@@ -35,7 +35,7 @@ func (a *application) homePage(c *ui.Context, radius float32) {
 				components.Text(c, locales.NoDevicesBody()).Wrap().TextAlign(ui.Center).FontSize(13).TextColor(inkMuted).MaxWidth(260)
 			})
 		default:
-			scrollContent(c, top, radius, func() {
+			scrollContent(c, top, radius, 18, func() {
 				// A failure after the devices were read leaves them as last
 				// read.
 				if e := a.errorDisplay(); e != "" {
@@ -64,8 +64,8 @@ func (a *application) homePage(c *ui.Context, radius float32) {
 	})
 }
 
-func areaHeading(c *ui.Context, name string) {
-	components.Text(c, name).FontSize(13).Bold().TextColor(inkMuted).SingleLine().Ellipsis("…").Margin(0, 4)
+func areaHeading(c *ui.Context, name string) ui.Element {
+	return components.Text(c, name).FontSize(13).Bold().TextColor(inkMuted).SingleLine().Ellipsis("…").Margin(0, 4)
 }
 
 // setupView stands in for the tiles until Home Assistant lists the devices:

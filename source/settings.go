@@ -20,10 +20,10 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 			}
 		})
 	}, func(top float32) {
-		scrollContent(c, top, radius, func() {
-			ui.Column(c).FillWidth().Padding(0, 4).Gap(18).Children(func() {
-				components.Text(c, locales.Connection()).FontSize(12).Bold().TextColor(t.TextMuted)
-				settingStacked(c, locales.Address(), locales.AddressHint(), func() {
+		scrollContent(c, top, radius, headerEdge, func() {
+			settingsGroup(c, locales.Language(), func() { a.languageSelect(c) })
+			settingsGroup(c, locales.Connection(), func() {
+				settingStacked(c, locales.Address(), "", func() {
 					components.TextBox(c, &a.address, components.TextBoxOptions{}).FillWidth().Label(locales.Address()).
 						Placeholder("http://homeassistant.local:8123").OnSubmit(a.saveConnection)
 				})
@@ -45,10 +45,8 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 					}
 				})
 				if e := a.errorDisplay(); e != "" {
-					components.Text(c, e).Wrap().FontSize(12).TextColor(t.Danger)
+					components.Text(c, e).Wrap().FontSize(12).TextColor(t.Danger).Margin(0, headerText-headerEdge)
 				}
-				components.Text(c, locales.General()).FontSize(12).Bold().TextColor(t.TextMuted).Margin(10, 0, 0, 0)
-				settingStacked(c, locales.Language(), locales.LanguageHint(), func() { a.languageSelect(c) })
 			})
 		})
 	})
@@ -69,12 +67,23 @@ func (a *application) languageSelect(c *ui.Context) {
 	}
 }
 
-// settingStacked puts a control below its title and description.
+// settingsGroup shows related settings under title, its text in line with
+// the header's title and its controls with the header's buttons.
+func settingsGroup(c *ui.Context, title string, build func()) {
+	ui.Column(c).FillWidth().Gap(12).Padding(0, 0, 10).Children(func() {
+		areaHeading(c, title).Margin(0, headerText-headerEdge)
+		ui.Column(c).FillWidth().Gap(18).Children(build)
+	})
+}
+
+// settingStacked puts a control below its title and description, if any.
 func settingStacked(c *ui.Context, title, description string, build func()) {
 	ui.Column(c).FillWidth().Gap(8).Children(func() {
-		ui.Column(c).FillWidth().Gap(2).Children(func() {
+		ui.Column(c).FillWidth().Gap(2).Padding(0, headerText-headerEdge).Children(func() {
 			components.Text(c, title).FontWeight(600)
-			components.Text(c, description).FontSize(12).TextColor(c.Theme().TextMuted).Wrap()
+			if description != "" {
+				components.Text(c, description).FontSize(12).TextColor(c.Theme().TextMuted).Wrap()
+			}
 		})
 		build()
 	})

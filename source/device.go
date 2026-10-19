@@ -26,7 +26,7 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 			}
 		}, func() { a.quickSwitch(c, s, v, name).MarginEnd(8) })
 	}, func(top float32) {
-		scrollContent(c, top, radius, func() {
+		scrollContent(c, top, radius, 18, func() {
 			deviceHero(c, s, v)
 			if l, ok := s.Level(); ok && s.Available() {
 				a.levelCard(c, s, l)

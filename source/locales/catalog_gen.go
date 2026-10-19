@@ -1436,16 +1436,6 @@ func (msgs Messages) Address() string {
 	return Catalog.Format(msgs.locale, "address", nil)
 }
 
-// AddressHint says "The URL you open Home Assistant at, such as http://homeassistant.local:8123."
-// in the language the app shows.
-func AddressHint() string { return In(i18n.Locale()).AddressHint() }
-
-// AddressHint says "The URL you open Home Assistant at, such as http://homeassistant.local:8123."
-// in the language of msgs.
-func (msgs Messages) AddressHint() string {
-	return Catalog.Format(msgs.locale, "addressHint", nil)
-}
-
 // Token says "Access token"
 // in the language the app shows.
 func Token() string { return In(i18n.Locale()).Token() }
@@ -1456,24 +1446,14 @@ func (msgs Messages) Token() string {
 	return Catalog.Format(msgs.locale, "token", nil)
 }
 
-// TokenHint says "Create a long-lived access token at the bottom of your Home Assistant profile."
+// TokenHint says "Create a long-lived token in your Home Assistant profile."
 // in the language the app shows.
 func TokenHint() string { return In(i18n.Locale()).TokenHint() }
 
-// TokenHint says "Create a long-lived access token at the bottom of your Home Assistant profile."
+// TokenHint says "Create a long-lived token in your Home Assistant profile."
 // in the language of msgs.
 func (msgs Messages) TokenHint() string {
 	return Catalog.Format(msgs.locale, "tokenHint", nil)
-}
-
-// General says "General"
-// in the language the app shows.
-func General() string { return In(i18n.Locale()).General() }
-
-// General says "General"
-// in the language of msgs.
-func (msgs Messages) General() string {
-	return Catalog.Format(msgs.locale, "general", nil)
 }
 
 // Language says "Language"
@@ -1484,16 +1464,6 @@ func Language() string { return In(i18n.Locale()).Language() }
 // in the language of msgs.
 func (msgs Messages) Language() string {
 	return Catalog.Format(msgs.locale, "language", nil)
-}
-
-// LanguageHint says "NeoHM follows the system's language unless you choose another."
-// in the language the app shows.
-func LanguageHint() string { return In(i18n.Locale()).LanguageHint() }
-
-// LanguageHint says "NeoHM follows the system's language unless you choose another."
-// in the language of msgs.
-func (msgs Messages) LanguageHint() string {
-	return Catalog.Format(msgs.locale, "languageHint", nil)
 }
 
 // LanguageSystem says "System"

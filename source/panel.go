@@ -42,6 +42,14 @@ const (
 	pageFade = 24
 )
 
+// headerEdge is how far the header's controls keep from the panel's sides,
+// pageBar's inset and the 6 its bar pads them by, and headerText how far its
+// title.
+const (
+	headerEdge = 14
+	headerText = headerEdge + 8
+)
+
 // pageBar floats a page's header over the top of its content, which blurs
 // under it the more the nearer the top.
 var pageBar = components.ScrollEdgeBarOptions{Style: components.ScrollEdgeBlur, Inset: 8, Height: 48, Color: panelTop.Alpha(0.5)}
@@ -172,16 +180,16 @@ func pageFrame(c *ui.Context, radius float32, label string, header func(), conte
 
 // scrollContent scrolls a page's content across the whole panel, its scroll
 // bar along the edge, clear of the header by top and of the bottom corners,
-// rounded by radius.
-func scrollContent(c *ui.Context, top, radius float32, content func()) {
+// rounded by radius, and inset from the sides by side.
+func scrollContent(c *ui.Context, top, radius, side float32, content func()) {
 	components.ScrollView(c, components.ScrollViewOptions{}).Fill().ScrollbarInsets(top, 0, radius).Children(func() {
-		ui.Column(c).FillWidth().Padding(top+pageFade, 18, 18, 18).Gap(18).Children(content)
+		ui.Column(c).FillWidth().Padding(top+pageFade, side, 18, side).Gap(18).Children(content)
 	})
 }
 
 // pageHeader titles a page in its bar, with its actions at the right.
 func pageHeader(c *ui.Context, title string, actions func()) {
-	components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).MarginStart(8)
+	components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).MarginStart(headerText - headerEdge)
 	actions()
 }
 
