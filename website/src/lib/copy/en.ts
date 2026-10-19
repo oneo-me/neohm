@@ -115,7 +115,7 @@ export const en = {
     steps: [
       {
         title: "Download NeoHM",
-        body: "Get the latest macOS release from GitHub and drag NeoHM into your Applications folder.",
+        body: "Get the latest macOS release from GitHub and drag NeoHM into your Applications folder. It is not notarized by Apple, so allow its first launch in Terminal with xattr -dr com.apple.quarantine /Applications/NeoHM.app.",
       },
       {
         title: "Create an access token",
@@ -139,7 +139,7 @@ export const en = {
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "Local by design",
     privacyBody:
-      "The address, token and language are saved in ~/.neohm/config.json, readable only by your user. NeoHM talks to your Home Assistant instance and nowhere else.",
+      "The address, token and language are saved in ~/.neohm/config.json, readable only by your user. NeoHM talks to your Home Assistant instance, and to GitHub only when you check for updates.",
     requirements: [
       "macOS 13+",
       "Windows & Linux next",

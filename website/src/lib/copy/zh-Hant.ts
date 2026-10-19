@@ -115,7 +115,7 @@ export const zhHant = {
     steps: [
       {
         title: "下載 NeoHM",
-        body: "在 GitHub 取得最新的 macOS 版本，把 NeoHM 拖進「應用程式」資料夾。",
+        body: "在 GitHub 取得最新的 macOS 版本，把 NeoHM 拖進「應用程式」資料夾。它沒有經過 Apple 公證，首次啟動前請在終端機執行 xattr -dr com.apple.quarantine /Applications/NeoHM.app。",
       },
       {
         title: "建立存取權杖",
@@ -139,7 +139,7 @@ export const zhHant = {
     architectures: "Apple 晶片 · Intel · x64 · ARM64",
     privacyTitle: "資料留在本機",
     privacyBody:
-      "位址、權杖和語言儲存在 ~/.neohm/config.json，只有你的使用者能讀取。NeoHM 只與你填寫的 Home Assistant 通訊。",
+      "位址、權杖和語言儲存在 ~/.neohm/config.json，只有你的使用者能讀取。NeoHM 只與你填寫的 Home Assistant 通訊，僅在你檢查更新時存取 GitHub。",
     requirements: [
       "macOS 13+",
       "Windows 與 Linux 即將到來",

@@ -159,6 +159,7 @@ func (a *application) showWindow() {
 // page, or Settings until Home Assistant is set up.
 func (a *application) resetPanel() {
 	a.detail, a.device, a.settingsOpen = false, "", !a.configured()
+	a.upd.open = false
 	a.follow()
 }
 

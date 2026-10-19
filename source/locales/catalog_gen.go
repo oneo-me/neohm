@@ -1675,3 +1675,143 @@ func TrayError() string { return In(i18n.Locale()).TrayError() }
 func (msgs Messages) TrayError() string {
 	return Catalog.Format(msgs.locale, "trayError", nil)
 }
+
+// CheckForUpdates says "Check for Updates"
+// in the language the app shows.
+func CheckForUpdates() string { return In(i18n.Locale()).CheckForUpdates() }
+
+// CheckForUpdates says "Check for Updates"
+// in the language of msgs.
+func (msgs Messages) CheckForUpdates() string {
+	return Catalog.Format(msgs.locale, "checkForUpdates", nil)
+}
+
+// UpdateChecking says "Checking for updates…"
+// in the language the app shows.
+func UpdateChecking() string { return In(i18n.Locale()).UpdateChecking() }
+
+// UpdateChecking says "Checking for updates…"
+// in the language of msgs.
+func (msgs Messages) UpdateChecking() string {
+	return Catalog.Format(msgs.locale, "updateChecking", nil)
+}
+
+// UpdateCurrent says "NeoHM is up to date"
+// in the language the app shows.
+func UpdateCurrent() string { return In(i18n.Locale()).UpdateCurrent() }
+
+// UpdateCurrent says "NeoHM is up to date"
+// in the language of msgs.
+func (msgs Messages) UpdateCurrent() string {
+	return Catalog.Format(msgs.locale, "updateCurrent", nil)
+}
+
+// UpdateVersion says "Version {version}"
+// in the language the app shows.
+func UpdateVersion(version string) string { return In(i18n.Locale()).UpdateVersion(version) }
+
+// UpdateVersion says "Version {version}"
+// in the language of msgs.
+func (msgs Messages) UpdateVersion(version string) string {
+	return Catalog.Format(msgs.locale, "updateVersion", map[string]any{"version": version})
+}
+
+// UpdateYours says "You have version {version}"
+// in the language the app shows.
+func UpdateYours(version string) string { return In(i18n.Locale()).UpdateYours(version) }
+
+// UpdateYours says "You have version {version}"
+// in the language of msgs.
+func (msgs Messages) UpdateYours(version string) string {
+	return Catalog.Format(msgs.locale, "updateYours", map[string]any{"version": version})
+}
+
+// UpdateDisabled says "This copy can't update itself"
+// in the language the app shows.
+func UpdateDisabled() string { return In(i18n.Locale()).UpdateDisabled() }
+
+// UpdateDisabled says "This copy can't update itself"
+// in the language of msgs.
+func (msgs Messages) UpdateDisabled() string {
+	return Catalog.Format(msgs.locale, "updateDisabled", nil)
+}
+
+// UpdateDisabledBody says "Move NeoHM to the Applications folder to get updates."
+// in the language the app shows.
+func UpdateDisabledBody() string { return In(i18n.Locale()).UpdateDisabledBody() }
+
+// UpdateDisabledBody says "Move NeoHM to the Applications folder to get updates."
+// in the language of msgs.
+func (msgs Messages) UpdateDisabledBody() string {
+	return Catalog.Format(msgs.locale, "updateDisabledBody", nil)
+}
+
+// UpdateCheckError says "Couldn't check for updates"
+// in the language the app shows.
+func UpdateCheckError() string { return In(i18n.Locale()).UpdateCheckError() }
+
+// UpdateCheckError says "Couldn't check for updates"
+// in the language of msgs.
+func (msgs Messages) UpdateCheckError() string {
+	return Catalog.Format(msgs.locale, "updateCheckError", nil)
+}
+
+// UpdateInstallError says "Couldn't install the update"
+// in the language the app shows.
+func UpdateInstallError() string { return In(i18n.Locale()).UpdateInstallError() }
+
+// UpdateInstallError says "Couldn't install the update"
+// in the language of msgs.
+func (msgs Messages) UpdateInstallError() string {
+	return Catalog.Format(msgs.locale, "updateInstallError", nil)
+}
+
+// UpdateRetry says "Try Again"
+// in the language the app shows.
+func UpdateRetry() string { return In(i18n.Locale()).UpdateRetry() }
+
+// UpdateRetry says "Try Again"
+// in the language of msgs.
+func (msgs Messages) UpdateRetry() string {
+	return Catalog.Format(msgs.locale, "updateRetry", nil)
+}
+
+// UpdateAvailable says "NeoHM {version} is available"
+// in the language the app shows.
+func UpdateAvailable(version string) string { return In(i18n.Locale()).UpdateAvailable(version) }
+
+// UpdateAvailable says "NeoHM {version} is available"
+// in the language of msgs.
+func (msgs Messages) UpdateAvailable(version string) string {
+	return Catalog.Format(msgs.locale, "updateAvailable", map[string]any{"version": version})
+}
+
+// UpdateInstall says "Install and Relaunch"
+// in the language the app shows.
+func UpdateInstall() string { return In(i18n.Locale()).UpdateInstall() }
+
+// UpdateInstall says "Install and Relaunch"
+// in the language of msgs.
+func (msgs Messages) UpdateInstall() string {
+	return Catalog.Format(msgs.locale, "updateInstall", nil)
+}
+
+// UpdateInstalling says "Downloading NeoHM {version}…"
+// in the language the app shows.
+func UpdateInstalling(version string) string { return In(i18n.Locale()).UpdateInstalling(version) }
+
+// UpdateInstalling says "Downloading NeoHM {version}…"
+// in the language of msgs.
+func (msgs Messages) UpdateInstalling(version string) string {
+	return Catalog.Format(msgs.locale, "updateInstalling", map[string]any{"version": version})
+}
+
+// UpdateRelaunch says "NeoHM relaunches once it's installed."
+// in the language the app shows.
+func UpdateRelaunch() string { return In(i18n.Locale()).UpdateRelaunch() }
+
+// UpdateRelaunch says "NeoHM relaunches once it's installed."
+// in the language of msgs.
+func (msgs Messages) UpdateRelaunch() string {
+	return Catalog.Format(msgs.locale, "updateRelaunch", nil)
+}

@@ -115,7 +115,7 @@ export const zhHans = {
     steps: [
       {
         title: "下载 NeoHM",
-        body: "在 GitHub 获取最新的 macOS 版本，把 NeoHM 拖进「应用程序」文件夹。",
+        body: "在 GitHub 获取最新的 macOS 版本，把 NeoHM 拖进「应用程序」文件夹。它没有经过 Apple 公证，首次启动前请在终端运行 xattr -dr com.apple.quarantine /Applications/NeoHM.app。",
       },
       {
         title: "创建访问令牌",
@@ -139,7 +139,7 @@ export const zhHans = {
     architectures: "Apple 芯片 · Intel · x64 · ARM64",
     privacyTitle: "数据留在本机",
     privacyBody:
-      "地址、令牌和语言保存在 ~/.neohm/config.json，只有你的用户能读取。NeoHM 只与你填写的 Home Assistant 通信。",
+      "地址、令牌和语言保存在 ~/.neohm/config.json，只有你的用户能读取。NeoHM 只与你填写的 Home Assistant 通信，仅在你检查更新时访问 GitHub。",
     requirements: [
       "macOS 13+",
       "Windows 与 Linux 即将到来",

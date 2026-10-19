@@ -163,5 +163,19 @@
   "requestError": "Home Assistant could not be reached.",
   "saveError": "Preferences could not be saved.",
   "loadError": "Preferences could not be read.",
-  "trayError": "The menu bar icon could not be created."
+  "trayError": "The menu bar icon could not be created.",
+  "checkForUpdates": "Check for Updates",
+  "updateChecking": "Checking for updates…",
+  "updateCurrent": "NeoHM is up to date",
+  "updateVersion": "Version {version}",
+  "updateYours": "You have version {version}",
+  "updateDisabled": "This copy can't update itself",
+  "updateDisabledBody": "Move NeoHM to the Applications folder to get updates.",
+  "updateCheckError": "Couldn't check for updates",
+  "updateInstallError": "Couldn't install the update",
+  "updateRetry": "Try Again",
+  "updateAvailable": "NeoHM {version} is available",
+  "updateInstall": "Install and Relaunch",
+  "updateInstalling": "Downloading NeoHM {version}…",
+  "updateRelaunch": "NeoHM relaunches once it's installed."
 }

@@ -115,7 +115,7 @@ export const ja = {
     steps: [
       {
         title: "NeoHM をダウンロード",
-        body: "GitHub から最新の macOS 版を入手し、NeoHM を「アプリケーション」フォルダにドラッグします。",
+        body: "GitHub から最新の macOS 版を入手し、NeoHM を「アプリケーション」フォルダにドラッグします。Apple の公証を受けていないため、初回起動の前にターミナルで xattr -dr com.apple.quarantine /Applications/NeoHM.app を実行してください。",
       },
       {
         title: "アクセストークンを作成",
@@ -139,7 +139,7 @@ export const ja = {
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "ローカルに保存",
     privacyBody:
-      "アドレス、トークン、言語は ~/.neohm/config.json に保存され、あなたのユーザーだけが読み取れます。NeoHM は入力した Home Assistant とのみ通信します。",
+      "アドレス、トークン、言語は ~/.neohm/config.json に保存され、あなたのユーザーだけが読み取れます。NeoHM は入力した Home Assistant と通信し、GitHub にはアップデートを確認するときだけアクセスします。",
     requirements: [
       "macOS 13+",
       "Windows・Linux 準備中",

@@ -14,6 +14,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/markdown"
 	"github.com/oneo-me/neohm/source/internal/ha"
 	"github.com/oneo-me/neohm/source/locales"
 	"github.com/oneo-me/onevra/source/shells/plain"
@@ -100,6 +101,9 @@ type application struct {
 	edits     atomic.Int64
 	panelOpen atomic.Bool
 	kick      chan struct{}
+	// upd is what the update button found, with updates.
+	upd     updateState
+	updates updates
 	// post runs a function on the main thread, setLocale shows a language
 	// and quit quits the app; tests replace them.
 	post      func(func())
@@ -108,7 +112,8 @@ type application struct {
 }
 
 func newApplication(path string) *application {
-	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain, setLocale: mygo.App.SetLocale, quit: mygo.App.Quit}
+	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain, setLocale: mygo.App.SetLocale, quit: mygo.App.Quit,
+		updates: mygoUpdates, upd: updateState{notes: &markdown.Options{Theme: &markdown.Theme{FontSize: 12}}}}
 }
 
 func (a *application) report(key string, err error) {

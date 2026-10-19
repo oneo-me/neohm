@@ -163,5 +163,19 @@
   "requestError": "无法连接 Home Assistant。",
   "saveError": "无法保存偏好设置。",
   "loadError": "无法读取偏好设置。",
-  "trayError": "无法创建菜单栏图标。"
+  "trayError": "无法创建菜单栏图标。",
+  "checkForUpdates": "检查更新",
+  "updateChecking": "正在检查更新…",
+  "updateCurrent": "NeoHM 已是最新版本",
+  "updateVersion": "版本 {version}",
+  "updateYours": "当前版本 {version}",
+  "updateDisabled": "此副本无法自行更新",
+  "updateDisabledBody": "将 NeoHM 移到“应用程序”文件夹后即可更新。",
+  "updateCheckError": "无法检查更新",
+  "updateInstallError": "无法安装更新",
+  "updateRetry": "重试",
+  "updateAvailable": "NeoHM {version} 现已推出",
+  "updateInstall": "安装并重新启动",
+  "updateInstalling": "正在下载 NeoHM {version}…",
+  "updateRelaunch": "安装完成后 NeoHM 将重新启动。"
 }

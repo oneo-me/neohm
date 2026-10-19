@@ -15,7 +15,16 @@ NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备
 
 ## 安装
 
-目前还没有发布版本，请按[开发](#开发)中的命令从源码构建。需要 macOS 13 或更高版本、Go 1.27 或更高版本，以及 Mac 能访问到的 Home Assistant。
+NeoHM 需要 macOS 13 或更高版本，以及 Mac 能访问到的 Home Assistant。
+
+1. 从 [Releases](https://github.com/oneo-me/ha-go/releases/latest) 下载最新版本的 `.dmg`，把 NeoHM 拖到“应用程序”文件夹。
+2. NeoHM 没有经过 Apple 公证，macOS 会阻止它首次启动。在终端中允许一次：
+
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/NeoHM.app
+   ```
+
+之后的版本在面板中安装：点击齿轮左边的箭头按钮检查更新，再点击**安装并重新启动**。只有放在“应用程序”或其他你可写入的文件夹中时，NeoHM 才能自行更新。
 
 ## 快速开始
 
@@ -28,7 +37,7 @@ NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备
 
 ## 开发
 
-Go 模块和 MyGo 打包配置都在 `source/` 中，请在该目录下运行 Go 和 MyGo 命令：
+Go 模块和 MyGo 打包配置都在 `source/` 中，构建需要 Go 1.27 或更高版本。请在该目录下运行 Go 和 MyGo 命令：
 
 ```sh
 cd source
@@ -36,6 +45,15 @@ go tool mygo dev      # 运行，带热重载
 go test ./...         # 无界面测试，不会打开窗口
 go tool mygo build    # 在 ../dist 生成 .app 和 .dmg
 ```
+
+### 发布
+
+推送 `v<版本>` 标签后，GitHub Actions 会构建通用版应用，并连同更新一起发布为 Release，说明取自 [CHANGELOG.md](CHANGELOG.md) 中该版本的小节：
+
+1. 修改 `source/mygo.json` 中的 `version`，并把更新日志中的 `[Unreleased]` 改为 `[<版本>] - <日期>`。
+2. 提交后执行 `git tag v<版本>` 和 `git push origin v<版本>`。
+
+工作流用 `MYGO_UPDATER_PRIVATE_KEY` 密钥签名更新，它的公钥就是 `mygo.json` 中的 `updates.publicKey`。已安装的应用只接受用这把密钥签名的更新，请在仓库之外保留一份副本。
 
 代码布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
 

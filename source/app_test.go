@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"image/png"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/neohm/source/internal/ha"
@@ -840,4 +843,102 @@ func TestSnapshot(t *testing.T) {
 		t.Fatal(err)
 	}
 	write("light-ceiling-colors.png")
+	a.closeDevice()
+	a.upd = updateState{open: true, phase: updateAvailable, notes: a.upd.notes,
+		found: &mygo.Update{Version: "9.0.0", Notes: "- Something new.\n- Something better."}}
+	write("update.png")
+}
+
+// fakeUpdates finds found, or fails with err, and installs it in two steps,
+// counting relaunches.
+func fakeUpdates(found *mygo.Update, err error, relaunched *int) updates {
+	return updates{
+		check: func(context.Context) (*mygo.Update, error) { return found, err },
+		install: func(_ context.Context, _ *mygo.Update, progress func(downloaded, total int64)) error {
+			progress(50, 100)
+			return err
+		},
+		relaunch: func() { *relaunched++ },
+	}
+}
+
+// The update button, left of Settings, says in a popover below it whether a
+// newer version is out, and installs it.
+func TestUpdates(t *testing.T) {
+	a := demoApp(t)
+	posted := make(chan func(), 8)
+	a.post = func(fn func()) { posted <- fn }
+	relaunched := 0
+	a.updates = fakeUpdates(nil, nil, &relaunched)
+	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
+
+	if err := tt.Click(locales.CheckForUpdates()); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(locales.UpdateChecking()) {
+		t.Fatalf("checking: %v", tt.Texts())
+	}
+	returned(t, posted)
+	tt.Frame()
+	if !tt.HasText(locales.UpdateCurrent()) {
+		t.Fatalf("up to date: %v", tt.Texts())
+	}
+	tt.Key(0, ui.KeyEscape)
+	if a.upd.open {
+		t.Fatal("Escape left the popover open")
+	}
+
+	// A development build cannot update itself, and says so.
+	a.updates = fakeUpdates(nil, mygo.ErrUpdatesDisabled, &relaunched)
+	if err := tt.Click(locales.CheckForUpdates()); err != nil {
+		t.Fatal(err)
+	}
+	returned(t, posted)
+	tt.Frame()
+	if !tt.HasText(locales.UpdateDisabled()) {
+		t.Fatalf("disabled: %v", tt.Texts())
+	}
+	tt.Key(0, ui.KeyEscape)
+
+	a.updates = fakeUpdates(&mygo.Update{Version: "9.0.0", Notes: "- Something new."}, nil, &relaunched)
+	if err := tt.Click(locales.CheckForUpdates()); err != nil {
+		t.Fatal(err)
+	}
+	returned(t, posted)
+	tt.Frame()
+	if !tt.HasText(locales.UpdateAvailable("9.0.0")) || !tt.HasText("Something new.") {
+		t.Fatalf("available: %v", tt.Texts())
+	}
+	if err := tt.Click(locales.UpdateInstall()); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(locales.UpdateInstalling("9.0.0")) {
+		t.Fatalf("installing: %v", tt.Texts())
+	}
+	returned(t, posted) // The progress.
+	if a.upd.progress != 0.5 {
+		t.Fatalf("progress %v", a.upd.progress)
+	}
+	returned(t, posted)
+	if relaunched != 1 {
+		t.Fatalf("relaunched %d times", relaunched)
+	}
+
+	// A failed install tries again from the popover.
+	a.upd.phase = updateAvailable
+	a.updates = fakeUpdates(a.upd.found, errors.New("offline"), &relaunched)
+	tt.Frame()
+	if err := tt.Click(locales.UpdateInstall()); err != nil {
+		t.Fatal(err)
+	}
+	returned(t, posted)
+	returned(t, posted)
+	tt.Frame()
+	if !tt.HasText(locales.UpdateInstallError()) || !tt.HasText(locales.UpdateRetry()) || relaunched != 1 {
+		t.Fatalf("failed: %v, relaunched %d", tt.Texts(), relaunched)
+	}
+	a.resetPanel()
+	if a.upd.open {
+		t.Fatal("the popover outlived the panel")
+	}
 }

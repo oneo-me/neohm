@@ -115,7 +115,7 @@ export const ko = {
     steps: [
       {
         title: "NeoHM 다운로드",
-        body: "GitHub에서 최신 macOS 릴리스를 받아 NeoHM을 응용 프로그램 폴더로 드래그하세요.",
+        body: "GitHub에서 최신 macOS 릴리스를 받아 NeoHM을 응용 프로그램 폴더로 드래그하세요. Apple 공증을 받지 않았으므로 처음 실행하기 전에 터미널에서 xattr -dr com.apple.quarantine /Applications/NeoHM.app을(를) 실행하세요.",
       },
       {
         title: "액세스 토큰 만들기",
@@ -139,7 +139,7 @@ export const ko = {
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "설계부터 로컬",
     privacyBody:
-      "주소, 토큰, 언어는 ~/.neohm/config.json에 저장되며 사용자만 읽을 수 있습니다. NeoHM은 입력한 Home Assistant와만 통신합니다.",
+      "주소, 토큰, 언어는 ~/.neohm/config.json에 저장되며 사용자만 읽을 수 있습니다. NeoHM은 입력한 Home Assistant와 통신하며, 업데이트를 확인할 때만 GitHub에 접속합니다.",
     requirements: [
       "macOS 13+",
       "Windows & Linux 준비 중",

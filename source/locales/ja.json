@@ -169,5 +169,19 @@
   "mygo.copy": "コピー",
   "mygo.paste": "ペースト",
   "mygo.delete": "削除",
-  "mygo.selectAll": "すべてを選択"
+  "mygo.selectAll": "すべてを選択",
+  "checkForUpdates": "アップデートを確認",
+  "updateChecking": "アップデートを確認中…",
+  "updateCurrent": "NeoHM は最新です",
+  "updateVersion": "バージョン {version}",
+  "updateYours": "現在のバージョン {version}",
+  "updateDisabled": "このコピーは自動でアップデートできません",
+  "updateDisabledBody": "NeoHM を“アプリケーション”フォルダに移動するとアップデートできます。",
+  "updateCheckError": "アップデートを確認できませんでした",
+  "updateInstallError": "アップデートをインストールできませんでした",
+  "updateRetry": "再試行",
+  "updateAvailable": "NeoHM {version} が利用可能です",
+  "updateInstall": "インストールして再起動",
+  "updateInstalling": "NeoHM {version} をダウンロード中…",
+  "updateRelaunch": "インストールが終わると NeoHM が再起動します。"
 }

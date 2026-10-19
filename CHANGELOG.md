@@ -10,6 +10,8 @@
 - Float each page's header over its content, blurred as it scrolls beneath.
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, with its room temperature, or why it cannot be controlled, under its name.
 - Keep the menu bar icon static, with nothing shown beside it.
+- Check for a new version from the button left of Settings, which shows its notes in a popover and installs it in place.
+- Publish each version as a GitHub release, its notes from this changelog.
 - Keep Settings inside the panel, opened from its gear button, with the language first and each group on a card.
 - Quit from the menu bar icon's right-click menu, which shows ⌘Q, or with ⌘Q in the panel.
 - Save the configuration, the access token included, in `~/.neohm`, readable only by the user.

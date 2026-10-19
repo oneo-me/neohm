@@ -15,7 +15,16 @@ Left-click the menu bar icon to open the panel. It shows the devices as tiles by
 
 ## Install
 
-No release is published yet. Build from source with the [Development](#development) commands. It needs macOS 13 or later, Go 1.27 or later and a Home Assistant instance the Mac can reach.
+NeoHM needs macOS 13 or later and a Home Assistant instance the Mac can reach.
+
+1. Download the `.dmg` of the latest version from [Releases](https://github.com/oneo-me/ha-go/releases/latest) and drag NeoHM to Applications.
+2. NeoHM is not notarized by Apple, so macOS blocks its first launch. Allow it once in Terminal:
+
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/NeoHM.app
+   ```
+
+Later versions install from the panel: click the arrow button left of the gear to check for one, then **Install and Relaunch**. NeoHM updates itself only from Applications, or another folder you can write to.
 
 ## Getting started
 
@@ -28,7 +37,7 @@ The address, the token, the language chosen and the air conditioner opened last 
 
 ## Development
 
-The Go module and the MyGo packaging configuration live in `source/`. Run Go and MyGo commands from that directory:
+The Go module and the MyGo packaging configuration live in `source/`. Building needs Go 1.27 or later. Run Go and MyGo commands from that directory:
 
 ```sh
 cd source
@@ -36,6 +45,15 @@ go tool mygo dev      # run with live reload
 go test ./...         # headless tests; never opens a window
 go tool mygo build    # .app and .dmg in ../dist
 ```
+
+### Releasing
+
+Pushing a tag `v<version>` builds a universal app on GitHub Actions and publishes it, with its update, as a release whose notes are that version's section of [CHANGELOG.md](CHANGELOG.md):
+
+1. Set `version` in `source/mygo.json`, and rename `[Unreleased]` in the changelog to `[<version>] - <date>`.
+2. Commit, then `git tag v<version>` and `git push origin v<version>`.
+
+The workflow signs updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, the key whose public half is `updates.publicKey` in `mygo.json`. Installed apps accept only updates signed with it, so keep a copy outside the repository.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
 

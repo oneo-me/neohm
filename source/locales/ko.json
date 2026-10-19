@@ -169,5 +169,19 @@
   "mygo.copy": "복사하기",
   "mygo.paste": "붙여넣기",
   "mygo.delete": "삭제",
-  "mygo.selectAll": "모두 선택"
+  "mygo.selectAll": "모두 선택",
+  "checkForUpdates": "업데이트 확인",
+  "updateChecking": "업데이트 확인 중…",
+  "updateCurrent": "NeoHM이 최신 버전입니다",
+  "updateVersion": "버전 {version}",
+  "updateYours": "현재 버전 {version}",
+  "updateDisabled": "이 사본은 스스로 업데이트할 수 없습니다",
+  "updateDisabledBody": "NeoHM을 응용 프로그램 폴더로 옮기면 업데이트할 수 있습니다.",
+  "updateCheckError": "업데이트를 확인할 수 없습니다",
+  "updateInstallError": "업데이트를 설치할 수 없습니다",
+  "updateRetry": "다시 시도",
+  "updateAvailable": "NeoHM {version} 사용 가능",
+  "updateInstall": "설치 후 다시 시작",
+  "updateInstalling": "NeoHM {version} 다운로드 중…",
+  "updateRelaunch": "설치가 끝나면 NeoHM이 다시 시작됩니다."
 }

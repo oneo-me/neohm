@@ -20,9 +20,12 @@ const tileHeight = 112
 func (a *application) homePage(c *ui.Context, radius float32) {
 	pageFrame(c, radius, locales.Title(), func() {
 		pageHeader(c, locales.Title(), func() {
-			if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
-				a.showSettings()
-			}
+			ui.Row(c).Gap(8).Shrink(0).Children(func() {
+				a.updateButton(c)
+				if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
+					a.showSettings()
+				}
+			})
 		})
 	}, func(top float32) {
 		switch {
