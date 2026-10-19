@@ -5,6 +5,9 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
+
+	"github.com/oneo-me/neohm/source/locales"
 )
 
 // config holds the preferences saved in ~/.neohm, the access token
@@ -14,6 +17,9 @@ type config struct {
 	Token   string `json:"token"`
 	// Entity is the device opened last, which the menu bar title follows.
 	Entity string `json:"entity"`
+	// Language is the catalog the app shows, as "zh-Hans", or "" for the
+	// one that suits the system's languages best.
+	Language string `json:"language,omitempty"`
 }
 
 func loadConfig(path string) (config, error) {
@@ -27,6 +33,9 @@ func loadConfig(path string) (config, error) {
 	}
 	if err := json.Unmarshal(data, &c); err != nil {
 		return config{}, err
+	}
+	if !slices.Contains(locales.Catalog.Languages(), c.Language) {
+		c.Language = ""
 	}
 	return c, nil
 }

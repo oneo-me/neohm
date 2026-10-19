@@ -373,6 +373,79 @@ func TestActions(t *testing.T) {
 	}
 }
 
+func parse(t *testing.T, state string) State {
+	t.Helper()
+	var s State
+	if err := json.Unmarshal([]byte(state), &s); err != nil {
+		t.Fatal(err)
+	}
+	return s
+}
+
+// A quick switch turns on what is off, closes what is open and leaves alone
+// what has no such pair.
+func TestToggle(t *testing.T) {
+	for _, tc := range []struct {
+		state, service, next string
+		data                 map[string]any
+	}{
+		{`{"entity_id":"light.a","state":"on"}`, "turn_off", "off", nil},
+		{`{"entity_id":"switch.a","state":"off"}`, "turn_on", "on", nil},
+		{`{"entity_id":"cover.a","state":"open","attributes":{"supported_features":3}}`, "close_cover", "closing", nil},
+		{`{"entity_id":"valve.a","state":"closed","attributes":{"supported_features":3}}`, "open_valve", "opening", nil},
+		{`{"entity_id":"cover.a","state":"open","attributes":{"supported_features":1}}`, "", "", nil},
+		{`{"entity_id":"media_player.a","state":"idle","attributes":{"supported_features":384}}`, "turn_off", "off", nil},
+		{`{"entity_id":"media_player.a","state":"playing","attributes":{"supported_features":1}}`, "", "", nil},
+		{`{"entity_id":"water_heater.a","state":"off","attributes":{"supported_features":8,"operation_list":["eco"]}}`, "turn_on", "", nil},
+		{`{"entity_id":"water_heater.a","state":"eco","attributes":{"supported_features":8,"operation_list":["off","eco"]}}`, "", "", nil},
+		{`{"entity_id":"climate.a","state":"heat","attributes":{"hvac_modes":["off","heat"]}}`, "turn_off", "off", nil},
+		{`{"entity_id":"climate.a","state":"off","attributes":{"hvac_modes":["off","heat"]}}`, "set_hvac_mode", "heat", map[string]any{"hvac_mode": "heat"}},
+		{`{"entity_id":"lock.a","state":"locked"}`, "", "", nil},
+		{`{"entity_id":"vacuum.a","state":"docked","attributes":{"supported_features":12316}}`, "", "", nil},
+		{`{"entity_id":"sensor.a","state":"21"}`, "", "", nil},
+	} {
+		act, ok := parse(t, tc.state).Toggle()
+		if ok != (tc.service != "") || act.Service != tc.service || act.Next != tc.next || len(act.Data) != len(tc.data) || act.Data["hvac_mode"] != tc.data["hvac_mode"] {
+			t.Errorf("%s: %+v %v", tc.state, act, ok)
+		}
+	}
+}
+
+// A slider sets the level of what dims, turns or moves, from what the entity
+// reports.
+func TestLevel(t *testing.T) {
+	for _, tc := range []struct {
+		state, name    string
+		value, min     float64
+		set            float64
+		service, field string
+		sent           any
+	}{
+		{`{"entity_id":"light.a","state":"on","attributes":{"brightness":204,"supported_color_modes":["brightness"]}}`, "brightness", 80, 1, 0, "turn_on", "brightness_pct", 1.0},
+		{`{"entity_id":"light.a","state":"off","attributes":{"supported_color_modes":["color_temp"]}}`, "brightness", 1, 1, 42.4, "turn_on", "brightness_pct", 42.0},
+		{`{"entity_id":"light.a","state":"on","attributes":{"supported_color_modes":["onoff"]}}`, "", 0, 0, 0, "", "", nil},
+		{`{"entity_id":"fan.a","state":"on","attributes":{"supported_features":1,"percentage":66,"percentage_step":33.3}}`, "speed", 66, 0, 0, "set_percentage", "percentage", 0.0},
+		{`{"entity_id":"cover.a","state":"open","attributes":{"supported_features":15,"current_position":60}}`, "position", 60, 0, 100, "set_cover_position", "position", 100.0},
+		{`{"entity_id":"valve.a","state":"open","attributes":{"supported_features":4,"current_position":30}}`, "position", 30, 0, 50, "set_valve_position", "position", 50.0},
+		{`{"entity_id":"cover.a","state":"open","attributes":{"supported_features":3}}`, "", 0, 0, 0, "", "", nil},
+		{`{"entity_id":"media_player.a","state":"playing","attributes":{"supported_features":4,"volume_level":0.35}}`, "volume", 35, 0, 50, "volume_set", "volume_level", 0.5},
+		{`{"entity_id":"media_player.a","state":"off","attributes":{"supported_features":4,"volume_level":0.35}}`, "", 0, 0, 0, "", "", nil},
+		{`{"entity_id":"humidifier.a","state":"on","attributes":{"humidity":45,"min_humidity":30,"max_humidity":80}}`, "humidity", 45, 30, 90, "set_humidity", "humidity", 80.0},
+	} {
+		l, ok := parse(t, tc.state).Level()
+		if ok != (tc.name != "") || l.Name != tc.name || l.Value != tc.value || l.Min != tc.min {
+			t.Errorf("%s: %+v %v", tc.state, l, ok)
+			continue
+		}
+		if !ok {
+			continue
+		}
+		if act := l.Set(tc.set); act.Service != tc.service || act.Data[tc.field] != tc.sent {
+			t.Errorf("%s: set %v: %+v", tc.state, tc.set, act)
+		}
+	}
+}
+
 func TestNormalizeURL(t *testing.T) {
 	for in, want := range map[string]string{
 		" homeassistant.local:8123/ ": "http://homeassistant.local:8123",

@@ -486,6 +486,86 @@ func (msgs Messages) OtherDevices() string {
 	return Catalog.Format(msgs.locale, "otherDevices", nil)
 }
 
+// QuickSwitch says "Turn {name} on or off"
+// in the language the app shows.
+func QuickSwitch(name string) string { return In(i18n.Locale()).QuickSwitch(name) }
+
+// QuickSwitch says "Turn {name} on or off"
+// in the language of msgs.
+func (msgs Messages) QuickSwitch(name string) string {
+	return Catalog.Format(msgs.locale, "quickSwitch", map[string]any{"name": name})
+}
+
+// Controls says "Controls"
+// in the language the app shows.
+func Controls() string { return In(i18n.Locale()).Controls() }
+
+// Controls says "Controls"
+// in the language of msgs.
+func (msgs Messages) Controls() string {
+	return Catalog.Format(msgs.locale, "controls", nil)
+}
+
+// Readings says "Readings"
+// in the language the app shows.
+func Readings() string { return In(i18n.Locale()).Readings() }
+
+// Readings says "Readings"
+// in the language of msgs.
+func (msgs Messages) Readings() string {
+	return Catalog.Format(msgs.locale, "readings", nil)
+}
+
+// LevelBrightness says "Brightness"
+// in the language the app shows.
+func LevelBrightness() string { return In(i18n.Locale()).LevelBrightness() }
+
+// LevelBrightness says "Brightness"
+// in the language of msgs.
+func (msgs Messages) LevelBrightness() string {
+	return Catalog.Format(msgs.locale, "level_brightness", nil)
+}
+
+// LevelSpeed says "Speed"
+// in the language the app shows.
+func LevelSpeed() string { return In(i18n.Locale()).LevelSpeed() }
+
+// LevelSpeed says "Speed"
+// in the language of msgs.
+func (msgs Messages) LevelSpeed() string {
+	return Catalog.Format(msgs.locale, "level_speed", nil)
+}
+
+// LevelPosition says "Position"
+// in the language the app shows.
+func LevelPosition() string { return In(i18n.Locale()).LevelPosition() }
+
+// LevelPosition says "Position"
+// in the language of msgs.
+func (msgs Messages) LevelPosition() string {
+	return Catalog.Format(msgs.locale, "level_position", nil)
+}
+
+// LevelVolume says "Volume"
+// in the language the app shows.
+func LevelVolume() string { return In(i18n.Locale()).LevelVolume() }
+
+// LevelVolume says "Volume"
+// in the language of msgs.
+func (msgs Messages) LevelVolume() string {
+	return Catalog.Format(msgs.locale, "level_volume", nil)
+}
+
+// LevelHumidity says "Target humidity"
+// in the language the app shows.
+func LevelHumidity() string { return In(i18n.Locale()).LevelHumidity() }
+
+// LevelHumidity says "Target humidity"
+// in the language of msgs.
+func (msgs Messages) LevelHumidity() string {
+	return Catalog.Format(msgs.locale, "level_humidity", nil)
+}
+
 // StateOn says "On"
 // in the language the app shows.
 func StateOn() string { return In(i18n.Locale()).StateOn() }
@@ -1394,6 +1474,46 @@ func TokenHint() string { return In(i18n.Locale()).TokenHint() }
 // in the language of msgs.
 func (msgs Messages) TokenHint() string {
 	return Catalog.Format(msgs.locale, "tokenHint", nil)
+}
+
+// General says "General"
+// in the language the app shows.
+func General() string { return In(i18n.Locale()).General() }
+
+// General says "General"
+// in the language of msgs.
+func (msgs Messages) General() string {
+	return Catalog.Format(msgs.locale, "general", nil)
+}
+
+// Language says "Language"
+// in the language the app shows.
+func Language() string { return In(i18n.Locale()).Language() }
+
+// Language says "Language"
+// in the language of msgs.
+func (msgs Messages) Language() string {
+	return Catalog.Format(msgs.locale, "language", nil)
+}
+
+// LanguageHint says "NeoHM follows the system's language unless you choose another."
+// in the language the app shows.
+func LanguageHint() string { return In(i18n.Locale()).LanguageHint() }
+
+// LanguageHint says "NeoHM follows the system's language unless you choose another."
+// in the language of msgs.
+func (msgs Messages) LanguageHint() string {
+	return Catalog.Format(msgs.locale, "languageHint", nil)
+}
+
+// LanguageSystem says "System"
+// in the language the app shows.
+func LanguageSystem() string { return In(i18n.Locale()).LanguageSystem() }
+
+// LanguageSystem says "System"
+// in the language of msgs.
+func (msgs Messages) LanguageSystem() string {
+	return Catalog.Format(msgs.locale, "languageSystem", nil)
 }
 
 // Connect says "Connect"

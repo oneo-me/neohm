@@ -16,51 +16,51 @@ import (
 const tileHeight = 112
 
 // homePage is where the panel opens: Home Assistant's devices as tiles, by
-// area. radius rounds the bottom corners the tiles scroll within.
+// area. radius rounds the corners the tiles scroll within.
 func (a *application) homePage(c *ui.Context, radius float32) {
-	pageHeader(c, locales.Devices(), func() {
-		if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
-			a.showSettings()
-		}
-	})
-	if !a.configured() || !a.listed {
-		a.setupView(c)
-		return
-	}
-	// A failure after the devices were read leaves them as last read.
-	if e := a.errorDisplay(); e != "" {
-		ui.Row(c).FillWidth().Shrink(0).Gap(8).Padding(0, 22, 10, 22).AlignItems(ui.Center).Children(func() {
-			components.Icon(c, lucide.TriangleAlert).Size(16, 16).TextColor(danger).Shrink(0)
-			components.Text(c, e).FontSize(12).Wrap().TextColor(inkMuted).Grow(1).MinWidth(0)
-		})
-	}
-	if len(a.home) == 0 {
-		ui.Column(c).Fill().Center().Gap(10).Padding(0, 24, 48, 24).Children(func() {
-			components.Icon(c, lucide.House).Size(44, 44).TextColor(inkMuted)
-			components.Text(c, locales.NoDevices()).FontSize(17).Bold().TextColor(ink)
-			components.Text(c, locales.NoDevicesBody()).Wrap().TextAlign(ui.Center).FontSize(13).TextColor(inkMuted).MaxWidth(260)
-		})
-		return
-	}
-	components.ScrollView(c, components.ScrollViewOptions{}).Fill().Radius(0, 0, radius, radius).
-		ScrollbarInsets(0, 4, radius).Children(func() {
-		ui.Column(c).FillWidth().Padding(2, 18, 18, 18).Gap(18).Children(func() {
-			for i, s := range a.home {
-				ui.Column(c.Key(i)).FillWidth().Gap(10).Children(func() {
-					switch {
-					case s.Area != "":
-						areaHeading(c, s.Area)
-					case len(a.home) > 1:
-						areaHeading(c, locales.OtherDevices())
-					}
-					ui.Grid(c).Columns(3).Gap(8).Children(func() {
-						for _, t := range s.Tiles {
-							a.tile(c, t, s.Area)
-						}
-					})
-				})
+	pageFrame(c, radius, locales.Devices(), func() {
+		pageHeader(c, locales.Devices(), func() {
+			if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
+				a.showSettings()
 			}
 		})
+	}, func(top float32) {
+		switch {
+		case !a.configured() || !a.listed:
+			a.setupView(c, top)
+		case len(a.home) == 0:
+			ui.Column(c).Fill().Center().Gap(10).Padding(top, 24, 48, 24).Children(func() {
+				components.Icon(c, lucide.House).Size(44, 44).TextColor(inkMuted)
+				components.Text(c, locales.NoDevices()).FontSize(17).Bold().TextColor(ink)
+				components.Text(c, locales.NoDevicesBody()).Wrap().TextAlign(ui.Center).FontSize(13).TextColor(inkMuted).MaxWidth(260)
+			})
+		default:
+			scrollContent(c, top, radius, func() {
+				// A failure after the devices were read leaves them as last
+				// read.
+				if e := a.errorDisplay(); e != "" {
+					ui.Row(c).FillWidth().Gap(8).Padding(0, 4).AlignItems(ui.Center).Children(func() {
+						components.Icon(c, lucide.TriangleAlert).Size(16, 16).TextColor(danger).Shrink(0)
+						components.Text(c, e).FontSize(12).Wrap().TextColor(inkMuted).Grow(1).MinWidth(0)
+					})
+				}
+				for i, s := range a.home {
+					ui.Column(c.Key(i)).FillWidth().Gap(10).Children(func() {
+						switch {
+						case s.Area != "":
+							areaHeading(c, s.Area)
+						case len(a.home) > 1:
+							areaHeading(c, locales.OtherDevices())
+						}
+						ui.Grid(c).Columns(3).Gap(8).Children(func() {
+							for _, t := range s.Tiles {
+								a.tile(c, t, s.Area)
+							}
+						})
+					})
+				}
+			})
+		}
 	})
 }
 
@@ -69,9 +69,10 @@ func areaHeading(c *ui.Context, name string) {
 }
 
 // setupView stands in for the tiles until Home Assistant lists the devices:
-// it waits, asks for the connection or says what went wrong.
-func (a *application) setupView(c *ui.Context) {
-	ui.Column(c).Fill().Center().Gap(14).Padding(0, 24, 48, 24).Children(func() {
+// it waits, asks for the connection or says what went wrong. top keeps it
+// clear of the header.
+func (a *application) setupView(c *ui.Context, top float32) {
+	ui.Column(c).Fill().Center().Gap(14).Padding(top, 24, 48, 24).Children(func() {
 		components.Icon(c, lucide.House).Size(48, 48).TextColor(accent)
 		if a.configured() && a.errorKey == "" {
 			components.Spinner(c, components.SpinnerRing)
@@ -88,86 +89,85 @@ func (a *application) setupView(c *ui.Context) {
 }
 
 // tile shows one device: what it is, its name and its main state, lit in
-// its color while it is on, open or at work. A click does what the device
-// is for: it switches a light, opens a menu of a lock's actions or opens an
-// air conditioner's controls.
+// its color while it is on, open or at work. A click opens the device's
+// page, an air conditioner's controls; a device that switches on and off,
+// or opens and closes, has a quick switch in the corner.
 func (a *application) tile(c *ui.Context, t ha.Tile, area string) {
 	s := a.held(t.Entity)
 	v := a.tileView(t, s)
 	name := tileName(t.Name, area)
-	var e ui.Element
-	if v.kind == tileStatic {
-		e = ui.Box(c.Key(s.EntityID))
-	} else {
-		e = ui.ButtonBase(c.Key(s.EntityID))
-	}
-	disabled := v.kind != tileStatic && v.kind != tilePage && (!s.Available() || len(v.actions) == 0)
-	e.Height(tileHeight).Radius(20).Padding(12).Column().AlignItems(ui.Start).Label(name + ", " + v.status).Disabled(disabled)
-	if v.kind == tileSwitch {
-		e.Role(ui.RoleToggleButton).Checked(v.lit)
-	}
-	level := float32(0)
-	if v.lit {
-		level = 1
-	}
-	level = e.Animate("lit", level, 220*time.Millisecond)
-	// The face follows the pointer, as the panel's other tiles do.
-	offA, litA := float32(0.045), float32(0.2)
-	if v.kind != tileStatic && !disabled {
+	ui.Box(c.Key(s.EntityID)).Height(tileHeight).Children(func() {
+		e := ui.ButtonBase(c).Fill().Radius(20).Padding(12).Column().AlignItems(ui.Start).Label(name + ", " + v.status)
+		level := float32(0)
+		if v.lit {
+			level = 1
+		}
+		level = e.Animate("lit", level, 220*time.Millisecond)
+		// The face follows the pointer, as the panel's other tiles do.
+		offA, litA := float32(0.045), float32(0.2)
 		switch {
 		case e.Pressed():
 			offA, litA = 0.12, 0.15
 		case e.Hovered():
 			offA, litA = 0.08, 0.26
 		}
-	}
-	off := ui.RGBA(255, 255, 255, offA)
-	e.Gradient(off.Mix(v.color.Alpha(litA+0.1), level), off.Mix(v.color.Alpha(litA-0.08), level), 135).
-		Border(1, tileEdge.Mix(v.color.Alpha(0.45), level)).
-		Shadow(0, 8, 24, 0, v.color.Alpha(0.28*level))
-	if !s.Available() {
-		e.Opacity(0.45)
-	}
-	e.Children(func() {
-		ui.Row(c).FillWidth().AlignItems(ui.Start).Children(func() {
-			disc, glyph := ui.RGBA(255, 255, 255, 0.07).Mix(v.color, level), inkMuted.Mix(discInk, level)
-			if v.neutral {
-				disc, glyph = v.color.Alpha(0.16), v.color
-			}
-			ui.Box(c).Size(36, 36).Radius(18).Shrink(0).Background(disc).Center().Children(func() {
-				components.Icon(c, v.icon).Size(19, 19).TextColor(glyph)
-			})
+		off := ui.RGBA(255, 255, 255, offA)
+		e.Gradient(off.Mix(v.color.Alpha(litA+0.1), level), off.Mix(v.color.Alpha(litA-0.08), level), 135).
+			Border(1, tileEdge.Mix(v.color.Alpha(0.45), level)).
+			Shadow(0, 8, 24, 0, v.color.Alpha(0.28*level))
+		if !s.Available() {
+			e.Opacity(0.45)
+		}
+		e.Children(func() {
+			deviceDisc(c, v, level, 36)
 			ui.Spacer(c)
-			switch v.kind {
-			case tileMenu:
-				components.Icon(c, lucide.ChevronDown).Size(15, 15).TextColor(inkMuted).Margin(2, 0, 0, 0)
-			case tilePage:
-				components.Icon(c, lucide.ChevronRight).Size(15, 15).TextColor(inkMuted).Margin(2, 0, 0, 0)
-			}
+			components.Text(c, name).FontSize(13).FontWeight(600).TextColor(ink).MaxLines(2)
+			components.Text(c, v.status).FontSize(12).TextColor(inkMuted.Mix(v.color.Mix(ink, 0.4), level)).
+				SingleLine().Ellipsis("…").Margin(2, 0, 0, 0)
 		})
-		ui.Spacer(c)
-		components.Text(c, name).FontSize(13).FontWeight(600).TextColor(ink).MaxLines(2)
-		components.Text(c, v.status).FontSize(12).TextColor(inkMuted.Mix(v.color.Mix(ink, 0.4), level)).
-			SingleLine().Ellipsis("…").Margin(2, 0, 0, 0)
+		if e.Clicked() {
+			a.open(t)
+		}
+		a.quickSwitch(c, s, v, name).Absolute().Top(12).Right(12)
 	})
-	switch v.kind {
-	case tileSwitch, tilePress:
-		if e.Clicked() {
-			a.perform(s, v.actions[0])
-		}
-	case tileMenu:
-		e.Menu(func(m *ui.Menu) {
-			for _, act := range v.actions {
-				if m.Item(actionText(act, s)).Checked(act.Current).Disabled(act.Disabled).Chosen() {
-					a.perform(s, act)
-				}
-			}
-		})
-	case tilePage:
-		if e.Clicked() {
-			a.openClimate(ha.ParseClimate(t.Entity))
-		}
+}
+
+// deviceDisc is the round icon of a device, filled with its color while it
+// is lit by level, size DIPs across.
+func deviceDisc(c *ui.Context, v tileView, level, size float32) ui.Element {
+	disc, glyph := ui.RGBA(255, 255, 255, 0.07).Mix(v.color, level), inkMuted.Mix(discInk, level)
+	if v.neutral {
+		disc, glyph = v.color.Alpha(0.16), v.color
 	}
+	icon := size * 19 / 36
+	return ui.Box(c).Size(size, size).Radius(size / 2).Shrink(0).Background(disc).Center().Children(func() {
+		components.Icon(c, v.icon).Size(icon, icon).TextColor(glyph)
+	})
+}
+
+// quickSwitch switches the device of entity s, as held, on and off, or
+// opens and closes it, if it does either; its element is empty otherwise.
+func (a *application) quickSwitch(c *ui.Context, s ha.State, v tileView, name string) ui.Element {
+	if _, ok := s.Toggle(); !ok {
+		return ui.Element{}
+	}
+	on := v.lit
+	sw := components.Switch(c, &on, locales.QuickSwitch(name), components.SwitchOptions{HideLabel: true})
+	sw.Disabled(!s.Available())
+	if on != v.lit {
+		a.toggle(s)
+	}
+	return sw
+}
+
+// open shows the page of the device of tile t: an air conditioner's
+// controls, else what its page shows of any other.
+func (a *application) open(t ha.Tile) {
+	if t.Entity.Domain() == "climate" {
+		a.openClimate(ha.ParseClimate(a.held(t.Entity)))
+		return
+	}
+	a.openDevice(t.Entity.EntityID)
 }
 
 // tileName drops the area's name from the front of a device's, which the

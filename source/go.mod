@@ -4,7 +4,7 @@ go 1.27.2
 
 require (
 	github.com/egoist/mygo v0.5.5
-	github.com/oneo-me/onevra/source v0.2026.12
+	github.com/oneo-me/onevra/source v0.2026.13
 )
 
 require (

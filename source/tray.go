@@ -100,8 +100,9 @@ func (a *application) hidePanel() {
 }
 
 // showPanel opens the panel under the menu bar icon. It draws its own dark
-// surface and arrow rather than the system popover's material. Without a menu
-// bar icon, its pages show in a window.
+// surface and arrow rather than the system popover's material, which the
+// blur under its pages' headers cannot see. Without a menu bar icon, its
+// pages show in a window.
 func (a *application) showPanel() {
 	if a.tray == nil {
 		a.showWindow()
@@ -152,10 +153,10 @@ func (a *application) showWindow() {
 	a.follow()
 }
 
-// resetPanel returns the closed panel to the page it opens on: the device
-// list, or Settings until Home Assistant is set up.
+// resetPanel returns the closed panel to the page it opens on: the home
+// page, or Settings until Home Assistant is set up.
 func (a *application) resetPanel() {
-	a.detail, a.settingsOpen = false, !a.configured()
+	a.detail, a.device, a.settingsOpen = false, "", !a.configured()
 	a.follow()
 }
 
@@ -186,7 +187,7 @@ func (a *application) back() bool {
 	switch {
 	case a.settingsOpen:
 		a.closeSettings()
-	case a.detail:
+	case a.detail || a.device != "":
 		a.closeDevice()
 	default:
 		return false

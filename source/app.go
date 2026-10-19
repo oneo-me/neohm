@@ -50,9 +50,11 @@ type application struct {
 	// there is no menu bar icon to anchor it to.
 	panel  *mygo.Window
 	window *plain.Shell
-	// The panel opens on the device list: detail shows the device opened in
-	// its place, and settingsOpen shows Settings over either.
+	// The panel opens on Home: detail shows the air conditioner opened last
+	// in its place, device the page of another device, by its entity, and
+	// settingsOpen shows Settings over any of them.
 	detail, settingsOpen bool
+	device               string
 
 	// home is what the home page shows, as last read, which listed
 	// reports. registry is what Home Assistant's registries said, nil
@@ -98,12 +100,14 @@ type application struct {
 	edits     atomic.Int64
 	panelOpen atomic.Bool
 	kick      chan struct{}
-	// post runs a function on the main thread; tests replace it.
-	post func(func())
+	// post runs a function on the main thread, and setLocale shows a
+	// language; tests replace them.
+	post      func(func())
+	setLocale func(string)
 }
 
 func newApplication(path string) *application {
-	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain}
+	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain, setLocale: mygo.App.SetLocale}
 }
 
 func (a *application) report(key string, err error) {
@@ -145,7 +149,7 @@ func (a *application) connect(list bool) {
 	client := a.client
 	a.mu.Unlock()
 	// What the old connection read may not exist on this one.
-	a.home, a.listed, a.registry, a.holds, a.hasClimate, a.detail = nil, false, nil, nil, false, false
+	a.home, a.listed, a.registry, a.holds, a.hasClimate, a.detail, a.device = nil, false, nil, nil, false, false, ""
 	a.follow()
 	if !list || client == nil {
 		return
@@ -199,14 +203,22 @@ func (a *application) openClimate(d ha.Climate) {
 	if !a.hasClimate || a.climate.EntityID != d.EntityID {
 		a.climate, a.hasClimate = d, true
 	}
-	a.detail = true
+	a.detail, a.device = true, ""
+	a.follow()
+	a.redraw()
+}
+
+// openDevice shows the page of the device of entity id in place of the home
+// page.
+func (a *application) openDevice(id string) {
+	a.detail, a.device = false, id
 	a.follow()
 	a.redraw()
 }
 
 // closeDevice returns the panel to the home page.
 func (a *application) closeDevice() {
-	a.detail = false
+	a.detail, a.device = false, ""
 	a.follow()
 	a.redraw()
 }
@@ -217,6 +229,14 @@ func (a *application) save() {
 	} else if a.errorKey == "saveError" || a.errorKey == "loadError" {
 		a.clearError()
 	}
+}
+
+// setLanguage shows the app in the language of tag, one of the catalogs',
+// or follows the system's with "".
+func (a *application) setLanguage(tag string) {
+	a.config.Language = tag
+	a.save()
+	a.setLocale(tag)
 }
 
 // saveConnection applies the address and token edited in Settings.
@@ -314,6 +334,7 @@ func (a *application) readHome(ctx context.Context, client *ha.Client, always bo
 // applyList shows a read of every entity, arranged with the registries last
 // read. The air conditioner opened last takes its state as applyState takes
 // a read of it; once it is gone, the panel and the menu bar title forget it.
+// The page of a device gone from Home closes.
 func (a *application) applyList(client *ha.Client, edits int64, states []ha.State, reg *ha.Registry, unit string, err error) {
 	if !a.current(client) || !a.reached(unit, err) {
 		return
@@ -322,6 +343,9 @@ func (a *application) applyList(client *ha.Client, edits int64, states []ha.Stat
 		a.registry = reg
 	}
 	a.home, a.listed = ha.Arrange(states, a.registry), true
+	if _, _, ok := a.tileOf(a.device); !ok {
+		a.device = ""
+	}
 	a.release(edits)
 	if i := slices.IndexFunc(states, func(s ha.State) bool { return s.EntityID == a.config.Entity }); i >= 0 {
 		a.update(edits, ha.ParseClimate(states[i]))
@@ -422,15 +446,39 @@ func (a *application) call(service string, data map[string]any) {
 	}()
 }
 
-// hold is what a tile shows after an action, until a read that started once
-// the action's calls returned and settled.
+// hold is what a device shows after an action, until a read that started
+// once the action's calls returned and settled.
 type hold struct {
-	state string
-	// pending counts calls on their way; edits is the count of local
-	// changes once the last returned, and until when it settles.
+	// state is the state shown, unless "", and level the level its page
+	// shows, as a light's brightness, when hasLevel says so.
+	state    string
+	level    float64
+	hasLevel bool
+	// pending counts calls on their way, and a level waiting for its
+	// slider to rest, which waiting reports and gen numbers; edits is the
+	// count of local changes once the last call returned, and until when
+	// it settles.
 	pending int
+	waiting bool
+	gen     int
 	edits   int64
 	until   time.Time
+}
+
+// tileOf finds the tile of entity id on the home page, and the area it
+// shows in.
+func (a *application) tileOf(id string) (ha.Tile, string, bool) {
+	if id == "" {
+		return ha.Tile{}, "", false
+	}
+	for _, s := range a.home {
+		for _, t := range s.Tiles {
+			if t.Entity.EntityID == id {
+				return t, s.Area, true
+			}
+		}
+	}
+	return ha.Tile{}, "", false
 }
 
 // tileCount is how many tiles the home page shows.
@@ -445,10 +493,72 @@ func (a *application) tileCount() int {
 // held is entity s as its tile shows it: in the state its last action leads
 // to, until Home Assistant reports one.
 func (a *application) held(s ha.State) ha.State {
-	if h := a.holds[s.EntityID]; h != nil {
+	if h := a.holds[s.EntityID]; h != nil && h.state != "" {
 		s.State = h.state
 	}
 	return s
+}
+
+// holdOf is the hold of entity id, made as needed.
+func (a *application) holdOf(id string) *hold {
+	h := a.holds[id]
+	if h == nil {
+		h = &hold{}
+		if a.holds == nil {
+			a.holds = map[string]*hold{}
+		}
+		a.holds[id] = h
+	}
+	return h
+}
+
+// level is level l of entity s as its page shows it: as last set, until
+// Home Assistant reports it.
+func (a *application) level(s ha.State, l ha.Level) float64 {
+	if h := a.holds[s.EntityID]; h != nil && h.hasLevel {
+		return h.level
+	}
+	return l.Value
+}
+
+// setLevel shows level v of entity s at once and sends it once the slider
+// rests.
+func (a *application) setLevel(s ha.State, l ha.Level, v float64) {
+	h := a.holdOf(s.EntityID)
+	if !h.waiting {
+		h.waiting = true
+		h.pending++
+	}
+	h.level, h.hasLevel = v, true
+	if next := l.Set(v).Next; next != "" {
+		h.state = next
+	}
+	h.gen++
+	gen := h.gen
+	a.edits.Add(1)
+	a.redraw()
+	time.AfterFunc(debounce, func() {
+		a.post(func() {
+			if a.holds[s.EntityID] != h || h.gen != gen {
+				return
+			}
+			h.waiting = false
+			h.pending--
+			a.perform(s, l.Set(h.level))
+		})
+	})
+}
+
+// toggle does what the quick switch of entity s does. The air conditioner
+// opened last switches as its controls switch it.
+func (a *application) toggle(s ha.State) {
+	if s.Domain() == "climate" && a.hasClimate && a.climate.EntityID == s.EntityID {
+		a.togglePower()
+		return
+	}
+	if act, ok := s.Toggle(); ok {
+		a.perform(s, act)
+	}
 }
 
 // perform asks Home Assistant for action act of entity s, showing at once the
@@ -460,16 +570,15 @@ func (a *application) perform(s ha.State, act ha.Action) {
 	if client == nil {
 		return
 	}
-	var h *hold
+	// An action that leads to a state holds it until Home Assistant
+	// reports it; a hold already made, as of a level, waits for the action
+	// too.
+	h := a.holds[s.EntityID]
 	if act.Next != "" {
-		if h = a.holds[s.EntityID]; h == nil {
-			h = &hold{}
-			if a.holds == nil {
-				a.holds = map[string]*hold{}
-			}
-			a.holds[s.EntityID] = h
-		}
+		h = a.holdOf(s.EntityID)
 		h.state = act.Next
+	}
+	if h != nil {
 		h.pending++
 	}
 	a.edits.Add(1)

@@ -49,8 +49,8 @@ const demoStates = `[
 	{"entity_id":"lock.front_door","state":"locked","attributes":{"friendly_name":"Front Door","supported_features":0}},
 	{"entity_id":"light.lamp","state":"off","attributes":{"friendly_name":"Bedroom Lamp"}},
 	{"entity_id":"switch.heater","state":"off","attributes":{"friendly_name":"Bedroom Heater","device_class":"outlet"}},
-	{"entity_id":"sensor.thermo_temperature","state":"24.27","attributes":{"device_class":"temperature","unit_of_measurement":"°C"}},
-	{"entity_id":"sensor.thermo_humidity","state":"45","attributes":{"device_class":"humidity","unit_of_measurement":"%"}},
+	{"entity_id":"sensor.thermo_temperature","state":"24.27","attributes":{"friendly_name":"Bedroom Thermometer Temperature","device_class":"temperature","unit_of_measurement":"°C"}},
+	{"entity_id":"sensor.thermo_humidity","state":"45","attributes":{"friendly_name":"Bedroom Thermometer Humidity","device_class":"humidity","unit_of_measurement":"%"}},
 	{"entity_id":"sensor.thermo_battery","state":"88","attributes":{"device_class":"battery","unit_of_measurement":"%"}},
 	{"entity_id":"binary_sensor.window","state":"on","attributes":{"device_class":"window"}},
 	{"entity_id":"vacuum.robot","state":"docked","attributes":{"friendly_name":"Robot Vacuum","supported_features":12316}}
@@ -124,6 +124,18 @@ func returned(t *testing.T, posted chan func()) {
 	}
 }
 
+// focus moves the keyboard to the control labeled label with Tab.
+func focus(t *testing.T, tt *ui.Tester, label string) {
+	t.Helper()
+	for range 20 {
+		if tt.Focused(label) {
+			return
+		}
+		tt.Key(0, ui.KeyTab)
+	}
+	t.Fatalf("%q never takes the keyboard", label)
+}
+
 func TestPanelControls(t *testing.T) {
 	a := demoApp(t)
 	a.detail = true
@@ -139,6 +151,12 @@ func TestPanelControls(t *testing.T) {
 	if a.climate.Target != 17 || a.trayTitle() != "17°" {
 		t.Fatalf("raise: %v %q", a.climate.Target, a.trayTitle())
 	}
+	focus(t, tt, locales.Eco())
+	tt.Key(0, ui.KeySpace)
+	if a.climate.Preset != "eco" {
+		t.Fatalf("eco: %q", a.climate.Preset)
+	}
+	a.togglePreset("eco")
 	if err := tt.Click(locales.Sleep() + ": " + locales.Off()); err != nil {
 		t.Fatal(err)
 	}
@@ -216,8 +234,9 @@ func TestHome(t *testing.T) {
 	}
 }
 
-// A tile switches its device, or offers its actions in a menu, and shows the
-// state an action leads to until a fresh read reports it.
+// A tile's quick switch switches its device, and the device's page offers
+// what else it does; either shows the state an action leads to until a fresh
+// read reports it.
 func TestTileActions(t *testing.T) {
 	url, calls := serviceCalls(t)
 	a := demoApp(t)
@@ -228,11 +247,11 @@ func TestTileActions(t *testing.T) {
 	tt := ui.NewTester(a.panelView, panelWidth, 900)
 
 	edits := a.edits.Load()
-	if err := tt.Click("Ceiling Light"); err != nil {
+	if err := tt.Click(locales.QuickSwitch("Ceiling Light")); err != nil {
 		t.Fatal(err)
 	}
-	if !tt.HasText(locales.StateOff()) || tt.HasText(locales.StateOn()+" · 80%") {
-		t.Fatalf("turn off: %v", tt.Texts())
+	if a.device != "" || !tt.HasText(locales.StateOff()) || tt.HasText(locales.StateOn()+" · 80%") {
+		t.Fatalf("turn off: %q %v", a.device, tt.Texts())
 	}
 	returned(t, posted)
 	states := parseStates(t, demoStates)
@@ -248,29 +267,121 @@ func TestTileActions(t *testing.T) {
 		t.Fatalf("holds %v", a.holds)
 	}
 
+	// The air conditioner opened last switches as its controls do; another
+	// turns on in its first mode.
+	if err := tt.Click(locales.QuickSwitch("AC")); err != nil {
+		t.Fatal(err)
+	}
+	if a.climate.Mode != "off" || a.trayTitle() != "" {
+		t.Fatalf("opened last: %q", a.climate.Mode)
+	}
+	if err := tt.Click(locales.QuickSwitch("Cabinet AC")); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(locales.ModeCool() + " · 24°") {
+		t.Fatalf("turn on: %v", tt.Texts())
+	}
+	returned(t, posted)
+
+	// A lock has no quick switch: its page offers what it does.
+	if _, ok := tt.Find(locales.QuickSwitch("Front Door")); ok {
+		t.Fatal("a lock has a quick switch")
+	}
 	if err := tt.Click("Front Door"); err != nil {
 		t.Fatal(err)
 	}
-	if got := tt.Menu(); !slices.Equal(got, []string{locales.ActionLock(), locales.ActionUnlock()}) {
-		t.Fatalf("lock menu %v", got)
+	if a.device != "lock.front_door" || !tt.HasText(locales.Controls()) {
+		t.Fatalf("lock page: %q %v", a.device, tt.Texts())
 	}
-	if err := tt.ChooseMenuItem(locales.ActionUnlock()); err != nil {
+	if err := tt.Click(locales.ActionUnlock()); err != nil {
 		t.Fatal(err)
 	}
 	if !tt.HasText(locales.StateUnlocking()) {
 		t.Fatalf("unlock: %v", tt.Texts())
 	}
 	returned(t, posted)
+	tt.Key(0, ui.KeyEscape)
+	if a.device != "" {
+		t.Fatalf("escape: %q", a.device)
+	}
 	if err := tt.Click("Robot Vacuum"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem(locales.ActionStart()); err != nil {
-		t.Fatalf("%v: %v", err, tt.Menu())
+	if err := tt.Click(locales.ActionStart()); err != nil {
+		t.Fatalf("%v: %v", err, tt.Texts())
 	}
 	returned(t, posted)
-	want := []string{"light/turn_off light.ceiling", "lock/unlock lock.front_door", "vacuum/start vacuum.robot"}
+	want := []string{"light/turn_off light.ceiling", "climate/set_hvac_mode climate.living_room",
+		"lock/unlock lock.front_door", "vacuum/start vacuum.robot"}
 	if got := calls(); !slices.Equal(got, want) {
 		t.Fatalf("calls %v", got)
+	}
+}
+
+// A device's page sends the level its slider sets once the slider rests,
+// showing it meanwhile, and a sensor's page lists its readings.
+func TestDevicePage(t *testing.T) {
+	var mu sync.Mutex
+	var bodies []map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		body["service"] = r.URL.Path[len("/api/services/"):]
+		mu.Lock()
+		bodies = append(bodies, body)
+		mu.Unlock()
+		w.Write([]byte(`[]`))
+	}))
+	defer srv.Close()
+	a := demoApp(t)
+	posted := make(chan func(), 4)
+	a.post = func(fn func()) { posted <- fn }
+	a.client = ha.NewClient(srv.URL, "token")
+	a.panelOpen.Store(true)
+	tt := ui.NewTester(a.panelView, panelWidth, 900)
+	if err := tt.Click("Curtain"); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{"Living Room", locales.LevelPosition(), "60%", locales.ActionOpen(), locales.ActionStop(), locales.ActionClose()} {
+		if !tt.HasText(s) {
+			t.Fatalf("missing %q in %v", s, tt.Texts())
+		}
+	}
+	if !a.listing {
+		t.Fatal("a device's page stopped reading every device")
+	}
+	focus(t, tt, locales.LevelPosition())
+	tt.Key(0, ui.KeyEnd)
+	if _, ok := tt.Find("100%"); !ok {
+		t.Fatalf("level not shown: %v", tt.Texts())
+	}
+	returned(t, posted) // The slider rests.
+	returned(t, posted) // The call returns.
+	mu.Lock()
+	if len(bodies) != 1 || bodies[0]["service"] != "cover/set_cover_position" || bodies[0]["position"] != 100.0 {
+		t.Fatalf("calls %v", bodies)
+	}
+	mu.Unlock()
+	// Until Home Assistant reports it, the slider keeps the level set.
+	a.applyList(a.client, a.edits.Load(), parseStates(t, demoStates), nil, "", nil)
+	tt.Frame()
+	if _, ok := tt.Find("100%"); !ok {
+		t.Fatalf("a read undid the level: %v", tt.Texts())
+	}
+
+	tt.Key(0, ui.KeyEscape)
+	if err := tt.Click("Thermometer"); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{locales.Readings(), "Temperature", "24.3 °C", "Humidity", "45%"} {
+		if _, ok := tt.Find(s); !ok {
+			t.Fatalf("missing %q in %v", s, tt.Texts())
+		}
+	}
+	// The page closes once its device is gone.
+	a.applyList(a.client, a.edits.Load(), parseStates(t, demoStates)[:8], nil, "", nil)
+	if a.device != "" {
+		t.Fatalf("gone device: %q", a.device)
 	}
 }
 
@@ -416,6 +527,18 @@ func TestSettingsPage(t *testing.T) {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
 	}
+	// The language follows the system until another is chosen.
+	var shown []string
+	a.setLocale = func(tag string) { shown = append(shown, tag) }
+	if err := tt.Click(locales.LanguageSystem()); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem("日本語"); err != nil {
+		t.Fatalf("%v: %v", err, tt.Menu())
+	}
+	if saved, err := loadConfig(a.path); err != nil || a.config.Language != "ja" || saved.Language != "ja" || !slices.Equal(shown, []string{"ja"}) {
+		t.Fatalf("language %q, saved %+v %v, shown %v", a.config.Language, saved, err, shown)
+	}
 	if err := tt.Click(locales.CloseSettings()); err != nil {
 		t.Fatal(err)
 	}
@@ -437,11 +560,18 @@ func TestSettingsPage(t *testing.T) {
 // The configuration file holds the token, so only the user can read it.
 func TestConfigRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "x", "config.json")
-	want := config{Address: "http://ha.local:8123", Token: "secret", Entity: "climate.a"}
+	want := config{Address: "http://ha.local:8123", Token: "secret", Entity: "climate.a", Language: "zh-Hant"}
 	if err := saveConfig(path, want); err != nil {
 		t.Fatal(err)
 	}
 	if got, err := loadConfig(path); err != nil || got != want {
+		t.Fatalf("%+v %v", got, err)
+	}
+	// A language the app is not written in follows the system's.
+	if err := saveConfig(path, config{Language: "fr"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := loadConfig(path); err != nil || got.Language != "" {
 		t.Fatalf("%+v %v", got, err)
 	}
 	info, err := os.Stat(path)
@@ -531,6 +661,8 @@ func TestSnapshot(t *testing.T) {
 		}
 	}
 	write("home.png")
+	tt.Scroll(panelWidth/2, 300, 0, 200)
+	write("home-scrolled.png")
 	a.settingsOpen = true
 	write("settings.png")
 	a.settingsOpen, a.detail = false, true
@@ -538,4 +670,8 @@ func TestSnapshot(t *testing.T) {
 	a.climate.Mode = "heat"
 	a.climate.Preset = "sleep"
 	write("panel-heat.png")
+	for _, id := range []string{"light.ceiling", "cover.curtain", "media_player.tv", "sensor.thermo_temperature", "lock.front_door"} {
+		a.openDevice(id)
+		write(strings.ReplaceAll(id, ".", "-") + ".png")
+	}
 }

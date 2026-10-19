@@ -10,20 +10,8 @@ import (
 	"github.com/oneo-me/onevra/source/icons/lucide"
 )
 
-// tileKind is what a click on a tile does.
-type tileKind int
-
-const (
-	tileStatic tileKind = iota // nothing: the tile only reads
-	tileSwitch                 // switches the device on or off
-	tilePress                  // presses it, as a button
-	tileMenu                   // opens a menu of its actions
-	tilePage                   // opens its controls, an air conditioner's
-)
-
-// tileView is how a tile shows its device.
+// tileView is how a tile, and the page it opens, show its device.
 type tileView struct {
-	kind tileKind
 	icon func() *ui.SVG
 	// color tints the icon, and the tile while lit: on, open or at work.
 	// A neutral device, one never on or off as a camera, keeps its icon
@@ -32,34 +20,33 @@ type tileView struct {
 	lit     bool
 	neutral bool
 	// status is the main state, as "On · 80%".
-	status  string
-	actions []ha.Action
+	status string
 }
 
 // tileView shows entity s, as held, of tile t.
 func (a *application) tileView(t ha.Tile, s ha.State) tileView {
-	v := tileView{kind: tileMenu, icon: lucide.CircleDot, color: accent, lit: s.Active(), status: stateText(s), actions: s.Actions()}
+	v := tileView{icon: lucide.CircleDot, color: accent, lit: s.Active(), status: stateText(s)}
 	switch s.Domain() {
 	case "climate":
 		return a.climateTile(s)
 	case "sensor", "binary_sensor":
 		return a.sensorTile(t, s)
 	case "light":
-		v.kind, v.icon, v.color = tileSwitch, lucide.Lightbulb, amber
+		v.icon, v.color = lucide.Lightbulb, amber
 		if c, ok := lightColor(s); ok {
 			v.color = c
 		}
 		v.status = withDetail(s, percent(s, "brightness", 255))
 	case "switch":
-		v.kind, v.icon, v.color = tileSwitch, lucide.Power, green
+		v.icon, v.color = lucide.Power, green
 		if s.Str("device_class") == "outlet" {
 			v.icon = lucide.Plug
 		}
 	case "fan":
-		v.kind, v.icon, v.color = tileSwitch, lucide.Fan, cyan
+		v.icon, v.color = lucide.Fan, cyan
 		v.status = withDetail(s, percent(s, "percentage", 100))
 	case "humidifier":
-		v.kind, v.icon = tileSwitch, lucide.Droplets
+		v.icon = lucide.Droplets
 		v.status = withDetail(s, percent(s, "humidity", 100))
 	case "water_heater":
 		v.icon, v.color = lucide.ShowerHead, orange
@@ -114,14 +101,14 @@ func (a *application) tileView(t ha.Tile, s ha.State) tileView {
 	case "siren":
 		v.icon, v.color = lucide.Siren, danger
 	case "camera":
-		v.kind, v.icon, v.lit, v.neutral = tileStatic, lucide.Cctv, false, true
+		v.icon, v.lit, v.neutral = lucide.Cctv, false, true
 	case "select":
 		v.icon, v.lit, v.neutral = lucide.ListChecks, false, true
 		if s.Available() && s.State != "unknown" {
 			v.status = s.State
 		}
 	case "button":
-		v.kind, v.icon, v.lit, v.neutral = tilePress, lucide.CircleDot, false, true
+		v.icon, v.lit, v.neutral = lucide.CircleDot, false, true
 		if s.Available() {
 			v.status = message("action_press")
 		}
@@ -130,10 +117,10 @@ func (a *application) tileView(t ha.Tile, s ha.State) tileView {
 }
 
 // climateTile shows an air conditioner as its controls do, local changes
-// included; a click opens them.
+// included.
 func (a *application) climateTile(s ha.State) tileView {
 	cl := a.shown(ha.ParseClimate(s))
-	v := tileView{kind: tilePage, icon: lucide.AirVent, color: modeColor(cl.Mode), lit: cl.On()}
+	v := tileView{icon: lucide.AirVent, color: modeColor(cl.Mode), lit: cl.On()}
 	switch {
 	case !cl.Available():
 		v.status = locales.Unavailable()
@@ -151,7 +138,7 @@ func (a *application) climateTile(s ha.State) tileView {
 // sensorTile shows what a device that only measures reads: its most telling
 // reading and the next one. A door left open or motion lights it.
 func (a *application) sensorTile(t ha.Tile, s ha.State) tileView {
-	v := tileView{kind: tileStatic, neutral: true, status: a.readingText(s)}
+	v := tileView{neutral: true, status: a.readingText(s)}
 	if len(t.Readings) > 0 {
 		v.status += " · " + a.readingText(t.Readings[0])
 	}

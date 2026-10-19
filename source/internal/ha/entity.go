@@ -1,6 +1,7 @@
 package ha
 
 import (
+	"math"
 	"slices"
 	"strings"
 )
@@ -91,13 +92,14 @@ type Action struct {
 }
 
 // Features of the entities, the bits of their supported_features the panel
-// reads.
+// reads. Valves share the covers' bits.
 const (
-	coverOpen, coverClose, coverStop = 1, 2, 8
-	lockOpen                         = 1
+	coverOpen, coverClose, coverPosition, coverStop = 1, 2, 4, 8
+	lockOpen                                        = 1
+	fanSpeed                                        = 1
 
-	mediaPause, mediaPrevious, mediaNext = 1, 16, 32
-	mediaTurnOn, mediaTurnOff, mediaPlay = 128, 256, 16384
+	mediaPause, mediaVolume, mediaPrevious, mediaNext = 1, 4, 16, 32
+	mediaTurnOn, mediaTurnOff, mediaPlay              = 128, 256, 16384
 
 	vacuumPause, vacuumStop, vacuumReturn = 4, 8, 16
 	vacuumLocate, vacuumStart             = 512, 8192
@@ -153,6 +155,139 @@ func (s State) Actions() []Action {
 		return out
 	}
 	return nil
+}
+
+// Toggle is what a quick switch asks of the entity: to switch it off while
+// it is on, else on, or to close it while it is open, else open it. It has
+// none, as a lock, a sensor or a vacuum, when ok is false.
+func (s State) Toggle() (act Action, ok bool) {
+	on := s.Active()
+	onOff := func() (Action, bool) {
+		if on {
+			return Action{Name: "turn_off", Service: "turn_off", Next: "off"}, true
+		}
+		return Action{Name: "turn_on", Service: "turn_on", Next: "on"}, true
+	}
+	switch d := s.Domain(); d {
+	case "light", "switch", "fan", "humidifier", "siren":
+		return onOff()
+	case "media_player":
+		if s.Supports(mediaTurnOn) && s.Supports(mediaTurnOff) {
+			return onOff()
+		}
+	case "water_heater":
+		// One whose operations include off switches through them.
+		if s.Supports(waterOnOff) && !slices.Contains(s.Strs("operation_list"), "off") {
+			act, ok = onOff()
+			if !on {
+				act.Next = ""
+			}
+			return act, ok
+		}
+	case "cover", "valve":
+		if !s.Supports(coverOpen) || !s.Supports(coverClose) {
+			break
+		}
+		if on {
+			return Action{Name: "close", Service: "close_" + d, Next: "closing"}, true
+		}
+		return Action{Name: "open", Service: "open_" + d, Next: "opening"}, true
+	case "climate":
+		c := ParseClimate(s)
+		if c.On() {
+			return Action{Name: "turn_off", Service: "turn_off", Next: "off"}, true
+		}
+		if mode := c.OnMode(); mode != "" {
+			return Action{Name: "turn_on", Service: "set_hvac_mode", Data: map[string]any{"hvac_mode": mode}, Next: mode}, true
+		}
+	}
+	return Action{}, false
+}
+
+// Level is how far a setting of an entity goes, in percent: a light's
+// brightness, a fan's speed, a cover's or a valve's position, a media
+// player's volume or a humidifier's target humidity.
+type Level struct {
+	// Name says which, as "brightness".
+	Name           string
+	Value          float64
+	Min, Max, Step float64
+	domain         string
+}
+
+// Level reports the setting a slider on the entity's page sets, if it has
+// one it can set now: a media player's volume only while it plays.
+func (s State) Level() (Level, bool) {
+	l := Level{Min: 0, Max: 100, Step: 1, domain: s.Domain()}
+	var ok bool
+	switch l.domain {
+	case "light":
+		// A light dims unless it only switches on and off.
+		dims := slices.ContainsFunc(s.Strs("supported_color_modes"), func(m string) bool { return m != "onoff" && m != "unknown" })
+		v, has := s.Num("brightness")
+		if !dims && !has {
+			return Level{}, false
+		}
+		l.Name, l.Min, ok = "brightness", 1, true
+		if has && s.Active() {
+			l.Value = math.Round(v / 255 * 100)
+		}
+	case "fan":
+		if !s.Supports(fanSpeed) {
+			return Level{}, false
+		}
+		l.Name, ok = "speed", true
+		l.Value, _ = s.Num("percentage")
+		if step, has := s.Num("percentage_step"); has && step > 0 {
+			l.Step = step
+		}
+	case "cover", "valve":
+		if !s.Supports(coverPosition) {
+			return Level{}, false
+		}
+		l.Name = "position"
+		l.Value, ok = s.Num("current_position")
+	case "media_player":
+		v, has := s.Num("volume_level")
+		if !s.Supports(mediaVolume) || !has || !s.Active() {
+			return Level{}, false
+		}
+		l.Name, l.Value, ok = "volume", math.Round(v*100), true
+	case "humidifier":
+		l.Name = "humidity"
+		l.Value, ok = s.Num("humidity")
+		if v, has := s.Num("min_humidity"); has {
+			l.Min = v
+		}
+		if v, has := s.Num("max_humidity"); has && v > l.Min {
+			l.Max = v
+		}
+	}
+	if !ok {
+		return Level{}, false
+	}
+	l.Value = max(l.Min, min(l.Max, l.Value))
+	return l, true
+}
+
+// Set is the action that sets the level to v, a whole percent.
+func (l Level) Set(v float64) Action {
+	v = math.Round(max(l.Min, min(l.Max, v)))
+	switch l.Name {
+	case "brightness":
+		return Action{Name: "turn_on", Service: "turn_on", Data: map[string]any{"brightness_pct": v}, Next: "on"}
+	case "speed":
+		next := "on"
+		if v == 0 {
+			next = "off"
+		}
+		return Action{Name: "set_percentage", Service: "set_percentage", Data: map[string]any{"percentage": v}, Next: next}
+	case "position":
+		return Action{Name: "set_position", Service: "set_" + l.domain + "_position", Data: map[string]any{"position": v}}
+	case "volume":
+		return Action{Name: "volume_set", Service: "volume_set", Data: map[string]any{"volume_level": v / 100}}
+	}
+	return Action{Name: "set_humidity", Service: "set_humidity", Data: map[string]any{"humidity": v}}
 }
 
 // openClose opens, stops and closes a cover or a valve, the domain whose

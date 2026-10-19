@@ -37,7 +37,14 @@ var (
 const (
 	arrowHeight = 9
 	panelRadius = 26
+	// pageFade is how far past its bar a page's header blurs the content
+	// under it: content at rest starts below that.
+	pageFade = 24
 )
+
+// pageBar floats a page's header over the top of its content, which blurs
+// under it the more the nearer the top.
+var pageBar = components.ScrollEdgeBarOptions{Style: components.ScrollEdgeBlur, Inset: 8, Height: 48, Color: panelTop.Alpha(0.5)}
 
 // panelTheme is Onevra's dark palette in the panel's colors, so that
 // components such as Switch match it.
@@ -101,8 +108,10 @@ func (a *application) panelView(c *ui.Context) {
 	}
 	c.Root().Background(ui.Transparent)
 	detail := a.showsDetail()
+	unitTop := components.ScrollEdgeBarExtent(c, pageBar) + pageFade
 	ui.Column(c).Fill().Padding(arrowHeight, 0, 0, 0).Draw(func(p *ui.Painter, r ui.Rect) {
-		// An arrow pointing at the menu bar icon, then the body.
+		// An arrow pointing at the menu bar icon, then the body, opaque: the
+		// blur under the pages' headers sees only what the panel paints.
 		cx := r.X + r.W/2
 		var arrow ui.Path
 		arrow.MoveTo(cx-11, r.Y+arrowHeight+1).QuadTo(cx-3, r.Y+1, cx, r.Y).QuadTo(cx+3, r.Y+1, cx+11, r.Y+arrowHeight+1).Close()
@@ -111,7 +120,7 @@ func (a *application) panelView(c *ui.Context) {
 		p.FillGradient(body, ui.LinearGradient{From: panelTop, To: panelBottom, Angle: 180}, panelRadius)
 		if detail {
 			// A soft glow behind the unit.
-			p.Shadow(ui.Rect{X: cx - 70, Y: body.Y + 90, W: 140, H: 30}, 15, 0, 0, 60, 0, accent.Alpha(0.10))
+			p.Shadow(ui.Rect{X: cx - 70, Y: body.Y + unitTop + 6, W: 140, H: 30}, 15, 0, 0, 60, 0, accent.Alpha(0.10))
 		}
 	}).Children(func() { a.page(c, panelRadius) })
 }
@@ -131,15 +140,18 @@ func (a *application) windowView(c *ui.Context) {
 	}).Children(func() { a.page(c, 0) })
 }
 
-// page builds Settings, the air conditioner opened or the home page,
-// whichever the panel shows. radius rounds the bottom corners of the
-// surface they scroll within.
+// page builds Settings, the air conditioner opened, the page of another
+// device or the home page, whichever the panel shows. radius rounds the
+// corners of the surface they show on.
 func (a *application) page(c *ui.Context, radius float32) {
+	t, area, device := a.tileOf(a.device)
 	switch {
 	case a.settingsOpen:
 		a.settingsPage(c, radius)
 	case a.showsDetail():
-		a.climatePage(c)
+		a.climatePage(c, radius)
+	case device:
+		a.devicePage(c, t, area, radius)
 	default:
 		a.homePage(c, radius)
 	}
@@ -147,84 +159,107 @@ func (a *application) page(c *ui.Context, radius float32) {
 
 func (a *application) showsDetail() bool { return a.detail && a.hasClimate && !a.settingsOpen }
 
-// pageHeader titles a page, with its actions at the right.
+// pageFrame builds a page whose content reaches the top of the panel, under
+// the bar of its header, which label names. content fills the page and
+// keeps its controls clear of the bar by top. The page, the header's blur
+// included, keeps within the panel's corners, rounded by radius.
+func pageFrame(c *ui.Context, radius float32, label string, header func(), content func(top float32)) {
+	ui.Box(c).Fill().Radius(radius).Clip().Children(func() {
+		content(components.ScrollEdgeBarExtent(c, pageBar))
+		components.ScrollEdgeBar(c, pageBar, header).Label(label)
+	})
+}
+
+// scrollContent scrolls a page's content across the whole panel, its scroll
+// bar along the edge, clear of the header by top and of the bottom corners,
+// rounded by radius.
+func scrollContent(c *ui.Context, top, radius float32, content func()) {
+	components.ScrollView(c, components.ScrollViewOptions{}).Fill().ScrollbarInsets(top, 0, radius).Children(func() {
+		ui.Column(c).FillWidth().Padding(top+pageFade, 18, 18, 18).Gap(18).Children(content)
+	})
+}
+
+// pageHeader titles a page in its bar, with its actions at the right.
 func pageHeader(c *ui.Context, title string, actions func()) {
-	ui.Row(c).FillWidth().Shrink(0).AlignItems(ui.Center).Gap(8).Padding(18, 18, 12, 22).Children(func() {
-		components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
-		actions()
-	})
+	components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).MarginStart(8)
+	actions()
 }
 
-// climatePage controls the air conditioner opened.
-func (a *application) climatePage(c *ui.Context) {
-	ui.Column(c).Fill().Padding(20, 18, 18, 18).Gap(0).Children(func() {
-		a.headerRow(c)
-		a.unitView(c)
-		ui.Spacer(c)
-		a.temperatureRow(c)
-		a.sliderRow(c)
-		a.tiles(c)
-	})
+// backButton leads from a device's page back to the home page.
+func (a *application) backButton(c *ui.Context) {
+	if circleButton(c, lucide.ChevronLeft, locales.Back(), 36, false).Clicked() {
+		a.closeDevice()
+	}
 }
 
-// headerRow leads back to the home page and names the air conditioner, the
-// room temperature and the connection, beside the power button.
-func (a *application) headerRow(c *ui.Context) {
-	cl := a.climate
-	ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(10).Children(func() {
-		if circleButton(c, lucide.ChevronLeft, locales.Back(), 36, false).Clicked() {
-			a.closeDevice()
-		}
-		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(4).Children(func() {
-			ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
-				components.Text(c, cl.Name).FontSize(16).Bold().TextColor(ink).SingleLine().Ellipsis("…").Shrink(1).MinWidth(0)
-				status, tip := accent, locales.Connected()
-				switch {
-				case !a.online:
-					status, tip = danger, locales.Offline()
-				case !cl.Available():
-					status, tip = danger, locales.Unavailable()
-				}
-				if e := a.errorDisplay(); e != "" {
-					status, tip = danger, e
-				}
-				dot := ui.Box(c).Size(8, 8).Radius(4).Background(status).Shrink(0).Label(tip)
-				dot.Shadow(0, 0, 8, 0, status.Alpha(0.7))
-				components.Tooltip(c, dot, tip)
-			})
-			ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
-				components.Icon(c, lucide.Thermometer).Size(14, 14).TextColor(accent)
-				components.Text(c, locales.Room()).FontSize(13).TextColor(inkMuted)
-				current := "—"
-				if cl.HasCurrent {
-					current = formatTemp(math.Round(cl.Current*10)/10) + a.unit
-				}
-				components.Text(c, current).FontSize(13).Bold().TextColor(ink)
-			})
+// climatePage controls the air conditioner opened. radius rounds the
+// corners of the surface it shows on.
+func (a *application) climatePage(c *ui.Context, radius float32) {
+	pageFrame(c, radius, a.climate.Name, func() { a.climateHeader(c) }, func(top float32) {
+		ui.Column(c).Fill().Padding(top+pageFade, 18, 18, 18).Children(func() {
+			a.unitView(c)
+			ui.Spacer(c)
+			a.temperatureRow(c)
+			a.sliderRow(c)
+			a.tiles(c)
 		})
-		on := cl.On()
-		glow := float32(0)
-		if on {
-			glow = 1
-		}
-		power := ui.ButtonBase(c).Size(52, 52).Radius(26).Shrink(0).Label(locales.Power()).Checked(on).Disabled(!cl.Available())
-		glow = power.Animate("glow", glow, 220*time.Millisecond)
-		tint := modeColor(cl.Mode)
-		if !on {
-			tint = accent
-		}
-		face := ui.RGBA(255, 255, 255, 0.08).Mix(tint, glow)
-		if power.Pressed() {
-			face = face.Mix(panelBottom, 0.2)
-		} else if power.Hovered() {
-			face = face.Mix(ink, 0.08)
-		}
-		power.Background(face).Shadow(0, 4, 22, 0, tint.Alpha(0.55*glow)).Center()
-		power.Children(func() { components.Icon(c, lucide.Power).Size(24, 24).TextColor(ink) })
-		if power.Clicked() {
-			a.togglePower()
-		}
 	})
+}
+
+// climateHeader leads back to the home page and names the air conditioner,
+// the room temperature and the connection, beside the power button.
+func (a *application) climateHeader(c *ui.Context) {
+	cl := a.climate
+	a.backButton(c)
+	ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(4).MarginStart(4).Children(func() {
+		ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
+			components.Text(c, cl.Name).FontSize(16).Bold().TextColor(ink).SingleLine().Ellipsis("…").Shrink(1).MinWidth(0)
+			status, tip := accent, locales.Connected()
+			switch {
+			case !a.online:
+				status, tip = danger, locales.Offline()
+			case !cl.Available():
+				status, tip = danger, locales.Unavailable()
+			}
+			if e := a.errorDisplay(); e != "" {
+				status, tip = danger, e
+			}
+			dot := ui.Box(c).Size(8, 8).Radius(4).Background(status).Shrink(0).Label(tip)
+			dot.Shadow(0, 0, 8, 0, status.Alpha(0.7))
+			components.Tooltip(c, dot, tip)
+		})
+		ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
+			components.Icon(c, lucide.Thermometer).Size(14, 14).TextColor(accent)
+			components.Text(c, locales.Room()).FontSize(13).TextColor(inkMuted)
+			current := "—"
+			if cl.HasCurrent {
+				current = formatTemp(math.Round(cl.Current*10)/10) + a.unit
+			}
+			components.Text(c, current).FontSize(13).Bold().TextColor(ink)
+		})
+	})
+	on := cl.On()
+	glow := float32(0)
+	if on {
+		glow = 1
+	}
+	power := ui.ButtonBase(c).Size(44, 44).Radius(22).Shrink(0).Label(locales.Power()).Checked(on).Disabled(!cl.Available())
+	glow = power.Animate("glow", glow, 220*time.Millisecond)
+	tint := modeColor(cl.Mode)
+	if !on {
+		tint = accent
+	}
+	face := ui.RGBA(255, 255, 255, 0.08).Mix(tint, glow)
+	if power.Pressed() {
+		face = face.Mix(panelBottom, 0.2)
+	} else if power.Hovered() {
+		face = face.Mix(ink, 0.08)
+	}
+	power.Background(face).Shadow(0, 4, 18, 0, tint.Alpha(0.55*glow)).Center()
+	power.Children(func() { components.Icon(c, lucide.Power).Size(21, 21).TextColor(ink) })
+	if power.Clicked() {
+		a.togglePower()
+	}
 }
 
 // unitView draws the indoor unit and the air it blows.
@@ -236,7 +271,7 @@ func (a *application) unitView(c *ui.Context) {
 	if !cl.HasTarget {
 		target = "--"
 	}
-	box := ui.Box(c).FillWidth().Height(150).Margin(4, 0, 0, 0)
+	box := ui.Box(c).FillWidth().Height(142)
 	level := float32(0)
 	if on {
 		level = 1
@@ -256,7 +291,7 @@ func (a *application) unitView(c *ui.Context) {
 	still := c.Preferences().ReduceMotion
 	box.Draw(func(p *ui.Painter, r ui.Rect) {
 		uw, uh := float32(128), float32(40)
-		u := ui.Rect{X: r.X + (r.W-uw)/2, Y: r.Y + 8, W: uw, H: uh}
+		u := ui.Rect{X: r.X + (r.W-uw)/2, Y: r.Y, W: uw, H: uh}
 		now := float64(p.Now().UnixMilli()) / 1000
 		if level > 0 {
 			drawAir(p, u, r, color, level, now, period, swing, still)
@@ -332,9 +367,8 @@ func (a *application) temperatureRow(c *ui.Context) {
 		pill.Children(func() {
 			components.Icon(c, lucide.Leaf).Size(18, 18).TextColor(inkMuted)
 			components.Text(c, locales.Eco()).FontSize(14).FontWeight(600).TextColor(ink)
-			sw := components.Switch(c, &eco, locales.Eco(), components.SwitchOptions{HideLabel: true})
-			sw.Disabled(!cl.HasPreset("eco"))
-			if sw.Changed() {
+			components.Switch(c, &eco, locales.Eco(), components.SwitchOptions{HideLabel: true}).Disabled(!cl.HasPreset("eco"))
+			if eco != (cl.Preset == "eco") {
 				a.togglePreset("eco")
 			}
 		})
