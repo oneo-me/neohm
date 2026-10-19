@@ -15,11 +15,11 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/ha-go/source/internal/ha"
 	"github.com/oneo-me/ha-go/source/locales"
-	"github.com/oneo-me/onevra/source/components"
+	"github.com/oneo-me/onevra/source/shells/plain"
 )
 
-// How often the climate entity is read while the panel shows, and while it
-// is closed and only the menu bar title needs it.
+// How often Home Assistant is read while the panel shows, and while it is
+// closed and only the menu bar title needs the device opened last.
 const (
 	pollOpen   = 3 * time.Second
 	pollClosed = 20 * time.Second
@@ -48,16 +48,26 @@ type application struct {
 	ready, quitting bool
 	tray            *mygo.Tray
 	trayMenu        *mygo.Menu
-	panel, settings *mygo.Window
-	settingsState   components.SettingsState
+	// panel is the open menu bar panel; window shows its pages instead when
+	// there is no menu bar icon to anchor it to.
+	panel  *mygo.Window
+	window *plain.Shell
+	// The panel opens on the device list: detail shows the device opened in
+	// its place, and settingsOpen shows Settings over either.
+	detail, settingsOpen bool
 
+	// devices are the climate entities the list shows, as last read, which
+	// listed reports.
+	devices []ha.Climate
+	listed  bool
+	// climate is the device opened last, config.Entity, once hasClimate says
+	// it is known.
 	climate    ha.Climate
 	hasClimate bool
 	unit       string
 	online     bool
 	errorKey   string
 	errorText  string
-	entities   []ha.Climate
 	connecting bool
 	connectMsg string
 	tempGen    int
@@ -71,6 +81,8 @@ type application struct {
 	mu     sync.Mutex
 	client *ha.Client // nil until configured
 	entity string
+	// listing has the poller read every device instead of entity alone.
+	listing bool
 
 	// edits counts local changes, so that a read started before one does
 	// not undo it on screen.
@@ -100,8 +112,11 @@ func (a *application) start() {
 	a.ready = true
 	a.connect(false)
 	go a.poll()
-	if a.tray == nil || !a.configured() {
+	switch {
+	case !a.configured():
 		a.openSettings()
+	case a.tray == nil:
+		a.showPanel()
 	}
 }
 
@@ -110,7 +125,7 @@ func (a *application) configured() bool {
 }
 
 // connect points the poller at the saved address and token, and with list
-// reads the climate entities for Settings.
+// reads the devices at once to report the connection in Settings.
 func (a *application) connect(list bool) {
 	a.mu.Lock()
 	if a.configured() {
@@ -118,47 +133,75 @@ func (a *application) connect(list bool) {
 	} else {
 		a.client = nil
 	}
-	a.entity = a.config.Entity
 	client := a.client
 	a.mu.Unlock()
-	a.hasClimate = a.hasClimate && a.climate.EntityID == a.config.Entity
-	a.wake()
+	// What the old connection read may not exist on this one.
+	a.devices, a.listed, a.hasClimate, a.detail = nil, false, false, false
+	a.follow()
 	if !list || client == nil {
 		return
 	}
 	a.connecting, a.connectMsg = true, ""
+	edits := a.edits.Load()
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		list, err := client.Climates(ctx)
 		a.post(func() {
-			a.connecting = false
-			if err != nil {
-				a.connectMsg = a.errorMessage(err)
-			} else {
-				a.entities = list
-				a.connectMsg = locales.ConnectedTo(len(list))
-				a.chooseEntity()
+			if !a.current(client) {
+				return
 			}
-			a.redraw()
+			a.connecting = false
+			if err == nil {
+				a.connectMsg = locales.ConnectedTo(len(list))
+			}
+			a.applyList(client, edits, list, "", err)
 		})
 	}()
 }
 
-// chooseEntity keeps the saved entity if it still exists, else picks the
-// first climate entity.
-func (a *application) chooseEntity() {
-	if slices.ContainsFunc(a.entities, func(c ha.Climate) bool { return c.EntityID == a.config.Entity }) || len(a.entities) == 0 {
-		return
-	}
-	a.selectEntity(a.entities[0].EntityID)
+// follow points the poller at what the panel shows: every device while the
+// list is open, else the device opened last, which the menu bar title
+// follows.
+func (a *application) follow() {
+	a.mu.Lock()
+	a.entity = a.config.Entity
+	a.listing = a.panelOpen.Load() && !a.detail
+	a.mu.Unlock()
+	a.wake()
 }
 
-func (a *application) selectEntity(id string) {
-	a.config.Entity = id
-	a.save()
-	a.hasClimate = false
-	a.connect(false)
+// current reports whether client is the connection in use; only its reads
+// are shown.
+func (a *application) current(client *ha.Client) bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.client == client
+}
+
+// openDevice shows the controls of device d in place of the list. The menu
+// bar title follows the device opened last.
+func (a *application) openDevice(d ha.Climate) {
+	if d.EntityID != a.config.Entity {
+		// A temperature still waiting for the slider goes to its own device.
+		a.sendTarget()
+		a.config.Entity = d.EntityID
+		a.save()
+	}
+	// The device opened last may show changes the list's read lacks.
+	if !a.hasClimate || a.climate.EntityID != d.EntityID {
+		a.climate, a.hasClimate = d, true
+	}
+	a.detail = true
+	a.follow()
+	a.redraw()
+}
+
+// closeDevice returns the panel to the device list.
+func (a *application) closeDevice() {
+	a.detail = false
+	a.follow()
+	a.redraw()
 }
 
 func (a *application) save() {
@@ -188,18 +231,27 @@ func (a *application) wake() {
 	}
 }
 
-// poll reads the climate entity on a background goroutine and hands each
-// result to the main thread.
+// poll reads Home Assistant on a background goroutine and hands each result
+// to the main thread.
 func (a *application) poll() {
 	var unitFor *ha.Client
 	for {
 		a.mu.Lock()
-		client, entity := a.client, a.entity
+		client, entity, listing := a.client, a.entity, a.listing
 		a.mu.Unlock()
-		if client != nil && entity != "" {
+		if client != nil && (listing || entity != "") {
 			edits := a.edits.Load()
 			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-			c, err := client.Climate(ctx, entity)
+			var (
+				list []ha.Climate
+				c    ha.Climate
+				err  error
+			)
+			if listing {
+				list, err = client.Climates(ctx)
+			} else {
+				c, err = client.Climate(ctx, entity)
+			}
 			unit := ""
 			if err == nil && unitFor != client {
 				if u, uerr := client.TemperatureUnit(ctx); uerr == nil && u != "" {
@@ -207,7 +259,11 @@ func (a *application) poll() {
 				}
 			}
 			cancel()
-			a.post(func() { a.applyState(client, edits, c, unit, err) })
+			if listing {
+				a.post(func() { a.applyList(client, edits, list, unit, err) })
+			} else {
+				a.post(func() { a.applyState(client, edits, c, unit, err) })
+			}
 		}
 		wait := pollClosed
 		if a.panelOpen.Load() {
@@ -220,13 +276,38 @@ func (a *application) poll() {
 	}
 }
 
+// applyList shows a read of every device. The device opened last takes its
+// entry as applyState takes a read of it; once it is gone, the panel and the
+// menu bar title forget it.
+func (a *application) applyList(client *ha.Client, edits int64, list []ha.Climate, unit string, err error) {
+	if !a.current(client) || !a.reached(unit, err) {
+		return
+	}
+	a.devices, a.listed = list, true
+	if i := slices.IndexFunc(list, func(c ha.Climate) bool { return c.EntityID == a.config.Entity }); i >= 0 {
+		a.update(edits, list[i])
+	} else if a.config.Entity != "" {
+		a.config.Entity, a.hasClimate, a.detail = "", false, false
+		a.save()
+		a.follow()
+	}
+	a.redraw()
+}
+
 func (a *application) applyState(client *ha.Client, edits int64, c ha.Climate, unit string, err error) {
 	a.mu.Lock()
 	current := a.client == client && (err != nil || a.entity == c.EntityID)
 	a.mu.Unlock()
-	if !current {
+	if !current || !a.reached(unit, err) {
 		return
 	}
+	a.update(edits, c)
+	a.redraw()
+}
+
+// reached records whether Home Assistant answered a read, with the unit it
+// reported, and reports the failure when it did not.
+func (a *application) reached(unit string, err error) bool {
 	if err != nil {
 		a.online = false
 		a.report("requestError", err)
@@ -234,7 +315,7 @@ func (a *application) applyState(client *ha.Client, edits int64, c ha.Climate, u
 			a.errorKey = "unauthorized"
 		}
 		a.redraw()
-		return
+		return false
 	}
 	a.online = true
 	if a.errorKey == "requestError" || a.errorKey == "unauthorized" {
@@ -243,19 +324,26 @@ func (a *application) applyState(client *ha.Client, edits int64, c ha.Climate, u
 	if unit != "" {
 		a.unit = unit
 	}
-	// A local change made after the read started wins until Home Assistant
-	// reports it.
+	return true
+}
+
+// update takes a read of the device opened last, unless a local change made
+// after the read started has yet to reach Home Assistant: that wins until
+// Home Assistant reports it.
+func (a *application) update(edits int64, c ha.Climate) {
 	if !a.hasClimate || a.edits.Load() == edits && a.pending == 0 && !a.tempPending && !time.Now().Before(a.holdUntil) {
 		a.climate, a.hasClimate = c, true
 	}
-	a.redraw()
 }
 
-func (a *application) errorMessage(err error) string {
-	if errors.Is(err, ha.ErrUnauthorized) {
-		return locales.Unauthorized()
+// shown is what the list shows of device d: the device opened last as the
+// panel controls it, with changes Home Assistant may not report yet, else the
+// list's read.
+func (a *application) shown(d ha.Climate) ha.Climate {
+	if a.hasClimate && a.climate.EntityID == d.EntityID {
+		return a.climate
 	}
-	return locales.RequestError() + " " + err.Error()
+	return d
 }
 
 // call sends a climate service call. The caller has already changed the
@@ -350,26 +438,36 @@ func (a *application) setTarget(t float64) {
 	time.AfterFunc(debounce, func() {
 		a.post(func() {
 			if gen == a.tempGen {
-				a.tempPending = false
-				a.call("set_temperature", map[string]any{"temperature": a.climate.Target})
+				a.sendTarget()
 			}
 		})
 	})
 }
 
-// redraw refreshes the windows and the menu bar title after a change.
+// sendTarget sends the temperature waiting for the slider to rest, if any.
+func (a *application) sendTarget() {
+	if !a.tempPending {
+		return
+	}
+	a.tempPending = false
+	a.call("set_temperature", map[string]any{"temperature": a.climate.Target})
+}
+
+// redraw refreshes the panel and the menu bar title after a change.
 func (a *application) redraw() {
-	for _, w := range []*mygo.Window{a.panel, a.settings} {
-		if w != nil {
-			w.Invalidate()
-		}
+	if a.panel != nil {
+		a.panel.Invalidate()
+	}
+	if a.window != nil {
+		a.window.Window().Invalidate()
 	}
 	if a.tray != nil {
 		a.tray.SetTitle(a.trayTitle())
 	}
 }
 
-// trayTitle is the target temperature shown beside the menu bar icon.
+// trayTitle is the target temperature of the device opened last, shown
+// beside the menu bar icon.
 func (a *application) trayTitle() string {
 	if !a.hasClimate || !a.climate.On() || !a.climate.HasTarget {
 		return ""
@@ -404,5 +502,5 @@ func (a *application) errorDisplay() string {
 
 func (a *application) scope(c *ui.Context) {
 	c.OnShortcut(ui.Cmd, ui.KeyQ, mygo.App.Quit)
-	c.OnShortcut(ui.Cmd, ui.KeyComma, a.openSettings)
+	c.OnShortcut(ui.Cmd, ui.KeyComma, a.showSettings)
 }

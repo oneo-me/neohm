@@ -1,36 +1,39 @@
 # HA Climate
 
-一个 macOS 菜单栏应用，用来控制 Home Assistant 里的空调（`climate.*` 实体）。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
+[English](README.md) | **简体中文**
 
-菜单栏图标旁会显示目标温度。左键点击图标打开控制面板，右键点击可以刷新、打开设置或退出。
+HA Climate 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的空调（`climate.*` 实体）。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
 
-## 配置
+左键点击菜单栏图标打开面板。面板列出所有空调，选择其中一台即可打开它的控制界面。设置也在同一个面板中，从齿轮按钮打开。右键点击图标可以退出。
+
+## 功能
+
+- 列出所有空调，并显示模式、室内温度和目标温度。
+- 控制电源、温度、模式、风速、风向、节能模式和睡眠，以每台空调支持的功能为准。
+- 在菜单栏图标旁显示最近打开的空调的目标温度。
+
+## 安装
+
+目前还没有发布版本，请按[开发](#开发)中的命令从源码构建。需要 macOS 13 或更高版本、Go 1.27 或更高版本，以及 Mac 能访问到的 Home Assistant。
+
+## 快速开始
 
 1. 在 Home Assistant 中打开个人资料页，创建一个**长期访问令牌**。
-2. 打开 **设置…**，填写地址（例如 `http://homeassistant.local:8123`）和令牌。
-3. 点击 **连接**，然后选择空调。
+2. 启动 HA Climate。完成 Home Assistant 配置之前，面板会直接打开设置；之后可以从面板的齿轮按钮或用 ⌘, 打开设置。
+3. 填写地址（例如 `http://homeassistant.local:8123`）和令牌，然后点击**连接**。
+4. 关闭设置，从列表中选择一台空调。
 
-地址和实体保存在 `~/Library/Application Support/ha-climate/config.json`，令牌保存在系统钥匙串中。
-
-## 面板功能
-
-| 控件 | Home Assistant 服务 |
-| --- | --- |
-| 电源 | `climate.turn_off` / `climate.set_hvac_mode` |
-| 温度滑块、− 和 + | `climate.set_temperature`（滑块停下后才发送） |
-| 模式 | `climate.set_hvac_mode` |
-| 风速 | `climate.set_fan_mode` |
-| 风向 | `climate.set_swing_mode` |
-| 节能模式、睡眠 | `climate.set_preset_mode`，设为 `eco` / `sleep`，关闭时恢复为 `none` |
-
-实体不支持的控件会显示为禁用。面板打开时每 3 秒读取一次状态，关闭时每 20 秒读取一次。
+地址和最近打开的空调保存在 `~/.ha-go/config.json`，令牌保存在系统钥匙串中。
 
 ## 开发
+
+Go 模块和 MyGo 打包配置都在 `source/` 中，请在该目录下运行 Go 和 MyGo 命令：
 
 ```sh
 cd source
 go tool mygo dev      # 运行，带热重载
 go test ./...         # 无界面测试，不会打开窗口
-HA_SNAPSHOT_DIR=/tmp go test -run Snapshot .   # 把面板渲染为 PNG
 go tool mygo build    # 在 ../dist 生成 .app 和 .dmg
 ```
+
+代码布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。

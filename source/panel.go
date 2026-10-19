@@ -37,7 +37,16 @@ func panelTheme() *ui.Theme {
 	t.Background, t.Surface = panelBottom, tileFace
 	t.Text, t.TextMuted = ink, inkMuted
 	t.Accent, t.AccentHover, t.AccentPressed = accent, accent.Mix(ink, 0.12), accent.Mix(panelBottom, 0.15)
+	t.AccentText = ink
 	t.Border = ui.RGBA(255, 255, 255, 0.14)
+	return t
+}
+
+// windowTheme is the panel's theme in a window, whose header continues the
+// top of the panel's gradient.
+func windowTheme(*ui.Context) *ui.Theme {
+	t := panelTheme()
+	t.Background = panelTop
 	return t
 }
 
@@ -75,10 +84,14 @@ func modeIcon(mode string) func() *ui.SVG {
 func (a *application) panelView(c *ui.Context) {
 	c.SetTheme(panelTheme())
 	a.scope(c)
-	if c.Shortcut(0, ui.KeyEscape) || c.Shortcut(ui.Cmd, ui.KeyW) {
+	if c.Shortcut(0, ui.KeyEscape) && !a.back() {
+		a.hidePanel()
+	}
+	if c.Shortcut(ui.Cmd, ui.KeyW) {
 		a.hidePanel()
 	}
 	c.Root().Background(ui.Transparent)
+	detail := a.showsDetail()
 	ui.Column(c).Fill().Padding(arrowHeight, 0, 0, 0).Draw(func(p *ui.Painter, r ui.Rect) {
 		// An arrow pointing at the menu bar icon, then the body.
 		cx := r.X + r.W/2
@@ -87,72 +100,105 @@ func (a *application) panelView(c *ui.Context) {
 		p.FillPath(&arrow, panelTop)
 		body := ui.Rect{X: r.X, Y: r.Y + arrowHeight, W: r.W, H: r.H - arrowHeight}
 		p.FillGradient(body, ui.LinearGradient{From: panelTop, To: panelBottom, Angle: 180}, panelRadius)
-		// A soft glow behind the unit.
-		p.Shadow(ui.Rect{X: cx - 70, Y: body.Y + 90, W: 140, H: 30}, 15, 0, 0, 60, 0, accent.Alpha(0.10))
-	}).Children(func() {
-		ui.Column(c).Fill().Padding(20, 18, 18, 18).Gap(0).Children(func() {
-			if !a.configured() || !a.hasClimate {
-				a.setupView(c)
-				return
-			}
-			a.headerRow(c)
-			a.unitView(c)
-			ui.Spacer(c)
-			a.temperatureRow(c)
-			a.sliderRow(c)
-			a.tiles(c)
-		})
+		if detail {
+			// A soft glow behind the unit.
+			p.Shadow(ui.Rect{X: cx - 70, Y: body.Y + 90, W: 140, H: 30}, 15, 0, 0, 60, 0, accent.Alpha(0.10))
+		}
+	}).Children(func() { a.page(c, panelRadius) })
+}
+
+// windowView shows the panel's pages in a window, for when there is no menu
+// bar icon to anchor the panel to.
+func (a *application) windowView(c *ui.Context) {
+	a.scope(c)
+	if c.Shortcut(0, ui.KeyEscape) {
+		a.back()
+	}
+	if c.Shortcut(ui.Cmd, ui.KeyW) {
+		a.window.Window().Close()
+	}
+	ui.Column(c).Fill().Draw(func(p *ui.Painter, r ui.Rect) {
+		p.FillGradient(r, ui.LinearGradient{From: panelTop, To: panelBottom, Angle: 180}, 0)
+	}).Children(func() { a.page(c, 0) })
+}
+
+// page builds Settings, the device opened or the device list, whichever the
+// panel shows. radius rounds the bottom corners of the surface they scroll
+// within.
+func (a *application) page(c *ui.Context, radius float32) {
+	switch {
+	case a.settingsOpen:
+		a.settingsPage(c, radius)
+	case a.showsDetail():
+		a.climatePage(c)
+	default:
+		a.listPage(c, radius)
+	}
+}
+
+func (a *application) showsDetail() bool { return a.detail && a.hasClimate && !a.settingsOpen }
+
+// pageHeader titles a page, with its actions at the right.
+func pageHeader(c *ui.Context, title string, actions func()) {
+	ui.Row(c).FillWidth().Shrink(0).AlignItems(ui.Center).Gap(8).Padding(18, 18, 12, 22).Children(func() {
+		components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
+		actions()
 	})
 }
 
-// setupView shows while there is no climate entity to control.
-func (a *application) setupView(c *ui.Context) {
-	ui.Column(c).Fill().Center().Gap(14).Children(func() {
-		components.Icon(c, lucide.AirVent).Size(48, 48).TextColor(accent)
-		if a.configured() && a.errorKey == "" {
-			components.Spinner(c, components.SpinnerRing)
-			return
-		}
-		components.Text(c, locales.SetupTitle()).FontSize(18).Bold().TextColor(ink)
-		msg := locales.SetupBody()
-		if e := a.errorDisplay(); e != "" {
-			msg = e
-		}
-		components.Text(c, msg).Wrap().TextAlign(ui.Center).FontSize(13).TextColor(inkMuted).MaxWidth(260)
-		components.Button(c, locales.Settings(), components.ButtonPrimary).OnClick(a.openSettings)
+// climatePage controls the device opened.
+func (a *application) climatePage(c *ui.Context) {
+	ui.Column(c).Fill().Padding(20, 18, 18, 18).Gap(0).Children(func() {
+		a.headerRow(c)
+		a.unitView(c)
+		ui.Spacer(c)
+		a.temperatureRow(c)
+		a.sliderRow(c)
+		a.tiles(c)
 	})
 }
 
+// headerRow leads back to the list and names the device, the room
+// temperature and the connection, beside the power button.
 func (a *application) headerRow(c *ui.Context) {
 	cl := a.climate
-	ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
-		components.Icon(c, lucide.Thermometer).Size(18, 18).TextColor(accent)
-		components.Text(c, locales.Room()).FontSize(15).TextColor(inkMuted)
-		current := "—"
-		if cl.HasCurrent {
-			current = formatTemp(math.Round(cl.Current*10)/10) + a.unit
+	ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(10).Children(func() {
+		if circleButton(c, lucide.ChevronLeft, locales.Back(), 36, false).Clicked() {
+			a.closeDevice()
 		}
-		components.Text(c, current).FontSize(15).Bold().TextColor(ink)
-		status, tip := accent, locales.Connected()
-		switch {
-		case !a.online:
-			status, tip = danger, locales.Offline()
-		case !cl.Available():
-			status, tip = danger, locales.Unavailable()
-		}
-		if e := a.errorDisplay(); e != "" {
-			status, tip = danger, e
-		}
-		dot := ui.Box(c).Size(8, 8).Radius(4).Background(status).MarginStart(4).Label(tip)
-		dot.Shadow(0, 0, 8, 0, status.Alpha(0.7))
-		components.Tooltip(c, dot, tip)
-		ui.Spacer(c)
+		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(4).Children(func() {
+			ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
+				components.Text(c, cl.Name).FontSize(16).Bold().TextColor(ink).SingleLine().Ellipsis("…").Shrink(1).MinWidth(0)
+				status, tip := accent, locales.Connected()
+				switch {
+				case !a.online:
+					status, tip = danger, locales.Offline()
+				case !cl.Available():
+					status, tip = danger, locales.Unavailable()
+				}
+				if e := a.errorDisplay(); e != "" {
+					status, tip = danger, e
+				}
+				dot := ui.Box(c).Size(8, 8).Radius(4).Background(status).Shrink(0).Label(tip)
+				dot.Shadow(0, 0, 8, 0, status.Alpha(0.7))
+				components.Tooltip(c, dot, tip)
+			})
+			ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
+				components.Icon(c, lucide.Thermometer).Size(14, 14).TextColor(accent)
+				components.Text(c, locales.Room()).FontSize(13).TextColor(inkMuted)
+				current := "—"
+				if cl.HasCurrent {
+					current = formatTemp(math.Round(cl.Current*10)/10) + a.unit
+				}
+				components.Text(c, current).FontSize(13).Bold().TextColor(ink)
+			})
+		})
 		on := cl.On()
 		glow := float32(0)
 		if on {
 			glow = 1
 		}
-		power := ui.ButtonBase(c).Size(52, 52).Radius(26).Label(locales.Power()).Checked(on).Disabled(!cl.Available())
+		power := ui.ButtonBase(c).Size(52, 52).Radius(26).Shrink(0).Label(locales.Power()).Checked(on).Disabled(!cl.Available())
 		glow = power.Animate("glow", glow, 220*time.Millisecond)
 		tint := modeColor(cl.Mode)
 		if !on {
@@ -308,7 +354,14 @@ func (a *application) sliderRow(c *ui.Context) {
 
 // roundButton is a circular icon button beside the slider.
 func roundButton(c *ui.Context, icon func() *ui.SVG, label string, disabled bool, click func()) {
-	b := ui.ButtonBase(c).Size(44, 44).Radius(22).Label(label).Disabled(disabled).Margin(6, 0, 0, 0).Center()
+	if circleButton(c, icon, label, 44, disabled).Margin(6, 0, 0, 0).Clicked() {
+		click()
+	}
+}
+
+// circleButton is a circular icon button of size DIPs across.
+func circleButton(c *ui.Context, icon func() *ui.SVG, label string, size float32, disabled bool) ui.Element {
+	b := ui.ButtonBase(c).Size(size, size).Radius(size / 2).Shrink(0).Label(label).Disabled(disabled).Center()
 	face := ui.RGBA(255, 255, 255, 0.06)
 	switch {
 	case disabled:
@@ -323,9 +376,7 @@ func roundButton(c *ui.Context, icon func() *ui.SVG, label string, disabled bool
 		b.Opacity(0.4)
 	}
 	components.Tooltip(c, b, label)
-	if b.Clicked() {
-		click()
-	}
+	return b
 }
 
 // temperatureSlider is a dark track with ticks and a white thumb.

@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 )
 
-// config holds the preferences saved in PathUserData. The access token is
-// kept in the system keychain instead.
+// config holds the preferences saved in ~/.ha-go. The access token is kept
+// in the system keychain instead.
 type config struct {
 	Address string `json:"address"`
-	Entity  string `json:"entity"`
+	// Entity is the device opened last, which the menu bar title follows.
+	Entity string `json:"entity"`
 }
 
 func loadConfig(path string) (config, error) {

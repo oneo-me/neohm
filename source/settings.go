@@ -4,26 +4,30 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/ha-go/source/locales"
 	"github.com/oneo-me/onevra/source/components"
+	"github.com/oneo-me/onevra/source/icons/lucide"
 )
 
-func (a *application) settingsWindowView(c *ui.Context) {
-	a.scope(c)
-	w, _ := c.Size()
-	a.settingsView(c, w)
-}
-
-func (a *application) settingsView(c *ui.Context, width float32) {
+// settingsPage edits the connection to Home Assistant in the panel, over the
+// page it covers. radius rounds the bottom corners it scrolls within.
+func (a *application) settingsPage(c *ui.Context, radius float32) {
 	t := c.Theme()
-	items := []components.SettingsItem{
-		{ID: "address", Title: locales.Address(), Description: locales.AddressHint(), Stacked: true, Build: func(c *ui.Context) {
-			components.TextBox(c, &a.address, components.TextBoxOptions{}).FillWidth().Label(locales.Address()).
-				Placeholder("http://homeassistant.local:8123").OnSubmit(a.saveConnection)
-		}},
-		{ID: "token", Title: locales.Token(), Description: locales.TokenHint(), Stacked: true, Build: func(c *ui.Context) {
-			components.TextBox(c, &a.token, components.TextBoxOptions{}).FillWidth().Label(locales.Token()).
-				Password().OnSubmit(a.saveConnection)
-		}},
-		{ID: "connect", Title: locales.Connect(), Content: func(c *ui.Context) {
+	pageHeader(c, locales.SettingsTitle(), func() {
+		if circleButton(c, lucide.X, locales.CloseSettings(), 36, false).Clicked() {
+			a.closeSettings()
+		}
+	})
+	components.ScrollView(c, components.ScrollViewOptions{}).Fill().Radius(0, 0, radius, radius).
+		ScrollbarInsets(0, 4, radius).Children(func() {
+		ui.Column(c).FillWidth().Padding(4, 22, 22, 22).Gap(18).Children(func() {
+			components.Text(c, locales.Connection()).FontSize(12).Bold().TextColor(t.TextMuted)
+			settingStacked(c, locales.Address(), locales.AddressHint(), func() {
+				components.TextBox(c, &a.address, components.TextBoxOptions{}).FillWidth().Label(locales.Address()).
+					Placeholder("http://homeassistant.local:8123").OnSubmit(a.saveConnection)
+			})
+			settingStacked(c, locales.Token(), locales.TokenHint(), func() {
+				components.TextBox(c, &a.token, components.TextBoxOptions{}).FillWidth().Label(locales.Token()).
+					Password().OnSubmit(a.saveConnection)
+			})
 			ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(t.Space(3)).Children(func() {
 				b := components.Button(c, locales.Connect(), components.ButtonPrimary).Disabled(a.connecting || a.address == "" || a.token == "")
 				if b.Clicked() {
@@ -37,47 +41,20 @@ func (a *application) settingsView(c *ui.Context, width float32) {
 					components.Text(c, a.connectMsg).Wrap().Grow(1).Basis(0).TextColor(t.TextMuted)
 				}
 			})
-		}},
-		{ID: "entity", Title: locales.Entity(), Description: locales.EntityHint(), Build: func(c *ui.Context) {
-			a.entitySelect(c)
-		}},
-	}
-	ui.Column(c).Fill().Children(func() {
-		components.Settings(c, &a.settingsState, []components.SettingsCategory{{
-			ID: "connection", Title: locales.Connection(),
-			Groups: []components.SettingsGroup{{ID: "connection", Items: items}},
-		}}, components.SettingsOptions{Narrow: width < 620, HideSearch: true, HideSidebar: true})
-		if e := a.errorDisplay(); e != "" {
-			ui.Column(c).FillWidth().Padding(0, t.Space(6), t.Space(4), t.Space(6)).Children(func() {
+			if e := a.errorDisplay(); e != "" {
 				components.Text(c, e).Wrap().FontSize(12).TextColor(t.Danger)
-			})
-		}
+			}
+		})
 	})
 }
 
-func (a *application) entitySelect(c *ui.Context) {
-	selected := a.config.Entity
-	name := func(id string) string {
-		for _, e := range a.entities {
-			if e.EntityID == id {
-				return e.Name
-			}
-		}
-		if id == "" {
-			return locales.EntityNone()
-		}
-		return id
-	}
-	s := components.Select(c, &selected)
-	s.Trigger.Label(locales.Entity()).MinWidth(200).Disabled(len(a.entities) == 0).
-		Children(func() { components.Text(c, name(selected)).SingleLine() })
-	s.Popup(func(ui.Element) {
-		for _, e := range a.entities {
-			label := e.Name + "  ·  " + e.EntityID
-			s.Item(e.EntityID).Label(label).Children(func() { components.Text(c, label) })
-		}
+// settingStacked puts a control below its title and description.
+func settingStacked(c *ui.Context, title, description string, build func()) {
+	ui.Column(c).FillWidth().Gap(8).Children(func() {
+		ui.Column(c).FillWidth().Gap(2).Children(func() {
+			components.Text(c, title).FontWeight(600)
+			components.Text(c, description).FontSize(12).TextColor(c.Theme().TextMuted).Wrap()
+		})
+		build()
 	})
-	if selected != a.config.Entity {
-		a.selectEntity(selected)
-	}
 }

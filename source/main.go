@@ -17,11 +17,11 @@ func main() {
 	if !mygo.App.RequestSingleInstanceLock() {
 		return
 	}
-	base, err := os.UserConfigDir()
+	home, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	dir := filepath.Join(base, "ha-climate")
+	dir := filepath.Join(home, ".ha-go")
 	mygo.App.SetPath(mygo.PathUserData, dir)
 	a := newApplication(filepath.Join(dir, "config.json"), keychain{})
 	a.config, err = loadConfig(a.path)

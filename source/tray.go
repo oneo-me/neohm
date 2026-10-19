@@ -12,7 +12,6 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/ha-go/source/locales"
 	"github.com/oneo-me/onevra/source/shells/plain"
-	"github.com/oneo-me/onevra/source/theme"
 )
 
 // The panel's size in DIPs, its arrow included.
@@ -51,29 +50,25 @@ func (a *application) installMenus() {
 			{Role: mygo.RoleEditMenu},
 		}))
 	}
-	if a.tray != nil {
-		a.trayMenu = mygo.NewMenu([]*mygo.MenuItem{
-			item(locales.OpenPanel(), a.showPanel),
-			item(locales.Refresh(), a.wake),
-			item(locales.Settings(), a.openSettings),
-			mygo.Separator(),
-			item(locales.Quit(), mygo.App.Quit),
-		})
-		// AppIndicator only reports menu actions, not button events.
-		if runtime.GOOS == "linux" {
-			a.tray.SetMenu(a.trayMenu)
-		}
+	if a.tray == nil {
+		return
+	}
+	// The panel holds everything else, Settings included.
+	items := []*mygo.MenuItem{item(locales.Quit(), mygo.App.Quit)}
+	if runtime.GOOS == "linux" {
+		// AppIndicator only reports menu actions, not button events, so the
+		// menu opens the panel too.
+		items = append([]*mygo.MenuItem{item(locales.OpenPanel(), a.showPanel), mygo.Separator()}, items...)
+	}
+	a.trayMenu = mygo.NewMenu(items)
+	if runtime.GOOS == "linux" {
+		a.tray.SetMenu(a.trayMenu)
 	}
 }
 
 func (a *application) reopen() {
-	if a.quitting {
-		return
-	}
-	if a.tray != nil && a.configured() {
+	if !a.quitting {
 		a.showPanel()
-	} else {
-		a.openSettings()
 	}
 }
 
@@ -91,11 +86,12 @@ func (a *application) hidePanel() {
 	}
 }
 
-// showPanel opens the climate panel under the menu bar icon. It draws its own
-// dark surface and arrow rather than the system popover's material.
+// showPanel opens the panel under the menu bar icon. It draws its own dark
+// surface and arrow rather than the system popover's material. Without a menu
+// bar icon, its pages show in a window.
 func (a *application) showPanel() {
 	if a.tray == nil {
-		a.openSettings()
+		a.showWindow()
 		return
 	}
 	if a.panel != nil {
@@ -108,44 +104,81 @@ func (a *application) showPanel() {
 	})
 	a.panel = panel
 	a.panelOpen.Store(true)
-	a.wake()
+	a.follow()
 	panel.OnClosed(func() {
 		if a.panel == panel {
 			a.panel = nil
 			a.panelOpen.Store(false)
+			a.resetPanel()
 		}
 	})
 }
 
-func (a *application) openSettings() {
-	a.hidePanel()
-	if a.settings == nil {
-		shell := plain.NewShell(plain.ShellOptions{
-			Title: locales.Settings(), Theme: theme.Onevra,
-			Width: 560, Height: 520, MinWidth: 420, MinHeight: 420,
-			Hidden: true, Content: a.settingsWindowView,
+// showWindow shows the panel's pages in a window when there is no menu bar
+// icon to anchor the panel to. The window is then the app: closing it quits.
+func (a *application) showWindow() {
+	if a.window == nil {
+		a.window = plain.NewShell(plain.ShellOptions{
+			Title: locales.Title(), Theme: windowTheme,
+			Width: panelWidth, Height: panelHeight, MinWidth: 360, MinHeight: 480,
+			Hidden: true, Content: a.windowView,
 		})
-		a.settings = shell.Window()
-		a.settings.OnClose(func(e *mygo.CloseEvent) {
-			if a.quitting {
-				return
-			}
-			e.PreventDefault()
-			if a.tray == nil {
+		a.window.Window().OnClose(func(*mygo.CloseEvent) {
+			if !a.quitting {
 				mygo.App.Quit()
-			} else {
-				a.settings.Hide()
 			}
 		})
 	}
-	if a.configured() && a.entities == nil && !a.connecting {
-		a.connect(true)
+	w := a.window.Window()
+	if w.IsMinimized() {
+		w.Restore()
 	}
-	if a.settings.IsMinimized() {
-		a.settings.Restore()
+	w.Show()
+	w.Focus()
+	a.panelOpen.Store(true)
+	a.follow()
+}
+
+// resetPanel returns the closed panel to the page it opens on: the device
+// list, or Settings until Home Assistant is set up.
+func (a *application) resetPanel() {
+	a.detail, a.settingsOpen = false, !a.configured()
+	a.follow()
+}
+
+// openSettings shows Settings in the panel, opening the panel first when it is
+// closed.
+func (a *application) openSettings() {
+	a.showSettings()
+	a.showPanel()
+}
+
+// showSettings shows Settings over the page the panel shows.
+func (a *application) showSettings() {
+	if !a.connecting {
+		a.connectMsg = ""
 	}
-	a.settings.Show()
-	a.settings.Focus()
+	a.settingsOpen = true
+	a.redraw()
+}
+
+func (a *application) closeSettings() {
+	a.settingsOpen = false
+	a.redraw()
+}
+
+// back leaves Settings, else the device opened, reporting whether the panel
+// showed either.
+func (a *application) back() bool {
+	switch {
+	case a.settingsOpen:
+		a.closeSettings()
+	case a.detail:
+		a.closeDevice()
+	default:
+		return false
+	}
+	return true
 }
 
 func (a *application) destroyTray() {

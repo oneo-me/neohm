@@ -44,6 +44,36 @@ func (msgs Messages) Title() string {
 	return Catalog.Format(msgs.locale, "title", nil)
 }
 
+// Devices says "Devices"
+// in the language the app shows.
+func Devices() string { return In(i18n.Locale()).Devices() }
+
+// Devices says "Devices"
+// in the language of msgs.
+func (msgs Messages) Devices() string {
+	return Catalog.Format(msgs.locale, "devices", nil)
+}
+
+// NoDevices says "No air conditioners"
+// in the language the app shows.
+func NoDevices() string { return In(i18n.Locale()).NoDevices() }
+
+// NoDevices says "No air conditioners"
+// in the language of msgs.
+func (msgs Messages) NoDevices() string {
+	return Catalog.Format(msgs.locale, "noDevices", nil)
+}
+
+// NoDevicesBody says "Home Assistant has no climate entities."
+// in the language the app shows.
+func NoDevicesBody() string { return In(i18n.Locale()).NoDevicesBody() }
+
+// NoDevicesBody says "Home Assistant has no climate entities."
+// in the language of msgs.
+func (msgs Messages) NoDevicesBody() string {
+	return Catalog.Format(msgs.locale, "noDevicesBody", nil)
+}
+
 // Room says "Room"
 // in the language the app shows.
 func Room() string { return In(i18n.Locale()).Room() }
@@ -112,6 +142,16 @@ func Airflow() string { return In(i18n.Locale()).Airflow() }
 // in the language of msgs.
 func (msgs Messages) Airflow() string {
 	return Catalog.Format(msgs.locale, "airflow", nil)
+}
+
+// Back says "Back"
+// in the language the app shows.
+func Back() string { return In(i18n.Locale()).Back() }
+
+// Back says "Back"
+// in the language of msgs.
+func (msgs Messages) Back() string {
+	return Catalog.Format(msgs.locale, "back", nil)
 }
 
 // On says "On"
@@ -444,6 +484,26 @@ func (msgs Messages) Settings() string {
 	return Catalog.Format(msgs.locale, "settings", nil)
 }
 
+// SettingsTitle says "Settings"
+// in the language the app shows.
+func SettingsTitle() string { return In(i18n.Locale()).SettingsTitle() }
+
+// SettingsTitle says "Settings"
+// in the language of msgs.
+func (msgs Messages) SettingsTitle() string {
+	return Catalog.Format(msgs.locale, "settingsTitle", nil)
+}
+
+// CloseSettings says "Close Settings"
+// in the language the app shows.
+func CloseSettings() string { return In(i18n.Locale()).CloseSettings() }
+
+// CloseSettings says "Close Settings"
+// in the language of msgs.
+func (msgs Messages) CloseSettings() string {
+	return Catalog.Format(msgs.locale, "closeSettings", nil)
+}
+
 // Quit says "Quit"
 // in the language the app shows.
 func Quit() string { return In(i18n.Locale()).Quit() }
@@ -462,16 +522,6 @@ func OpenPanel() string { return In(i18n.Locale()).OpenPanel() }
 // in the language of msgs.
 func (msgs Messages) OpenPanel() string {
 	return Catalog.Format(msgs.locale, "openPanel", nil)
-}
-
-// Refresh says "Refresh"
-// in the language the app shows.
-func Refresh() string { return In(i18n.Locale()).Refresh() }
-
-// Refresh says "Refresh"
-// in the language of msgs.
-func (msgs Messages) Refresh() string {
-	return Catalog.Format(msgs.locale, "refresh", nil)
 }
 
 // Connection says "Home Assistant"
@@ -522,36 +572,6 @@ func TokenHint() string { return In(i18n.Locale()).TokenHint() }
 // in the language of msgs.
 func (msgs Messages) TokenHint() string {
 	return Catalog.Format(msgs.locale, "tokenHint", nil)
-}
-
-// Entity says "Air conditioner"
-// in the language the app shows.
-func Entity() string { return In(i18n.Locale()).Entity() }
-
-// Entity says "Air conditioner"
-// in the language of msgs.
-func (msgs Messages) Entity() string {
-	return Catalog.Format(msgs.locale, "entity", nil)
-}
-
-// EntityHint says "The climate entity the panel controls."
-// in the language the app shows.
-func EntityHint() string { return In(i18n.Locale()).EntityHint() }
-
-// EntityHint says "The climate entity the panel controls."
-// in the language of msgs.
-func (msgs Messages) EntityHint() string {
-	return Catalog.Format(msgs.locale, "entityHint", nil)
-}
-
-// EntityNone says "Connect first"
-// in the language the app shows.
-func EntityNone() string { return In(i18n.Locale()).EntityNone() }
-
-// EntityNone says "Connect first"
-// in the language of msgs.
-func (msgs Messages) EntityNone() string {
-	return Catalog.Format(msgs.locale, "entityNone", nil)
 }
 
 // Connect says "Connect"
