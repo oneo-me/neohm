@@ -1,6 +1,6 @@
 # NeoHM
 
-NeoHM is a macOS menu bar app that controls Home Assistant devices, built with Onevra components on MyGo. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
+NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that controls Home Assistant devices, built with Onevra components on MyGo. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
 
 ## Principles
 

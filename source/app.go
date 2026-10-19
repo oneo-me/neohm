@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"maps"
+	"runtime"
 	"slices"
 	"strconv"
 	"sync"
@@ -132,7 +133,11 @@ func (a *application) clearError() { a.errorKey, a.errorText = "", "" }
 
 func (a *application) start() {
 	if err := a.createTray(); err != nil {
-		a.report("trayError", err)
+		key := "trayError"
+		if runtime.GOOS != "darwin" {
+			key = "trayIconError"
+		}
+		a.report(key, err)
 	}
 	a.installMenus()
 	a.ready = true

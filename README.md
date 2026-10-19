@@ -2,9 +2,9 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-NeoHM is a macOS menu bar app that controls the devices of a Home Assistant instance, with full controls for air conditioners. It is built in Go with [MyGo](https://github.com/egoist/mygo) and [Onevra](https://github.com/oneo-me/onevra).
+NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that controls the devices of a Home Assistant instance, with full controls for air conditioners. It is built in Go with [MyGo](https://github.com/egoist/mygo) and [Onevra](https://github.com/oneo-me/onevra).
 
-Left-click the menu bar icon to open the panel. It shows the devices as tiles by room, lit while they are on. A click on a tile turns its device on or off, and the arrow in its corner opens the device's page; a device that does not switch opens its page from the click. Settings opens in the same panel from its gear button. Right-click the icon for Quit NeoHM, or press ⌘Q while the panel is open.
+Click the menu bar icon on macOS, or the tray icon on Windows, to open the panel; on Linux, choose **Open panel** from the tray icon's menu. It shows the devices as tiles by room, lit while they are on. A click on a tile turns its device on or off, and the arrow in its corner opens the device's page; a device that does not switch opens its page from the click. Settings opens in the same panel from its gear button. Right-click the icon for Quit NeoHM, which Linux lists in the same menu, or press ⌘Q (Ctrl+Q on Windows and Linux) while the panel is open.
 
 <p align="center">
   <img src="docs/screenshots/home.jpg" width="24%" alt="Devices by room">
@@ -18,25 +18,31 @@ Left-click the menu bar icon to open the panel. It shows the devices as tiles by
 - Show the devices as tiles grouped by room, each with its main state and whether it is on.
 - Switch lights, plugs, fans, covers and more from their tiles, and dim, color, move, play, lock or start a device from its page, with a light's colors and a cover's quarter positions a click away.
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, as far as it offers them.
-- Show the interface in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS or the language chosen in Settings.
+- Show the interface in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following the system or the language chosen in Settings.
 
 ## Install
 
-NeoHM needs macOS 13 or later and a Home Assistant instance the Mac can reach.
+NeoHM needs a Home Assistant instance the computer can reach. Download the latest version from [Releases](https://github.com/oneo-me/neohm/releases/latest):
 
-1. Download the `.dmg` of the latest version from [Releases](https://github.com/oneo-me/neohm/releases/latest) and drag NeoHM to Applications.
-2. NeoHM is not notarized by Apple, so macOS blocks its first launch. Allow it once in Terminal:
+- **macOS 13 or later**: open the `.dmg` and drag NeoHM to Applications. NeoHM is not notarized by Apple, so macOS blocks its first launch. Allow it once in Terminal:
 
-   ```sh
-   xattr -dr com.apple.quarantine /Applications/NeoHM.app
-   ```
+  ```sh
+  xattr -dr com.apple.quarantine /Applications/NeoHM.app
+  ```
 
-Later versions install from Settings: NeoHM checks once a day and notifies you of a new one, or click **Check for Updates** under Updates, then **Install and Relaunch**. NeoHM updates itself only from Applications, or another folder you can write to.
+- **Windows**: run `NeoHM Setup <version> amd64.exe`, or the `arm64` one on ARM. NeoHM is not signed, so SmartScreen warns before its first launch: click **More info**, then **Run anyway**.
+- **Linux**: install it for your user with the command below. Its tray icon needs `libayatana-appindicator3`, and the script names any other library missing. The `.deb` package installs it for every user instead, but does not update itself.
+
+  ```sh
+  curl -fsSL https://github.com/oneo-me/neohm/releases/latest/download/install.sh | sh
+  ```
+
+Later versions install from Settings: NeoHM checks once a day and notifies you of a new one, or click **Check for Updates** under Updates, then **Install and Relaunch**. NeoHM updates itself only where it can write: Applications on macOS, or where the installer or `install.sh` put it.
 
 ## Getting started
 
 1. In Home Assistant, open your profile and create a **long-lived access token**.
-2. Start NeoHM. The panel opens on Settings until Home Assistant is set up; later, open Settings from the panel's gear button or with ⌘,.
+2. Start NeoHM. The panel opens on Settings until Home Assistant is set up; later, open Settings from the panel's gear button or with ⌘, (Ctrl+, on Windows and Linux).
 3. Enter the address, for example `http://homeassistant.local:8123`, and the token, then click **Connect**.
 4. Close Settings to see your devices. Click a tile to switch its device, or its arrow to open the device's page.
 
@@ -60,12 +66,12 @@ The Go module and the MyGo packaging configuration live in `source/`. Building n
 cd source
 go tool mygo dev      # run with live reload
 go test ./...         # headless tests; never opens a window
-go tool mygo build    # .app and .dmg in ../dist
+go tool mygo build    # this system's app and installer in ../dist
 ```
 
 ### Releasing
 
-Pushing a tag `v<version>` builds a universal app on GitHub Actions and publishes it, with its update, as a release whose notes are that version's section of [CHANGELOG.md](CHANGELOG.md):
+Pushing a tag `v<version>` builds the apps for macOS, Windows and Linux on GitHub Actions and publishes them, with their updates, as a release whose notes are that version's section of [CHANGELOG.md](CHANGELOG.md):
 
 1. Set `version` in `source/mygo.json`, and rename `[Unreleased]` in the changelog to `[<version>] - <date>`.
 2. Commit, then `git tag v<version>` and `git push origin v<version>`.

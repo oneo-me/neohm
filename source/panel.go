@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"runtime"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -34,8 +35,17 @@ var (
 	discInk  = ui.RGB(14, 20, 38)
 )
 
+// arrowHeight is the height of the arrow pointing at the menu bar icon. The
+// panel has none on Windows, where it may flip above the taskbar's icon, and
+// on Linux, where it opens in the middle of the screen.
+var arrowHeight = func() float32 {
+	if runtime.GOOS == "darwin" {
+		return 9
+	}
+	return 0
+}()
+
 const (
-	arrowHeight = 9
 	panelRadius = 26
 	// pageFade is how far past its bar a page's header blurs the content
 	// under it: content at rest starts below that.
@@ -113,9 +123,11 @@ func (a *application) panelView(c *ui.Context) {
 		// An arrow pointing at the menu bar icon, then the body, opaque: the
 		// blur under the pages' headers sees only what the panel paints.
 		cx := r.X + r.W/2
-		var arrow ui.Path
-		arrow.MoveTo(cx-11, r.Y+arrowHeight+1).QuadTo(cx-3, r.Y+1, cx, r.Y).QuadTo(cx+3, r.Y+1, cx+11, r.Y+arrowHeight+1).Close()
-		p.FillPath(&arrow, panelTop)
+		if arrowHeight > 0 {
+			var arrow ui.Path
+			arrow.MoveTo(cx-11, r.Y+arrowHeight+1).QuadTo(cx-3, r.Y+1, cx, r.Y).QuadTo(cx+3, r.Y+1, cx+11, r.Y+arrowHeight+1).Close()
+			p.FillPath(&arrow, panelTop)
+		}
 		body := ui.Rect{X: r.X, Y: r.Y + arrowHeight, W: r.W, H: r.H - arrowHeight}
 		p.FillGradient(body, ui.LinearGradient{From: panelTop, To: panelBottom, Angle: 180}, panelRadius)
 		if detail {

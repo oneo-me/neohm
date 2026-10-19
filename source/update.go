@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/egoist/mygo"
@@ -116,6 +117,17 @@ func (a *application) updatesGroup(c *ui.Context) {
 	})
 }
 
+// updateDisabledBody says how to install the app where it can update itself.
+func updateDisabledBody() string {
+	switch runtime.GOOS {
+	case "windows":
+		return locales.UpdateDisabledBodyWindows()
+	case "linux":
+		return locales.UpdateDisabledBodyLinux()
+	}
+	return locales.UpdateDisabledBody()
+}
+
 func (a *application) updateView(c *ui.Context) {
 	u := &a.upd
 	current := mygo.App.Version()
@@ -130,7 +142,7 @@ func (a *application) updateView(c *ui.Context) {
 	case updateCurrent:
 		updateHeading(c, lucide.CircleCheck, green, locales.UpdateCurrent(), locales.UpdateVersion(current))
 	case updateDisabled:
-		updateHeading(c, lucide.CircleAlert, inkMuted, locales.UpdateDisabled(), locales.UpdateDisabledBody())
+		updateHeading(c, lucide.CircleAlert, inkMuted, locales.UpdateDisabled(), updateDisabledBody())
 	case updateFailed:
 		title := locales.UpdateCheckError()
 		if u.installFailed {

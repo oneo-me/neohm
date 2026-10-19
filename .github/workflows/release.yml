@@ -58,9 +58,18 @@ jobs:
 
   build:
     needs: draft-release
-    # Xcode 26 compiles the Liquid Glass icon; signing and disk images need macOS.
-    runs-on: macos-26
+    name: build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Xcode 26 compiles the Liquid Glass icon; signing and disk images need macOS.
+          - { name: macOS, os: macos-26, platform: "darwin/universal" }
+          # MyGo needs no cgo, so Linux cross-compiles the Windows apps.
+          - { name: Windows, os: ubuntu-latest, platform: "windows/amd64,windows/arm64" }
+          - { name: Linux, os: ubuntu-latest, platform: "linux/amd64,linux/arm64" }
     steps:
       - uses: actions/checkout@v7
 
@@ -70,8 +79,13 @@ jobs:
           cache-dependency-path: source/go.sum
 
       - name: Test
+        if: matrix.name == 'macOS'
         working-directory: source
         run: go test ./...
+
+      - name: Install NSIS, for the Windows installers
+        if: matrix.name == 'Windows'
+        run: sudo apt-get update && sudo apt-get install -y nsis
 
       # Without the key, mygo build skips the update manifests, and installed
       # apps would never see this release.
@@ -84,13 +98,13 @@ jobs:
             exit 1
           fi
 
-      # Signed ad hoc, without notarization.
+      # Signed ad hoc on macOS and unsigned on Windows, without notarization.
       - name: Build and upload
         working-directory: source
         env:
           GH_TOKEN: ${{ github.token }}
           MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
-        run: go tool mygo build -platform darwin/universal -upload
+        run: go tool mygo build -platform "${{ matrix.platform }}" -upload
 
   publish:
     needs: build

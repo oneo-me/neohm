@@ -12,6 +12,10 @@
       "NSLocalNetworkUsageDescription": "NeoHM connects to Home Assistant on your local network."
     }
   },
+  "linux": {
+    "comment": "Control your Home Assistant devices",
+    "depends": ["libayatana-appindicator3-1"]
+  },
   "updates": {
     "publicKey": "fQmpdSkgqkbctOLivEm/E40L0ZUSTkd+hQHxlwJZQC8=",
     "github": "oneo-me/neohm",

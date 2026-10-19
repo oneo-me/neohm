@@ -1716,6 +1716,16 @@ func (msgs Messages) TrayError() string {
 	return Catalog.Format(msgs.locale, "trayError", nil)
 }
 
+// TrayIconError says "The tray icon could not be created."
+// in the language the app shows.
+func TrayIconError() string { return In(i18n.Locale()).TrayIconError() }
+
+// TrayIconError says "The tray icon could not be created."
+// in the language of msgs.
+func (msgs Messages) TrayIconError() string {
+	return Catalog.Format(msgs.locale, "trayIconError", nil)
+}
+
 // CheckForUpdates says "Check for Updates"
 // in the language the app shows.
 func CheckForUpdates() string { return In(i18n.Locale()).CheckForUpdates() }
@@ -1784,6 +1794,26 @@ func UpdateDisabledBody() string { return In(i18n.Locale()).UpdateDisabledBody()
 // in the language of msgs.
 func (msgs Messages) UpdateDisabledBody() string {
 	return Catalog.Format(msgs.locale, "updateDisabledBody", nil)
+}
+
+// UpdateDisabledBodyWindows says "Install NeoHM with its installer to get updates."
+// in the language the app shows.
+func UpdateDisabledBodyWindows() string { return In(i18n.Locale()).UpdateDisabledBodyWindows() }
+
+// UpdateDisabledBodyWindows says "Install NeoHM with its installer to get updates."
+// in the language of msgs.
+func (msgs Messages) UpdateDisabledBodyWindows() string {
+	return Catalog.Format(msgs.locale, "updateDisabledBodyWindows", nil)
+}
+
+// UpdateDisabledBodyLinux says "Install NeoHM with install.sh to get updates."
+// in the language the app shows.
+func UpdateDisabledBodyLinux() string { return In(i18n.Locale()).UpdateDisabledBodyLinux() }
+
+// UpdateDisabledBodyLinux says "Install NeoHM with install.sh to get updates."
+// in the language of msgs.
+func (msgs Messages) UpdateDisabledBodyLinux() string {
+	return Catalog.Format(msgs.locale, "updateDisabledBodyLinux", nil)
 }
 
 // UpdateCheckError says "Couldn't check for updates"

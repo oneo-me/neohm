@@ -2,9 +2,9 @@
 
 [English](README.md) | **简体中文**
 
-NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备，并为空调提供完整的控制界面。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
+NeoHM 是 macOS 上的菜单栏应用，也是 Windows 和 Linux 上的托盘应用，用来控制 Home Assistant 中的设备，并为空调提供完整的控制界面。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
 
-左键点击菜单栏图标打开面板。面板按房间以方块显示设备，设备开启时方块会亮起。点击方块可以开关设备，方块角上的箭头会打开设备的页面；不能开关的设备点击方块即打开它的页面。设置也在同一个面板中，从齿轮按钮打开。右键点击图标可以退出 NeoHM，面板打开时也可以按 ⌘Q 退出。
+在 macOS 上点击菜单栏图标，或在 Windows 上点击托盘图标，即可打开面板；在 Linux 上，从托盘图标的菜单中选择**打开面板**。面板按房间以方块显示设备，设备开启时方块会亮起。点击方块可以开关设备，方块角上的箭头会打开设备的页面；不能开关的设备点击方块即打开它的页面。设置也在同一个面板中，从齿轮按钮打开。右键点击图标可以退出 NeoHM（Linux 上在同一个菜单中），面板打开时也可以按 ⌘Q（Windows 和 Linux 上为 Ctrl+Q）退出。
 
 <p align="center">
   <img src="docs/screenshots/home.jpg" width="24%" alt="按房间显示的设备">
@@ -18,25 +18,31 @@ NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备
 - 按房间以方块显示设备，每个方块显示设备的主要状态以及是否开启。
 - 在方块上开关灯、插座、风扇、窗帘等设备，并在设备的页面中调光、调色、调节位置、播放、锁门或启动设备，一键选择灯光颜色或窗帘的四分位置。
 - 控制空调的电源、温度、模式、风速、风向、节能模式和睡眠，以每台空调支持的功能为准。
-- 以英文、简体中文、繁体中文、日文或韩文显示界面，跟随 macOS 或在设置中选择的语言。
+- 以英文、简体中文、繁体中文、日文或韩文显示界面，跟随系统或在设置中选择的语言。
 
 ## 安装
 
-NeoHM 需要 macOS 13 或更高版本，以及 Mac 能访问到的 Home Assistant。
+NeoHM 需要一个这台电脑能访问到的 Home Assistant。从 [Releases](https://github.com/oneo-me/neohm/releases/latest) 下载最新版本：
 
-1. 从 [Releases](https://github.com/oneo-me/neohm/releases/latest) 下载最新版本的 `.dmg`，把 NeoHM 拖到“应用程序”文件夹。
-2. NeoHM 没有经过 Apple 公证，macOS 会阻止它首次启动。在终端中允许一次：
+- **macOS 13 或更高版本**：打开 `.dmg`，把 NeoHM 拖到“应用程序”文件夹。NeoHM 没有经过 Apple 公证，macOS 会阻止它首次启动。在终端中允许一次：
 
-   ```sh
-   xattr -dr com.apple.quarantine /Applications/NeoHM.app
-   ```
+  ```sh
+  xattr -dr com.apple.quarantine /Applications/NeoHM.app
+  ```
 
-之后的版本在设置中安装：NeoHM 每天检查一次，有新版本时会通知你；也可以在“更新”下点击**检查更新**，再点击**安装并重新启动**。只有放在“应用程序”或其他你可写入的文件夹中时，NeoHM 才能自行更新。
+- **Windows**：运行 `NeoHM Setup <版本> amd64.exe`，ARM 设备请用 `arm64` 版本。NeoHM 没有签名，SmartScreen 会在首次启动前警告：点击**更多信息**，再点击**仍要运行**。
+- **Linux**：用下面的命令为当前用户安装。托盘图标需要 `libayatana-appindicator3`，脚本会列出缺少的其他库。`.deb` 软件包则为所有用户安装，但不会自行更新。
+
+  ```sh
+  curl -fsSL https://github.com/oneo-me/neohm/releases/latest/download/install.sh | sh
+  ```
+
+之后的版本在设置中安装：NeoHM 每天检查一次，有新版本时会通知你；也可以在“更新”下点击**检查更新**，再点击**安装并重新启动**。NeoHM 只能在它可写入的位置自行更新：macOS 上的“应用程序”文件夹，或安装程序和 `install.sh` 安装到的位置。
 
 ## 快速开始
 
 1. 在 Home Assistant 中打开个人资料页，创建一个**长期访问令牌**。
-2. 启动 NeoHM。完成 Home Assistant 配置之前，面板会直接打开设置；之后可以从面板的齿轮按钮或用 ⌘, 打开设置。
+2. 启动 NeoHM。完成 Home Assistant 配置之前，面板会直接打开设置；之后可以从面板的齿轮按钮或用 ⌘,（Windows 和 Linux 上为 Ctrl+,）打开设置。
 3. 填写地址（例如 `http://homeassistant.local:8123`）和令牌，然后点击**连接**。
 4. 关闭设置即可看到你的设备。点击方块可以开关设备，点击它的箭头可以打开设备的页面。
 
@@ -60,12 +66,12 @@ Go 模块和 MyGo 打包配置都在 `source/` 中，构建需要 Go 1.27 或更
 cd source
 go tool mygo dev      # 运行，带热重载
 go test ./...         # 无界面测试，不会打开窗口
-go tool mygo build    # 在 ../dist 生成 .app 和 .dmg
+go tool mygo build    # 在 ../dist 生成本系统的应用和安装包
 ```
 
 ### 发布
 
-推送 `v<版本>` 标签后，GitHub Actions 会构建通用版应用，并连同更新一起发布为 Release，说明取自 [CHANGELOG.md](CHANGELOG.md) 中该版本的小节：
+推送 `v<版本>` 标签后，GitHub Actions 会构建 macOS、Windows 和 Linux 版应用，并连同更新一起发布为 Release，说明取自 [CHANGELOG.md](CHANGELOG.md) 中该版本的小节：
 
 1. 修改 `source/mygo.json` 中的 `version`，并把更新日志中的 `[Unreleased]` 改为 `[<版本>] - <日期>`。
 2. 提交后执行 `git tag v<版本>` 和 `git push origin v<版本>`。
