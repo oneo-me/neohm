@@ -137,6 +137,17 @@ func focus(t *testing.T, tt *ui.Tester, label string) {
 	t.Fatalf("%q never takes the keyboard", label)
 }
 
+// clickScene clicks the drawing at the top of a device's page, below the
+// power button labeled power.
+func clickScene(t *testing.T, tt *ui.Tester, power string) {
+	t.Helper()
+	r, ok := tt.Find(power)
+	if !ok {
+		t.Fatalf("no %q in %v", power, tt.Texts())
+	}
+	tt.ClickAt(panelWidth/2, r.Y+r.H+pageFade+40)
+}
+
 func TestPanelControls(t *testing.T) {
 	a := demoApp(t)
 	a.detail = true
@@ -175,9 +186,7 @@ func TestPanelControls(t *testing.T) {
 		t.Fatalf("power off: %q", a.climate.Mode)
 	}
 	tt.Advance(time.Second)
-	if err := tt.Click(locales.Power()); err != nil {
-		t.Fatal(err)
-	}
+	clickScene(t, tt, locales.Power())
 	if a.climate.Mode != "cool" {
 		t.Fatalf("power on: %q", a.climate.Mode)
 	}
@@ -384,7 +393,8 @@ func TestDevicePage(t *testing.T) {
 		}
 	}
 	// A light turns off at a brightness of 0, and switches from the power
-	// button of its page; a cover opens and closes from the button there.
+	// button of its page or its drawing; a cover opens and closes from the
+	// button there.
 	tt.Key(0, ui.KeyEscape)
 	if err := tt.Click(locales.DeviceDetails("Ceiling Light")); err != nil {
 		t.Fatal(err)
@@ -403,6 +413,11 @@ func TestDevicePage(t *testing.T) {
 		t.Fatalf("power: %v", tt.Texts())
 	}
 	returned(t, posted)
+	clickScene(t, tt, locales.QuickSwitch("Ceiling Light"))
+	if !tt.HasText(locales.StateOff()) {
+		t.Fatalf("drawing: %v", tt.Texts())
+	}
+	returned(t, posted)
 	tt.Key(0, ui.KeyEscape)
 	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
 		t.Fatal(err)
@@ -417,7 +432,7 @@ func TestDevicePage(t *testing.T) {
 		services = append(services, b["service"].(string))
 	}
 	mu.Unlock()
-	if want := []string{"light/turn_off", "light/turn_on", "cover/close_cover"}; !slices.Equal(services, want) {
+	if want := []string{"light/turn_off", "light/turn_on", "light/turn_off", "cover/close_cover"}; !slices.Equal(services, want) {
 		t.Fatalf("calls %v", services)
 	}
 	tt.Key(0, ui.KeyEscape)

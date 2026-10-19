@@ -23,7 +23,7 @@ var (
 // its color while it is on, open or at work. amount, 0 to 1, is how far its
 // level goes: a light's brightness, a fan's speed or how far a cover is
 // open.
-func deviceScene(c *ui.Context, s ha.State, v tileView, amount float64) {
+func deviceScene(c *ui.Context, s ha.State, v tileView, amount float64) ui.Element {
 	// The drawing takes the room the controls leave, in its middle.
 	box := ui.Box(c.Key(s.EntityID)).FillWidth().Grow(1).MinHeight(sceneHeight).Shrink(0)
 	lit := float32(0)
@@ -65,6 +65,7 @@ func deviceScene(c *ui.Context, s ha.State, v tileView, amount float64) {
 			deviceDisc(c, v, lit, 76).Shadow(0, 10, 36, 0, color.Alpha(0.45*lit))
 		})
 	}
+	return box
 }
 
 // stage is the middle of r, sceneHeight high, where a device is drawn.

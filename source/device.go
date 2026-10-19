@@ -49,7 +49,12 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 		fill := view.LayoutBounds().H
 		view.Children(func() {
 			ui.Column(c).FillWidth().MinHeight(fill).Padding(top+pageFade, 18, 18, 18).Children(func() {
-				deviceScene(c, s, v, amount)
+				// A click on the drawing switches the device, as its power
+				// button does.
+				scene := deviceScene(c, s, v, amount)
+				if _, ok := s.Toggle(); ok && s.Available() {
+					scene.OnClick(func() { a.toggle(s) })
+				}
 				a.readout(c, t, s, v, l, hasLevel, value)
 				if hasLevel {
 					title := message("level_" + l.Name)

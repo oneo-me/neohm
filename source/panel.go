@@ -263,7 +263,8 @@ func (a *application) powerButton(c *ui.Context) {
 	}
 }
 
-// unitView draws the indoor unit and the air it blows.
+// unitView draws the indoor unit and the air it blows. A click on it turns
+// the air conditioner on or off, as its power button does.
 func (a *application) unitView(c *ui.Context) {
 	cl := a.climate
 	on := cl.On()
@@ -273,6 +274,9 @@ func (a *application) unitView(c *ui.Context) {
 		target = "--"
 	}
 	box := ui.Box(c).FillWidth().Height(142)
+	if cl.Available() {
+		box.OnClick(a.togglePower)
+	}
 	level := float32(0)
 	if on {
 		level = 1

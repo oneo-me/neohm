@@ -47,7 +47,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 
 **Arranging Home.** Which device and area each entity belongs to, and what Home Assistant's dashboards hide, come only from the registries of its WebSocket API. The poller reads them in one short session per connection, and again every five minutes. `ha.Arrange` then shows each device's main controls, or one tile of a sensor device's readings, by area.
 
-**Control.** A click on a tile that switches calls one service of its entity's domain at once, as the power button in a device's page header does; the tile's arrow, or a click on any other tile, opens the device's page. A device's page calls the others, and sends a level, or a color dragged in the picker, once its control rests; a swatch sends its color at once. An air conditioner's controls call `climate` services on the device shown. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
+**Control.** A click on a tile that switches calls one service of its entity's domain at once, as the power button in a device's page header, or a click on the device drawn below it, does; the tile's arrow, or a click on any other tile, opens the device's page. A device's page calls the others, and sends a level, or a color dragged in the picker, once its control rests; a swatch sends its color at once. An air conditioner's controls call `climate` services on the device shown, and a click on its unit turns it on or off. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
 
 ## Data and state
 
