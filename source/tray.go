@@ -169,11 +169,13 @@ func (a *application) openSettings() {
 	a.showPanel()
 }
 
-// showSettings shows Settings over the page the panel shows.
+// showSettings shows Settings over the page the panel shows, reading again
+// whether the app opens at login, which System Settings also changes.
 func (a *application) showSettings() {
 	if !a.connecting {
 		a.connected = false
 	}
+	a.atLogin, a.loginFailed = a.openAtLogin(), false
 	a.settingsOpen = true
 	a.redraw()
 }

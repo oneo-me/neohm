@@ -36,6 +36,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 - Open the panel on Home, or on Settings until Home Assistant is set up. Closing the panel returns it there.
 - Run network work off the main thread and apply its results on the main thread. Builders never start work.
 - Keep the access token in the configuration file, readable only by the user, rather than the keychain.
+- Leave opening at login to the system, which System Settings also changes: Settings reads it each time it opens rather than saving it.
 - When the language changes, set again what was set only once: the menus, the menu bar icon's tooltip and the window's title.
 - Apply a language only when Settings changes it. MyGo keeps it across launches, and `MYGO_LOCALE` still overrides it.
 - Show a local change at once, and keep it over reads that started before it until Home Assistant reports it.

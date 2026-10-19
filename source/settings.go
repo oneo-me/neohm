@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/neohm/source/locales"
@@ -8,8 +10,8 @@ import (
 	"github.com/oneo-me/onevra/source/icons/lucide"
 )
 
-// settingsPage edits the language, the connection to Home Assistant and
-// updates in the panel, over the page it covers. radius rounds the corners
+// settingsPage edits the language, opening at login, the connection to Home
+// Assistant and updates in the panel, over the page it covers. radius rounds the corners
 // it scrolls within.
 func (a *application) settingsPage(c *ui.Context, radius float32) {
 	t := c.Theme()
@@ -21,7 +23,10 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 		})
 	}, func(top float32) {
 		scrollContent(c, top, radius, 18, func() {
-			settingsGroup(c, locales.Language(), func() { a.languageSelect(c) })
+			settingsGroup(c, locales.General(), func() {
+				settingStacked(c, locales.Language(), "", func() { a.languageSelect(c) })
+				a.openAtLoginSwitch(c)
+			})
 			settingsGroup(c, locales.Connection(), func() {
 				settingStacked(c, locales.Address(), "", func() {
 					components.TextBox(c, &a.address, components.TextBoxOptions{}).FillWidth().Label(locales.Address()).
@@ -66,6 +71,35 @@ func (a *application) languageSelect(c *ui.Context) {
 	if s.Changed() {
 		a.setLanguage(tag)
 	}
+}
+
+// openAtLoginSwitch turns opening the app when the user logs in on or off,
+// which the system keeps rather than the configuration file.
+func (a *application) openAtLoginSwitch(c *ui.Context) {
+	t := c.Theme()
+	on := a.atLogin
+	ui.Column(c).FillWidth().Gap(6).Children(func() {
+		components.Switch(c, &on, locales.OpenAtLogin())
+		if on != a.atLogin {
+			a.changeOpenAtLogin(on)
+		}
+		if a.loginFailed {
+			components.Text(c, locales.OpenAtLoginError()).FontSize(12).TextColor(t.Danger).Wrap()
+		} else {
+			components.Text(c, locales.OpenAtLoginHint()).FontSize(12).TextColor(t.TextMuted).Wrap()
+		}
+	})
+}
+
+// changeOpenAtLogin asks the system to open the app at login, or not, and
+// shows what it then reports.
+func (a *application) changeOpenAtLogin(on bool) {
+	err := a.setOpenAtLogin(on)
+	if err != nil {
+		log.Printf("openAtLoginError: %v", err)
+	}
+	a.atLogin, a.loginFailed = a.openAtLogin(), err != nil
+	a.redraw()
 }
 
 // card is a rounded surface holding one part of Settings.

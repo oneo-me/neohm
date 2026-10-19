@@ -87,12 +87,21 @@ func demoApp(t *testing.T) *application {
 	states := parseStates(t, demoStates)
 	a := newApplication(filepath.Join(t.TempDir(), "config.json"))
 	a.post = func(fn func()) {}
+	fakeLogin(a)
 	a.config = config{Address: "http://ha.test", Token: "token", Entity: "climate.bedroom"}
 	a.address, a.token = a.config.Address, a.config.Token
 	a.registry = demoRegistry()
 	a.home, a.listed = ha.Arrange(states, a.registry), true
 	a.climate, a.hasClimate, a.online = ha.ParseClimate(states[0]), true, true
 	return a
+}
+
+// fakeLogin stands in for the system's login items, which start with the
+// app not opening at login.
+func fakeLogin(a *application) {
+	var on bool
+	a.openAtLogin = func() bool { return on }
+	a.setOpenAtLogin = func(v bool) error { on = v; return nil }
 }
 
 // serviceCalls records the service calls of Home Assistant at its URL, as
@@ -632,6 +641,7 @@ func TestTileName(t *testing.T) {
 
 func TestSetupView(t *testing.T) {
 	a := newApplication(filepath.Join(t.TempDir(), "config.json"))
+	fakeLogin(a)
 	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
 	if !tt.HasText(locales.SetupTitle()) {
 		t.Fatal(tt.Texts())
@@ -685,6 +695,29 @@ func TestSettingsPage(t *testing.T) {
 	}
 	if saved, err := loadConfig(a.path); err != nil || a.config.Language != "ja" || saved.Language != "ja" || !slices.Equal(shown, []string{"ja"}) {
 		t.Fatalf("language %q, saved %+v %v, shown %v", a.config.Language, saved, err, shown)
+	}
+	// Opening at login is the system's to keep, and a failure to change it
+	// shows below its switch.
+	tt.Frame()
+	if err := tt.Click(locales.OpenAtLogin()); err != nil {
+		t.Fatal(err)
+	}
+	if !a.openAtLogin() || !a.atLogin {
+		t.Fatal("not opening at login")
+	}
+	a.setOpenAtLogin = func(bool) error { return errors.New("denied") }
+	tt.Frame()
+	if err := tt.Click(locales.OpenAtLogin()); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if !a.atLogin || !tt.HasText(locales.OpenAtLoginError()) {
+		t.Fatalf("at login %v, texts %v", a.atLogin, tt.Texts())
+	}
+	a.showSettings()
+	tt.Frame()
+	if tt.HasText(locales.OpenAtLoginError()) {
+		t.Fatal("the failure outlived Settings")
 	}
 	if err := tt.Click(locales.CloseSettings()); err != nil {
 		t.Fatal(err)

@@ -104,15 +104,22 @@ type application struct {
 	// upd is what Settings' updates found, with updates.
 	upd     updateState
 	updates updates
-	// post runs a function on the main thread, setLocale shows a language
-	// and quit quits the app; tests replace them.
-	post      func(func())
-	setLocale func(string)
-	quit      func()
+	// atLogin is whether the system opens the app at login, as Settings
+	// last read it, and loginFailed that Settings could not change it.
+	atLogin, loginFailed bool
+	// post runs a function on the main thread, setLocale shows a language,
+	// quit quits the app, and openAtLogin and setOpenAtLogin read and change
+	// whether the system opens it at login; tests replace them.
+	post           func(func())
+	setLocale      func(string)
+	quit           func()
+	openAtLogin    func() bool
+	setOpenAtLogin func(bool) error
 }
 
 func newApplication(path string) *application {
 	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain, setLocale: mygo.App.SetLocale, quit: mygo.App.Quit,
+		openAtLogin: mygo.App.OpenAtLogin, setOpenAtLogin: mygo.App.SetOpenAtLogin,
 		updates: mygoUpdates, upd: updateState{notes: &markdown.Options{Theme: &markdown.Theme{FontSize: 12}}}}
 }
 

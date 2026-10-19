@@ -1556,6 +1556,16 @@ func (msgs Messages) TokenHint() string {
 	return Catalog.Format(msgs.locale, "tokenHint", nil)
 }
 
+// General says "General"
+// in the language the app shows.
+func General() string { return In(i18n.Locale()).General() }
+
+// General says "General"
+// in the language of msgs.
+func (msgs Messages) General() string {
+	return Catalog.Format(msgs.locale, "general", nil)
+}
+
 // Language says "Language"
 // in the language the app shows.
 func Language() string { return In(i18n.Locale()).Language() }
@@ -1574,6 +1584,36 @@ func LanguageSystem() string { return In(i18n.Locale()).LanguageSystem() }
 // in the language of msgs.
 func (msgs Messages) LanguageSystem() string {
 	return Catalog.Format(msgs.locale, "languageSystem", nil)
+}
+
+// OpenAtLogin says "Open at login"
+// in the language the app shows.
+func OpenAtLogin() string { return In(i18n.Locale()).OpenAtLogin() }
+
+// OpenAtLogin says "Open at login"
+// in the language of msgs.
+func (msgs Messages) OpenAtLogin() string {
+	return Catalog.Format(msgs.locale, "openAtLogin", nil)
+}
+
+// OpenAtLoginHint says "Starts NeoHM when you log in."
+// in the language the app shows.
+func OpenAtLoginHint() string { return In(i18n.Locale()).OpenAtLoginHint() }
+
+// OpenAtLoginHint says "Starts NeoHM when you log in."
+// in the language of msgs.
+func (msgs Messages) OpenAtLoginHint() string {
+	return Catalog.Format(msgs.locale, "openAtLoginHint", nil)
+}
+
+// OpenAtLoginError says "NeoHM couldn't change whether it opens at login."
+// in the language the app shows.
+func OpenAtLoginError() string { return In(i18n.Locale()).OpenAtLoginError() }
+
+// OpenAtLoginError says "NeoHM couldn't change whether it opens at login."
+// in the language of msgs.
+func (msgs Messages) OpenAtLoginError() string {
+	return Catalog.Format(msgs.locale, "openAtLoginError", nil)
 }
 
 // Connect says "Connect"
