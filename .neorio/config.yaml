@@ -1,0 +1,14 @@
+tasks:
+  - label: Run
+    group: run
+    command: go
+    args: [tool, mygo, dev]
+    options:
+      cwd: source
+  - label: Build
+    group: build
+    command: go
+    args: [tool, mygo, build]
+    options:
+      cwd: source
+    outputDirectory: ../dist
