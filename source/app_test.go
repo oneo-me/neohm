@@ -31,8 +31,8 @@ func parseStates(t *testing.T, list string) []ha.State {
 }
 
 // demoStates are a sample home: two air conditioners, the bedroom's first,
-// lights, a curtain, a TV, a lock, a plug, a thermometer, a window sensor
-// and a vacuum.
+// lights, a curtain, a TV, a lock, a plug, a thermometer, a window sensor,
+// a vacuum and a fan.
 const demoStates = `[
 	{"entity_id":"climate.bedroom","state":"cool","attributes":{
 		"friendly_name":"Bedroom AC","hvac_modes":["off","cool","heat","dry","fan_only","auto"],
@@ -53,7 +53,8 @@ const demoStates = `[
 	{"entity_id":"sensor.thermo_humidity","state":"45","attributes":{"friendly_name":"Bedroom Thermometer Humidity","device_class":"humidity","unit_of_measurement":"%"}},
 	{"entity_id":"sensor.thermo_battery","state":"88","attributes":{"device_class":"battery","unit_of_measurement":"%"}},
 	{"entity_id":"binary_sensor.window","state":"on","attributes":{"device_class":"window"}},
-	{"entity_id":"vacuum.robot","state":"docked","attributes":{"friendly_name":"Robot Vacuum","supported_features":12316}}
+	{"entity_id":"vacuum.robot","state":"docked","attributes":{"friendly_name":"Robot Vacuum","supported_features":12316}},
+	{"entity_id":"fan.bedroom","state":"on","attributes":{"friendly_name":"Bedroom Fan","percentage":40,"percentage_step":10,"supported_features":1}}
 ]`
 
 func demoRegistry() *ha.Registry {
@@ -62,7 +63,7 @@ func demoRegistry() *ha.Registry {
 			"climate.bedroom": {Device: "ac"}, "light.lamp": {Device: "lamp"}, "switch.heater": {Device: "plug"},
 			"sensor.thermo_temperature": {Device: "thermo", Precision: 1, HasPrecision: true},
 			"sensor.thermo_humidity":    {Device: "thermo"}, "sensor.thermo_battery": {Device: "thermo", Hidden: true},
-			"binary_sensor.window": {Device: "window"}, "vacuum.robot": {Device: "vacuum"},
+			"binary_sensor.window": {Device: "window"}, "vacuum.robot": {Device: "vacuum"}, "fan.bedroom": {Device: "fan"},
 			"climate.living_room": {Area: "living_room"}, "light.ceiling": {Area: "living_room"},
 			"cover.curtain": {Area: "living_room"}, "media_player.tv": {Area: "living_room"},
 			"lock.front_door": {Area: "living_room"},
@@ -70,7 +71,7 @@ func demoRegistry() *ha.Registry {
 		Devices: map[string]ha.Device{
 			"ac": {Name: "Bedroom AC", Area: "bedroom"}, "lamp": {Name: "Bedroom Lamp", Area: "bedroom"},
 			"plug": {Name: "Bedroom Plug", Area: "bedroom"}, "thermo": {Name: "Bedroom Thermometer", Area: "bedroom"},
-			"window": {Name: "Bedroom Window", Area: "bedroom"}, "vacuum": {Name: "Robot Vacuum"},
+			"window": {Name: "Bedroom Window", Area: "bedroom"}, "vacuum": {Name: "Robot Vacuum"}, "fan": {Name: "Bedroom Fan", Area: "bedroom"},
 		},
 		Areas: []ha.Area{{ID: "living_room", Name: "Living Room"}, {ID: "bedroom", Name: "Bedroom"}},
 	}
@@ -294,7 +295,7 @@ func TestTileActions(t *testing.T) {
 	if err := tt.Click("Front Door"); err != nil {
 		t.Fatal(err)
 	}
-	if a.device != "lock.front_door" || !tt.HasText(locales.Controls()) {
+	if a.device != "lock.front_door" || !tt.HasText(locales.ActionLock()) {
 		t.Fatalf("lock page: %q %v", a.device, tt.Texts())
 	}
 	if err := tt.Click(locales.ActionUnlock()); err != nil {
@@ -323,7 +324,8 @@ func TestTileActions(t *testing.T) {
 }
 
 // A device's page sends the level its slider sets once the slider rests,
-// showing it meanwhile, and a sensor's page lists its readings.
+// showing it meanwhile, a sensor's page shows its readings and a light's
+// switches from its power button.
 func TestDevicePage(t *testing.T) {
 	var mu sync.Mutex
 	var bodies []map[string]any
@@ -346,7 +348,7 @@ func TestDevicePage(t *testing.T) {
 	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range []string{"Living Room", locales.LevelPosition(), "60%", locales.ActionOpen(), locales.ActionStop(), locales.ActionClose()} {
+	for _, s := range []string{"Living Room", locales.LevelPosition(), "60", locales.ActionOpen(), locales.ActionStop(), locales.ActionClose()} {
 		if !tt.HasText(s) {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
@@ -356,7 +358,7 @@ func TestDevicePage(t *testing.T) {
 	}
 	focus(t, tt, locales.LevelPosition())
 	tt.Key(0, ui.KeyEnd)
-	if _, ok := tt.Find("100%"); !ok {
+	if _, ok := tt.Find("100"); !ok {
 		t.Fatalf("level not shown: %v", tt.Texts())
 	}
 	returned(t, posted) // The slider rests.
@@ -369,7 +371,7 @@ func TestDevicePage(t *testing.T) {
 	// Until Home Assistant reports it, the slider keeps the level set.
 	a.applyList(a.client, a.edits.Load(), parseStates(t, demoStates), nil, "", nil)
 	tt.Frame()
-	if _, ok := tt.Find("100%"); !ok {
+	if _, ok := tt.Find("100"); !ok {
 		t.Fatalf("a read undid the level: %v", tt.Texts())
 	}
 
@@ -377,10 +379,33 @@ func TestDevicePage(t *testing.T) {
 	if err := tt.Click("Thermometer"); err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range []string{locales.Readings(), "Temperature", "24.3 °C", "Humidity", "45%"} {
+	for _, s := range []string{"Temperature", "24.3", "°C", "Humidity", "45%"} {
 		if _, ok := tt.Find(s); !ok {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
+	}
+	// A light switches from the power button of its page; a cover has none.
+	tt.Key(0, ui.KeyEscape)
+	if err := tt.Click(locales.DeviceDetails("Ceiling Light")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click(locales.QuickSwitch("Ceiling Light")); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(locales.StateOff()) {
+		t.Fatalf("power: %v", tt.Texts())
+	}
+	returned(t, posted)
+	tt.Key(0, ui.KeyEscape)
+	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := tt.Find(locales.QuickSwitch("Curtain")); ok {
+		t.Fatal("a cover has a power button")
+	}
+	tt.Key(0, ui.KeyEscape)
+	if err := tt.Click("Thermometer"); err != nil {
+		t.Fatal(err)
 	}
 	// The page closes once its device is gone.
 	a.applyList(a.client, a.edits.Load(), parseStates(t, demoStates)[:8], nil, "", nil)
@@ -402,18 +427,18 @@ func TestListRead(t *testing.T) {
 	a.edits.Add(1)
 	a.applyList(client, edits, read, nil, "", nil)
 	cl := ha.ParseClimate(read[0])
-	if a.climate.Target != 20 || a.shown(cl).Target != 20 || a.tileCount() != 11 {
+	if a.climate.Target != 20 || a.shown(cl).Target != 20 || a.tileCount() != 12 {
 		t.Fatalf("stale read replaced a local change: %v, %d tiles", a.climate.Target, a.tileCount())
 	}
 	a.applyList(client, a.edits.Load(), read[1:], nil, "", nil)
-	if a.hasClimate || a.detail || a.tileCount() != 10 || !a.listing || a.config.Entity != "" || a.entity != "" {
+	if a.hasClimate || a.detail || a.tileCount() != 11 || !a.listing || a.config.Entity != "" || a.entity != "" {
 		t.Fatalf("gone device: %v %v %v %q", a.hasClimate, a.detail, a.listing, a.config.Entity)
 	}
 	if saved, err := loadConfig(a.path); err != nil || saved.Entity != "" {
 		t.Fatalf("saved %+v %v", saved, err)
 	}
 	a.applyList(ha.NewClient("http://ha.test", "old"), a.edits.Load(), read, nil, "", nil)
-	if a.tileCount() != 10 {
+	if a.tileCount() != 11 {
 		t.Fatal("read of another connection shown")
 	}
 	// The registries last read keep arranging the tiles.
@@ -689,7 +714,8 @@ func TestSnapshot(t *testing.T) {
 	a.climate.Mode = "heat"
 	a.climate.Preset = "sleep"
 	write("panel-heat.png")
-	for _, id := range []string{"light.ceiling", "cover.curtain", "media_player.tv", "sensor.thermo_temperature", "lock.front_door"} {
+	for _, id := range []string{"light.ceiling", "light.lamp", "cover.curtain", "media_player.tv", "sensor.thermo_temperature",
+		"binary_sensor.window", "lock.front_door", "switch.heater", "fan.bedroom", "vacuum.robot"} {
 		a.openDevice(id)
 		write(strings.ReplaceAll(id, ".", "-") + ".png")
 	}

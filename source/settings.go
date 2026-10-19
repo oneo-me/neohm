@@ -67,8 +67,12 @@ func (a *application) languageSelect(c *ui.Context) {
 	}
 }
 
-// settingsGroup shows related settings on a card under title, as a
-// device's page shows its parts.
+// card is a rounded surface holding one part of Settings.
+func card(c *ui.Context) ui.Element {
+	return ui.Column(c).FillWidth().Radius(20).Background(tileFace).Border(1, tileEdge)
+}
+
+// settingsGroup shows related settings on a card under title.
 func settingsGroup(c *ui.Context, title string, build func()) {
 	ui.Column(c).FillWidth().Gap(10).Padding(0, 0, 6).Children(func() {
 		areaHeading(c, title)

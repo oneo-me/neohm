@@ -234,15 +234,7 @@ func (a *application) climatePage(c *ui.Context, radius float32) {
 func (a *application) climateHeader(c *ui.Context) {
 	cl := a.climate
 	a.titledHeader(c, cl.Name, func() {
-		problem := a.errorDisplay()
-		switch {
-		case problem != "":
-		case !a.online:
-			problem = locales.Offline()
-		case !cl.Available():
-			problem = locales.Unavailable()
-		}
-		if problem != "" {
+		if problem := a.problem(cl.Available()); problem != "" {
 			headerSubtitle(c, problem, danger)
 			return
 		}
@@ -262,26 +254,11 @@ func (a *application) climateHeader(c *ui.Context) {
 // color while it is on.
 func (a *application) powerButton(c *ui.Context) {
 	cl := a.climate
-	on := cl.On()
-	glow := float32(0)
-	if on {
-		glow = 1
+	tint := accent
+	if cl.On() {
+		tint = modeColor(cl.Mode)
 	}
-	power := ui.ButtonBase(c).Size(44, 44).Radius(22).Shrink(0).Label(locales.Power()).Checked(on).Disabled(!cl.Available())
-	glow = power.Animate("glow", glow, 220*time.Millisecond)
-	tint := modeColor(cl.Mode)
-	if !on {
-		tint = accent
-	}
-	face := ui.RGBA(255, 255, 255, 0.08).Mix(tint, glow)
-	if power.Pressed() {
-		face = face.Mix(panelBottom, 0.2)
-	} else if power.Hovered() {
-		face = face.Mix(ink, 0.08)
-	}
-	power.Background(face).Shadow(0, 4, 18, 0, tint.Alpha(0.55*glow)).Center()
-	power.Children(func() { components.Icon(c, lucide.Power).Size(21, 21).TextColor(ink) })
-	if power.Clicked() {
+	if powerButton(c, locales.Power(), cl.On(), !cl.Available(), tint).Clicked() {
 		a.togglePower()
 	}
 }
@@ -404,153 +381,29 @@ func (a *application) temperatureRow(c *ui.Context) {
 
 func (a *application) sliderRow(c *ui.Context) {
 	cl := a.climate
-	step := cl.Step
-	ui.Row(c).FillWidth().AlignItems(ui.Start).Gap(12).Children(func() {
-		roundButton(c, lucide.Minus, locales.Lower(), cl.Target <= cl.Min, func() { a.setTarget(cl.Target - step) })
-		ui.Column(c).Grow(1).Basis(0).Gap(8).Children(func() {
-			a.temperatureSlider(c)
-			ui.Row(c).FillWidth().PaddingX(10).Children(func() {
-				components.Text(c, formatTemp(cl.Min)+"°").FontSize(13).TextColor(inkMuted)
-				ui.Spacer(c)
-				components.Text(c, formatTemp(cl.Max)+"°").FontSize(13).TextColor(inkMuted)
-			})
-		})
-		roundButton(c, lucide.Plus, locales.Raise(), cl.Target >= cl.Max, func() { a.setTarget(cl.Target + step) })
-	})
-}
-
-// roundButton is a circular icon button beside the slider.
-func roundButton(c *ui.Context, icon func() *ui.SVG, label string, disabled bool, click func()) {
-	if circleButton(c, icon, label, 44, disabled).Margin(6, 0, 0, 0).Clicked() {
-		click()
-	}
-}
-
-// circleButton is a circular icon button of size DIPs across.
-func circleButton(c *ui.Context, icon func() *ui.SVG, label string, size float32, disabled bool) ui.Element {
-	b := ui.ButtonBase(c).Size(size, size).Radius(size / 2).Shrink(0).Label(label).Disabled(disabled).Center()
-	face := ui.RGBA(255, 255, 255, 0.06)
-	switch {
-	case disabled:
-	case b.Pressed():
-		face = ui.RGBA(255, 255, 255, 0.14)
-	case b.Hovered():
-		face = ui.RGBA(255, 255, 255, 0.1)
-	}
-	b.Background(face).Border(1, tileEdge)
-	glyph := min(size/2, 18)
-	b.Children(func() { components.Icon(c, icon).Size(glyph, glyph).TextColor(ink) })
-	if disabled {
-		b.Opacity(0.4)
-	}
-	components.Tooltip(c, b, label)
-	return b
-}
-
-// temperatureSlider is a dark track with ticks and a white thumb.
-func (a *application) temperatureSlider(c *ui.Context) {
-	cl := a.climate
-	const height, inset = 56, 4
-	thumb := float32(height - 2*inset)
-	value := cl.Target
-	s := ui.SliderBase(c, &value, cl.Min, cl.Max).Step(cl.Step).Label(locales.Target()).
-		FillWidth().Height(height).PaddingX(inset + thumb/2).FocusRing(false)
-	if s.Changed() {
-		a.setTarget(value)
-	}
-	_, _, held := s.Dragged()
-	grow := s.Animate("held", map[bool]float32{false: 0, true: 1}[held], 150*time.Millisecond)
-	focus := s.FocusVisible()
-	fraction := float32(0)
-	if cl.Max > cl.Min {
-		fraction = float32((value - cl.Min) / (cl.Max - cl.Min))
-	}
-	ticks := 0
-	if cl.Step > 0 {
-		ticks = int(math.Round((cl.Max - cl.Min) / cl.Step))
-	}
-	for ticks > 28 {
-		ticks /= 2
-	}
-	s.Draw(func(p *ui.Painter, r ui.Rect) {
-		p.Fill(r, ui.RGBA(0, 0, 0, 0.42), 18)
-		p.Stroke(r, ui.RGBA(255, 255, 255, 0.05), 18, 1)
-		left, width := r.X+inset+thumb/2, r.W-2*inset-thumb
-		x := left + width*fraction
-		for i := 0; i <= ticks && ticks > 0; i++ {
-			tx := left + width*float32(i)/float32(ticks)
-			if tx < x+thumb/2+4 {
-				continue
-			}
-			h := float32(8)
-			if i%5 == 0 {
-				h = 12
-			}
-			p.Fill(ui.Rect{X: tx - 0.75, Y: r.Y + r.H/2 - h/2, W: 1.5, H: h}, ui.RGBA(255, 255, 255, 0.22), 0.75)
-		}
-		size := thumb * (1 + 0.06*grow)
-		k := ui.Rect{X: x - size/2, Y: r.Y + r.H/2 - size/2, W: size, H: size}
-		p.Shadow(k, 15, 0, 0, 14, 1, accent.Alpha(0.55))
-		p.Fill(ui.Rect{X: k.X - 3, Y: k.Y - 3, W: k.W + 6, H: k.H + 6}, accent.Alpha(0.9), 17)
-		p.Fill(k, ui.RGB(255, 255, 255), 14)
-		if focus {
-			p.FocusRing(ui.Rect{X: k.X - 3, Y: k.Y - 3, W: k.W + 6, H: k.H + 6}, [4]float32{17, 17, 17, 17})
-		}
+	sliderRow(c, slider{
+		Value: cl.Target, Min: cl.Min, Max: cl.Max, Step: cl.Step,
+		Label: locales.Target(), Lower: locales.Lower(), Raise: locales.Raise(),
+		Color: modeColor(cl.Mode), Disabled: !cl.Available(),
+		Bound: func(t float64) string { return formatTemp(t) + "°" },
+		Set:   a.setTarget,
 	})
 }
 
 // tiles are the four controls along the bottom.
 func (a *application) tiles(c *ui.Context) {
 	cl := a.climate
-	ui.Row(c).FillWidth().Gap(8).Margin(18, 0, 0, 0).Children(func() {
-		mode := cl.Mode
-		a.menuTile(c, modeIcon(mode), locales.Mode(), optionText("mode", mode), "mode", mode, cl.ActiveModes(), a.setMode)
-		a.menuTile(c, lucide.Fan, locales.FanSpeed(), optionText("fan", cl.FanMode), "fan", cl.FanMode, cl.FanModes, a.setFan)
-		a.sleepTile(c, cl)
-		a.menuTile(c, lucide.Wind, locales.Airflow(), optionText("swing", cl.SwingMode), "swing", cl.SwingMode, cl.SwingModes, a.setSwing)
-	})
-}
-
-func tileBase(c *ui.Context, label string, disabled bool) ui.Element {
-	t := ui.ButtonBase(c).Grow(1).Basis(0).Height(104).Radius(20).Padding(12, 8, 12, 10).
-		Column().AlignItems(ui.Start).Label(label).Disabled(disabled)
-	face := tileFace
-	switch {
-	case disabled:
-	case t.Pressed():
-		face = ui.RGBA(255, 255, 255, 0.12)
-	case t.Hovered():
-		face = tileHover
-	}
-	t.Background(face).Border(1, tileEdge)
-	if disabled {
-		t.Opacity(0.45)
-	}
-	return t
-}
-
-func tileText(c *ui.Context, title, value string) {
-	components.Text(c, title).FontSize(12).TextColor(inkMuted).SingleLine().Ellipsis("…")
-	components.Text(c, value).FontSize(12).Bold().TextColor(ink).SingleLine().Ellipsis("…").Margin(2, 0, 0, 0)
-}
-
-// menuTile opens a menu of a Home Assistant option list.
-func (a *application) menuTile(c *ui.Context, icon func() *ui.SVG, title, value, kind, current string, options []string, choose func(string)) {
-	t := tileBase(c, title+": "+value, len(options) == 0 || !a.climate.Available())
-	t.Children(func() {
-		ui.Row(c).FillWidth().Children(func() {
-			components.Icon(c, icon).Size(26, 26).TextColor(accent.Mix(ink, 0.15))
-			ui.Spacer(c)
-			components.Icon(c, lucide.ChevronDown).Size(15, 15).TextColor(inkMuted)
-		})
-		ui.Spacer(c)
-		tileText(c, title, value)
-	})
-	t.Menu(func(m *ui.Menu) {
-		for _, o := range options {
-			if m.Item(optionText(kind, o)).Checked(o == current).Chosen() {
-				choose(o)
-			}
+	off := !cl.Available()
+	tileRows(c, 4, func(i int) {
+		switch i {
+		case 0:
+			menuTile(c, modeIcon(cl.Mode), accent, locales.Mode(), optionText("mode", cl.Mode), "mode", cl.Mode, cl.ActiveModes(), off, a.setMode)
+		case 1:
+			menuTile(c, lucide.Fan, accent, locales.FanSpeed(), optionText("fan", cl.FanMode), "fan", cl.FanMode, cl.FanModes, off, a.setFan)
+		case 2:
+			a.sleepTile(c, cl)
+		case 3:
+			menuTile(c, lucide.Wind, accent, locales.Airflow(), optionText("swing", cl.SwingMode), "swing", cl.SwingMode, cl.SwingModes, off, a.setSwing)
 		}
 	})
 }
@@ -566,18 +419,11 @@ func (a *application) sleepTile(c *ui.Context, cl ha.Climate) {
 		ui.Row(c).FillWidth().Children(func() {
 			color := inkMuted
 			if on {
-				color = accent.Mix(ink, 0.15)
+				color = accent
 			}
-			components.Icon(c, lucide.Moon).Size(26, 26).TextColor(color)
+			tileIcon(c, lucide.Moon, color)
 			ui.Spacer(c)
-			dot := ui.RGBA(255, 255, 255, 0.3)
-			if on {
-				dot = accent
-			}
-			d := ui.Box(c).Size(8, 8).Radius(4).Background(dot).Margin(4, 0, 0, 0).MarginEnd(3)
-			if on {
-				d.Shadow(0, 0, 8, 0, accent.Alpha(0.8))
-			}
+			tileDot(c, on, accent)
 		})
 		ui.Spacer(c)
 		tileText(c, locales.Sleep(), value)

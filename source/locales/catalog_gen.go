@@ -486,24 +486,34 @@ func (msgs Messages) DeviceDetails(name string) string {
 	return Catalog.Format(msgs.locale, "deviceDetails", map[string]any{"name": name})
 }
 
-// Controls says "Controls"
+// Decrease says "Decrease {name}"
 // in the language the app shows.
-func Controls() string { return In(i18n.Locale()).Controls() }
+func Decrease(name string) string { return In(i18n.Locale()).Decrease(name) }
 
-// Controls says "Controls"
+// Decrease says "Decrease {name}"
 // in the language of msgs.
-func (msgs Messages) Controls() string {
-	return Catalog.Format(msgs.locale, "controls", nil)
+func (msgs Messages) Decrease(name string) string {
+	return Catalog.Format(msgs.locale, "decrease", map[string]any{"name": name})
 }
 
-// Readings says "Readings"
+// Increase says "Increase {name}"
 // in the language the app shows.
-func Readings() string { return In(i18n.Locale()).Readings() }
+func Increase(name string) string { return In(i18n.Locale()).Increase(name) }
 
-// Readings says "Readings"
+// Increase says "Increase {name}"
 // in the language of msgs.
-func (msgs Messages) Readings() string {
-	return Catalog.Format(msgs.locale, "readings", nil)
+func (msgs Messages) Increase(name string) string {
+	return Catalog.Format(msgs.locale, "increase", map[string]any{"name": name})
+}
+
+// Option says "Option"
+// in the language the app shows.
+func Option() string { return In(i18n.Locale()).Option() }
+
+// Option says "Option"
+// in the language of msgs.
+func (msgs Messages) Option() string {
+	return Catalog.Format(msgs.locale, "option", nil)
 }
 
 // LevelBrightness says "Brightness"

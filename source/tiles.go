@@ -252,25 +252,37 @@ var binaryText = map[string][2]string{
 }
 
 // readingText is what sensor s reads: a binary sensor's state as its device
-// class names it, else the value with its unit, rounded as Home Assistant
-// says.
+// class names it, else the value with its unit.
 func (a *application) readingText(s ha.State) string {
+	value, unit := a.readingParts(s)
+	switch unit {
+	case "":
+		return value
+	case "%", "°":
+		return value + unit
+	}
+	return value + " " + unit
+}
+
+// readingParts is what sensor s reads, as readingText says it, and the unit
+// apart, its value rounded as Home Assistant says.
+func (a *application) readingParts(s ha.State) (value, unit string) {
 	switch {
 	case !s.Available():
-		return locales.Unavailable()
+		return locales.Unavailable(), ""
 	case s.State == "unknown":
-		return "—"
+		return "—", ""
 	case s.Domain() == "binary_sensor":
 		keys, ok := binaryText[s.Str("device_class")]
 		if !ok {
 			keys = [2]string{"state_off", "state_on"}
 		}
 		if s.State == "on" {
-			return message(keys[1])
+			return message(keys[1]), ""
 		}
-		return message(keys[0])
+		return message(keys[0]), ""
 	}
-	value := s.State
+	value = s.State
 	if f, err := strconv.ParseFloat(value, 64); err == nil {
 		if p, ok := a.registry.Precision(s.EntityID); ok {
 			value = strconv.FormatFloat(f, 'f', p, 64)
@@ -278,14 +290,7 @@ func (a *application) readingText(s ha.State) string {
 			value = strconv.FormatFloat(math.Round(f*100)/100, 'f', -1, 64)
 		}
 	}
-	switch unit := s.Str("unit_of_measurement"); unit {
-	case "":
-		return value
-	case "%", "°":
-		return value + unit
-	default:
-		return value + " " + unit
-	}
+	return value, s.Str("unit_of_measurement")
 }
 
 // stateText names the state of entity s, as "Open", in the app's language;
