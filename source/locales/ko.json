@@ -1,7 +1,6 @@
 {
   "@@locale": "ko",
   "title": "NeoHM",
-  "devices": "기기",
   "noDevices": "기기 없음",
   "noDevicesBody": "여기에 표시할 Home Assistant 기기가 없습니다.",
   "room": "실내",
@@ -46,6 +45,7 @@
   "swing_both": "상하좌우",
   "otherDevices": "기타",
   "quickSwitch": "{name} 켜기/끄기",
+  "deviceDetails": "{name} 세부 정보",
   "controls": "제어",
   "readings": "측정값",
   "level_brightness": "밝기",

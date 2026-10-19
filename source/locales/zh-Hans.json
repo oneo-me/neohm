@@ -1,7 +1,6 @@
 {
   "@@locale": "zh-Hans",
   "title": "NeoHM",
-  "devices": "设备",
   "noDevices": "没有设备",
   "noDevicesBody": "Home Assistant 中没有可以在这里显示的设备。",
   "room": "室内",
@@ -46,6 +45,7 @@
   "swing_both": "全向",
   "otherDevices": "其他",
   "quickSwitch": "开关{name}",
+  "deviceDetails": "{name}详情",
   "controls": "控制",
   "readings": "读数",
   "level_brightness": "亮度",

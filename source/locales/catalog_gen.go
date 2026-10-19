@@ -46,16 +46,6 @@ func (msgs Messages) Title() string {
 	return Catalog.Format(msgs.locale, "title", nil)
 }
 
-// Devices says "Devices"
-// in the language the app shows.
-func Devices() string { return In(i18n.Locale()).Devices() }
-
-// Devices says "Devices"
-// in the language of msgs.
-func (msgs Messages) Devices() string {
-	return Catalog.Format(msgs.locale, "devices", nil)
-}
-
 // NoDevices says "No devices"
 // in the language the app shows.
 func NoDevices() string { return In(i18n.Locale()).NoDevices() }
@@ -494,6 +484,16 @@ func QuickSwitch(name string) string { return In(i18n.Locale()).QuickSwitch(name
 // in the language of msgs.
 func (msgs Messages) QuickSwitch(name string) string {
 	return Catalog.Format(msgs.locale, "quickSwitch", map[string]any{"name": name})
+}
+
+// DeviceDetails says "Show details of {name}"
+// in the language the app shows.
+func DeviceDetails(name string) string { return In(i18n.Locale()).DeviceDetails(name) }
+
+// DeviceDetails says "Show details of {name}"
+// in the language of msgs.
+func (msgs Messages) DeviceDetails(name string) string {
+	return Catalog.Format(msgs.locale, "deviceDetails", map[string]any{"name": name})
 }
 
 // Controls says "Controls"

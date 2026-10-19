@@ -193,7 +193,7 @@ func TestPanelControls(t *testing.T) {
 	if err := tt.Click(locales.Back()); err != nil {
 		t.Fatal(err)
 	}
-	if a.detail || !tt.HasText(locales.Devices()) {
+	if a.detail || !tt.HasText(locales.Title()) {
 		t.Fatalf("back: %v", tt.Texts())
 	}
 }
@@ -206,7 +206,7 @@ func TestHome(t *testing.T) {
 	a.climate.Target = 21 // A local change the read lacks.
 	tt := ui.NewTester(a.panelView, panelWidth, 900)
 	for _, s := range []string{
-		locales.Devices(), "Living Room", "Bedroom", locales.OtherDevices(),
+		locales.Title(), "Living Room", "Bedroom", locales.OtherDevices(),
 		"Cabinet AC", locales.ModeOff(), "AC", locales.ModeCool() + " · 21°",
 		"Ceiling Light", locales.StateOn() + " · 80%", "Curtain", locales.StateOpen() + " · 60%",
 		"TV", locales.StatePlaying() + " · Interstellar", "Front Door", locales.StateLocked(),
@@ -216,7 +216,7 @@ func TestHome(t *testing.T) {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
 	}
-	if err := tt.Click("Cabinet AC"); err != nil {
+	if err := tt.Click(locales.DeviceDetails("Cabinet AC")); err != nil {
 		t.Fatal(err)
 	}
 	if !a.detail || a.climate.EntityID != "climate.living_room" || a.entity != "climate.living_room" {
@@ -234,8 +234,8 @@ func TestHome(t *testing.T) {
 	}
 }
 
-// A tile's quick switch switches its device, and the device's page offers
-// what else it does; either shows the state an action leads to until a fresh
+// A click on a tile switches its device, and the device's page, opened from
+// the tile's corner, offers what else it does; either shows the state an action leads to until a fresh
 // read reports it.
 func TestTileActions(t *testing.T) {
 	url, calls := serviceCalls(t)
@@ -283,9 +283,13 @@ func TestTileActions(t *testing.T) {
 	}
 	returned(t, posted)
 
-	// A lock has no quick switch: its page offers what it does.
+	// A lock does not switch: its tile opens its page, which offers what it
+	// does.
 	if _, ok := tt.Find(locales.QuickSwitch("Front Door")); ok {
-		t.Fatal("a lock has a quick switch")
+		t.Fatal("a lock switches from its tile")
+	}
+	if _, ok := tt.Find(locales.DeviceDetails("Front Door")); ok {
+		t.Fatal("a lock's tile has a details button")
 	}
 	if err := tt.Click("Front Door"); err != nil {
 		t.Fatal(err)
@@ -339,7 +343,7 @@ func TestDevicePage(t *testing.T) {
 	a.client = ha.NewClient(srv.URL, "token")
 	a.panelOpen.Store(true)
 	tt := ui.NewTester(a.panelView, panelWidth, 900)
-	if err := tt.Click("Curtain"); err != nil {
+	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
 		t.Fatal(err)
 	}
 	for _, s := range []string{"Living Room", locales.LevelPosition(), "60%", locales.ActionOpen(), locales.ActionStop(), locales.ActionClose()} {

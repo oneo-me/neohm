@@ -18,8 +18,8 @@ const tileHeight = 112
 // homePage is where the panel opens: Home Assistant's devices as tiles, by
 // area. radius rounds the corners the tiles scroll within.
 func (a *application) homePage(c *ui.Context, radius float32) {
-	pageFrame(c, radius, locales.Devices(), func() {
-		pageHeader(c, locales.Devices(), func() {
+	pageFrame(c, radius, locales.Title(), func() {
+		pageHeader(c, locales.Title(), func() {
 			if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
 				a.showSettings()
 			}
@@ -89,15 +89,23 @@ func (a *application) setupView(c *ui.Context, top float32) {
 }
 
 // tile shows one device: what it is, its name and its main state, lit in
-// its color while it is on, open or at work. A click opens the device's
-// page, an air conditioner's controls; a device that switches on and off,
-// or opens and closes, has a quick switch in the corner.
+// its color while it is on, open or at work. A click switches a device that
+// switches on and off, or opens and closes, whose page then opens from the
+// button in the corner; it opens the page of any other, an air
+// conditioner's controls.
 func (a *application) tile(c *ui.Context, t ha.Tile, area string) {
 	s := a.held(t.Entity)
 	v := a.tileView(t, s)
 	name := tileName(t.Name, area)
+	_, switches := s.Toggle()
 	ui.Box(c.Key(s.EntityID)).Height(tileHeight).Children(func() {
-		e := ui.ButtonBase(c).Fill().Radius(20).Padding(12).Column().AlignItems(ui.Start).Label(name + ", " + v.status)
+		e := ui.ButtonBase(c).Fill().Radius(20).Padding(12).Column().AlignItems(ui.Start)
+		if switches {
+			e.Label(locales.QuickSwitch(name)).Disabled(!s.Available())
+			e.Role(ui.RoleSwitch).Checked(v.lit).Value(v.status)
+		} else {
+			e.Label(name + ", " + v.status)
+		}
 		level := float32(0)
 		if v.lit {
 			level = 1
@@ -125,10 +133,18 @@ func (a *application) tile(c *ui.Context, t ha.Tile, area string) {
 			components.Text(c, v.status).FontSize(12).TextColor(inkMuted.Mix(v.color.Mix(ink, 0.4), level)).
 				SingleLine().Ellipsis("…").Margin(2, 0, 0, 0)
 		})
-		if e.Clicked() {
+		switch {
+		case !e.Clicked():
+		case switches:
+			a.toggle(s)
+		default:
 			a.open(t)
 		}
-		a.quickSwitch(c, s, v, name).Absolute().Top(12).Right(12)
+		if switches {
+			if circleButton(c, lucide.ChevronRight, locales.DeviceDetails(name), 28, false).Absolute().Top(16).Right(12).Clicked() {
+				a.open(t)
+			}
+		}
 	})
 }
 

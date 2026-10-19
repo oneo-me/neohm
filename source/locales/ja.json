@@ -1,7 +1,6 @@
 {
   "@@locale": "ja",
   "title": "NeoHM",
-  "devices": "デバイス",
   "noDevices": "デバイスがありません",
   "noDevicesBody": "ここに表示できるデバイスが Home Assistant にありません。",
   "room": "室温",
@@ -46,6 +45,7 @@
   "swing_both": "上下左右",
   "otherDevices": "その他",
   "quickSwitch": "{name}のオン/オフ",
+  "deviceDetails": "{name}の詳細",
   "controls": "操作",
   "readings": "測定値",
   "level_brightness": "明るさ",

@@ -414,7 +414,8 @@ func circleButton(c *ui.Context, icon func() *ui.SVG, label string, size float32
 		face = ui.RGBA(255, 255, 255, 0.1)
 	}
 	b.Background(face).Border(1, tileEdge)
-	b.Children(func() { components.Icon(c, icon).Size(18, 18).TextColor(ink) })
+	glyph := min(size/2, 18)
+	b.Children(func() { components.Icon(c, icon).Size(glyph, glyph).TextColor(ink) })
 	if disabled {
 		b.Opacity(0.4)
 	}

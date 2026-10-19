@@ -1,7 +1,6 @@
 {
   "@@locale": "en",
   "title": "NeoHM",
-  "devices": "Devices",
   "noDevices": "No devices",
   "noDevicesBody": "Home Assistant has no devices to show here.",
   "room": "Room",
@@ -46,6 +45,7 @@
   "swing_both": "Both",
   "otherDevices": "Other",
   "quickSwitch": "Turn {name} on or off",
+  "deviceDetails": "Show details of {name}",
   "controls": "Controls",
   "readings": "Readings",
   "level_brightness": "Brightness",

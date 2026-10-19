@@ -10,7 +10,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 | `source/app.go` | Application state, the poller, merging reads with local changes and sending service calls. |
 | `source/tray.go` | The menu bar icon and menus, the panel's lifecycle and navigation, and the window used without a menu bar icon. |
 | `source/panel.go` | The panel's frame, theme and palette, the frame every page shares, and the controls of one air conditioner. |
-| `source/home.go` | Home's tiles by area with their quick switches, and what stands in for them before Home Assistant answers. |
+| `source/home.go` | Home's tiles by area, which switch their devices and open their pages, and what stands in for them before Home Assistant answers. |
 | `source/tiles.go` | How each kind of device shows on its tile and page. |
 | `source/device.go` | A device's page: its level, its other actions and its readings. |
 | `source/settings.go` | The Settings page. |
@@ -41,7 +41,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 
 **Arranging Home.** Which device and area each entity belongs to, and what Home Assistant's dashboards hide, come only from the registries of its WebSocket API. The poller reads them in one short session per connection, and again every five minutes. `ha.Arrange` then shows each device's main controls, or one tile of a sensor device's readings, by area.
 
-**Control.** A tile's quick switch calls one service of its entity's domain at once. A device's page calls the others, and sends a level once its slider rests. An air conditioner's controls call `climate` services on the device shown. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
+**Control.** A click on a tile that switches calls one service of its entity's domain at once, as the switch in a device's page header does; the tile's arrow, or a click on any other tile, opens the device's page. A device's page calls the others, and sends a level once its slider rests. An air conditioner's controls call `climate` services on the device shown. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
 
 ## Data and state
 
