@@ -24,7 +24,7 @@ Left-click the menu bar icon to open the panel. It shows the devices as tiles by
 
 NeoHM needs macOS 13 or later and a Home Assistant instance the Mac can reach.
 
-1. Download the `.dmg` of the latest version from [Releases](https://github.com/oneo-me/ha-go/releases/latest) and drag NeoHM to Applications.
+1. Download the `.dmg` of the latest version from [Releases](https://github.com/oneo-me/neohm/releases/latest) and drag NeoHM to Applications.
 2. NeoHM is not notarized by Apple, so macOS blocks its first launch. Allow it once in Terminal:
 
    ```sh
@@ -41,6 +41,16 @@ Later versions install from the panel: click the arrow button left of the gear t
 4. Close Settings to see your devices. Click a tile to switch its device, or its arrow to open the device's page.
 
 The address, the token, the language chosen and the air conditioner opened last are saved in `~/.neohm/config.json`, which only your user account can read.
+
+## Contributing
+
+NeoHM has been tried on only a few kinds of devices, so testing yours is the most useful help. Install it, open each of your devices, and [open an issue](https://github.com/oneo-me/neohm/issues) for any that shows or behaves wrongly, or for kinds that are missing. Include:
+
+1. The kind of device, its brand and model, and the Home Assistant integration it uses.
+2. Its entity's state and attributes, copied from **Developer tools → States** in Home Assistant.
+3. What you did, what you expected and what NeoHM showed, with a screenshot.
+
+Issues confirming that a kind of device works are welcome too. To change the code yourself, start with [Development](#development).
 
 ## Development
 

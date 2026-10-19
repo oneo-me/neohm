@@ -24,7 +24,7 @@ NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备
 
 NeoHM 需要 macOS 13 或更高版本，以及 Mac 能访问到的 Home Assistant。
 
-1. 从 [Releases](https://github.com/oneo-me/ha-go/releases/latest) 下载最新版本的 `.dmg`，把 NeoHM 拖到“应用程序”文件夹。
+1. 从 [Releases](https://github.com/oneo-me/neohm/releases/latest) 下载最新版本的 `.dmg`，把 NeoHM 拖到“应用程序”文件夹。
 2. NeoHM 没有经过 Apple 公证，macOS 会阻止它首次启动。在终端中允许一次：
 
    ```sh
@@ -41,6 +41,16 @@ NeoHM 需要 macOS 13 或更高版本，以及 Mac 能访问到的 Home Assistan
 4. 关闭设置即可看到你的设备。点击方块可以开关设备，点击它的箭头可以打开设备的页面。
 
 地址、令牌、所选语言和最近打开的空调保存在 `~/.neohm/config.json`，只有你的用户账户可以读取。
+
+## 参与开发
+
+NeoHM 只在少数几类设备上试用过，因此测试你的设备是最有用的帮助。安装后逐个打开你的设备，如果有设备显示或操作不正确，或者某类设备缺失，请[提交 Issue](https://github.com/oneo-me/neohm/issues)，并附上：
+
+1. 设备类型、品牌和型号，以及它使用的 Home Assistant 集成。
+2. 它的实体状态和属性，从 Home Assistant 的**开发者工具 → 状态**中复制。
+3. 你的操作、预期的结果和 NeoHM 实际显示的内容，并附上截图。
+
+也欢迎提交 Issue 告诉我们某类设备工作正常。如果想自己修改代码，请从[开发](#开发)开始。
 
 ## 开发
 
