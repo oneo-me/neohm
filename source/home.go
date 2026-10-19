@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/egoist/mygo/ui"
-	"github.com/oneo-me/ha-go/source/internal/ha"
-	"github.com/oneo-me/ha-go/source/locales"
+	"github.com/oneo-me/neohm/source/internal/ha"
+	"github.com/oneo-me/neohm/source/locales"
 	"github.com/oneo-me/onevra/source/components"
 	"github.com/oneo-me/onevra/source/icons/lucide"
 )

@@ -1,4 +1,4 @@
-module github.com/oneo-me/ha-go/source
+module github.com/oneo-me/neohm/source
 
 go 1.27.2
 

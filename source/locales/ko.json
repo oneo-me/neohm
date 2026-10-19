@@ -1,6 +1,6 @@
 {
   "@@locale": "ko",
-  "title": "HA 에어컨",
+  "title": "NeoHM",
   "devices": "기기",
   "noDevices": "기기 없음",
   "noDevicesBody": "여기에 표시할 Home Assistant 기기가 없습니다.",

@@ -1,6 +1,6 @@
-# HA Climate
+# NeoHM
 
-HA Climate is a macOS menu bar app that controls Home Assistant devices, built with Onevra components on MyGo. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
+NeoHM is a macOS menu bar app that controls Home Assistant devices, built with Onevra components on MyGo. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
 
 ## Principles
 

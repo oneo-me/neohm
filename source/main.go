@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/egoist/mygo"
-	"github.com/oneo-me/ha-go/source/locales"
+	"github.com/oneo-me/neohm/source/locales"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	dir := filepath.Join(home, ".ha-go")
+	dir := filepath.Join(home, ".neohm")
 	mygo.App.SetPath(mygo.PathUserData, dir)
 	a := newApplication(filepath.Join(dir, "config.json"))
 	a.config, err = loadConfig(a.path)

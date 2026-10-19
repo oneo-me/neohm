@@ -1,6 +1,6 @@
 {
   "@@locale": "zh-Hant",
-  "title": "HA 空調",
+  "title": "NeoHM",
   "devices": "裝置",
   "noDevices": "沒有裝置",
   "noDevicesBody": "Home Assistant 中沒有可以在這裡顯示的裝置。",

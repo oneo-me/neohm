@@ -1,6 +1,6 @@
 {
   "@@locale": "ja",
-  "title": "HA エアコン",
+  "title": "NeoHM",
   "devices": "デバイス",
   "noDevices": "デバイスがありません",
   "noDevicesBody": "ここに表示できるデバイスが Home Assistant にありません。",

@@ -1,13 +1,13 @@
 {
-  "name": "HA Climate",
-  "identifier": "me.oneo.ha-climate",
-  "version": "0.1.0",
+  "name": "NeoHM",
+  "identifier": "me.oneo.neohm",
+  "version": "0.2.0",
   "out": "../dist",
   "macos": {
     "minimumSystemVersion": "13.0",
     "infoPlist": {
       "LSUIElement": true,
-      "NSLocalNetworkUsageDescription": "HA Climate connects to Home Assistant on your local network."
+      "NSLocalNetworkUsageDescription": "NeoHM connects to Home Assistant on your local network."
     }
   },
   "i18n": {

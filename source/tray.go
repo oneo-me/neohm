@@ -10,7 +10,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
-	"github.com/oneo-me/ha-go/source/locales"
+	"github.com/oneo-me/neohm/source/locales"
 	"github.com/oneo-me/onevra/source/shells/plain"
 )
 

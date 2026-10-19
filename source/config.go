@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-// config holds the preferences saved in ~/.ha-go, the access token
+// config holds the preferences saved in ~/.neohm, the access token
 // included.
 type config struct {
 	Address string `json:"address"`

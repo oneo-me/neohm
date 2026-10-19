@@ -17,8 +17,8 @@ import (
 
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
-	"github.com/oneo-me/ha-go/source/internal/ha"
-	"github.com/oneo-me/ha-go/source/locales"
+	"github.com/oneo-me/neohm/source/internal/ha"
+	"github.com/oneo-me/neohm/source/locales"
 )
 
 func parseStates(t *testing.T, list string) []ha.State {

@@ -36,11 +36,11 @@ type Messages struct{ locale string }
 // source language.
 func In(locale string) Messages { return Messages{locale} }
 
-// Title says "HA Climate"
+// Title says "NeoHM"
 // in the language the app shows.
 func Title() string { return In(i18n.Locale()).Title() }
 
-// Title says "HA Climate"
+// Title says "NeoHM"
 // in the language of msgs.
 func (msgs Messages) Title() string {
 	return Catalog.Format(msgs.locale, "title", nil)

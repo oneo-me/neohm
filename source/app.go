@@ -13,8 +13,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
-	"github.com/oneo-me/ha-go/source/internal/ha"
-	"github.com/oneo-me/ha-go/source/locales"
+	"github.com/oneo-me/neohm/source/internal/ha"
+	"github.com/oneo-me/neohm/source/locales"
 	"github.com/oneo-me/onevra/source/shells/plain"
 )
 

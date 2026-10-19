@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "title": "HA Climate",
+  "title": "NeoHM",
   "devices": "Devices",
   "noDevices": "No devices",
   "noDevicesBody": "Home Assistant has no devices to show here.",

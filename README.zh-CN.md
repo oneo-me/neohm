@@ -1,8 +1,8 @@
-# HA Climate
+# NeoHM
 
 [English](README.md) | **简体中文**
 
-HA Climate 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备，并为空调提供完整的控制界面。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
+NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备，并为空调提供完整的控制界面。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
 
 左键点击菜单栏图标打开面板。面板按房间以方块显示设备，设备开启时方块会亮起。点击方块可以开关设备、从菜单中选择操作，或打开空调的控制界面。设置也在同一个面板中，从齿轮按钮打开。右键点击图标可以退出。
 
@@ -21,11 +21,11 @@ HA Climate 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的�
 ## 快速开始
 
 1. 在 Home Assistant 中打开个人资料页，创建一个**长期访问令牌**。
-2. 启动 HA Climate。完成 Home Assistant 配置之前，面板会直接打开设置；之后可以从面板的齿轮按钮或用 ⌘, 打开设置。
+2. 启动 NeoHM。完成 Home Assistant 配置之前，面板会直接打开设置；之后可以从面板的齿轮按钮或用 ⌘, 打开设置。
 3. 填写地址（例如 `http://homeassistant.local:8123`）和令牌，然后点击**连接**。
 4. 关闭设置即可看到你的设备，选择一台空调可以打开它的控制界面。
 
-地址、令牌和最近打开的空调保存在 `~/.ha-go/config.json`，只有你的用户账户可以读取。
+地址、令牌和最近打开的空调保存在 `~/.neohm/config.json`，只有你的用户账户可以读取。
 
 ## 开发
 
