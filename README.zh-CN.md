@@ -6,6 +6,13 @@ NeoHM 是一个 macOS 菜单栏应用，用来控制 Home Assistant 中的设备
 
 左键点击菜单栏图标打开面板。面板按房间以方块显示设备，设备开启时方块会亮起。点击方块可以开关设备，方块角上的箭头会打开设备的页面；不能开关的设备点击方块即打开它的页面。设置也在同一个面板中，从齿轮按钮打开。右键点击图标可以退出 NeoHM，面板打开时也可以按 ⌘Q 退出。
 
+<p align="center">
+  <img src="docs/screenshots/home.jpg" width="24%" alt="按房间显示的设备">
+  <img src="docs/screenshots/air-conditioner.jpg" width="24%" alt="空调的控制界面">
+  <img src="docs/screenshots/light.jpg" width="24%" alt="灯的页面">
+  <img src="docs/screenshots/cover.jpg" width="24%" alt="窗帘的页面">
+</p>
+
 ## 功能
 
 - 按房间以方块显示设备，每个方块显示设备的主要状态以及是否开启。
