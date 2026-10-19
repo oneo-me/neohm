@@ -11,7 +11,6 @@ Left-click the menu bar icon to open the panel. It shows the devices as tiles by
 - Show the devices as tiles grouped by room, each with its main state and whether it is on.
 - Switch lights, plugs, fans, covers and more from their tiles, and dim, color, move, play, lock or start a device from its page, with a light's colors and a cover's quarter positions a click away.
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, as far as it offers them.
-- Show the target temperature of the air conditioner opened last beside the menu bar icon.
 - Show the interface in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS or the language chosen in Settings.
 
 ## Install

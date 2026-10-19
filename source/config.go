@@ -15,7 +15,8 @@ import (
 type config struct {
 	Address string `json:"address"`
 	Token   string `json:"token"`
-	// Entity is the device opened last, which the menu bar title follows.
+	// Entity is the air conditioner opened last, which the panel shows
+	// in place of Home.
 	Entity string `json:"entity"`
 	// Language is the catalog the app shows, as "zh-Hans", or "" for the
 	// one that suits the system's languages best.

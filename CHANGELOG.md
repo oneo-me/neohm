@@ -8,7 +8,7 @@
 - Set a light's color from swatches of its whites and colors, or any color and white from a picker, and move a cover or valve to 0, 25, 50, 75 or 100% from stops below its slider.
 - Float each page's header over its content, blurred as it scrolls beneath.
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, with its room temperature, or why it cannot be controlled, under its name.
-- Show the target temperature of the air conditioner opened last beside the menu bar icon.
+- Keep the menu bar icon static, with nothing shown beside it.
 - Keep Settings inside the panel, opened from its gear button, with the language first and each group on a card.
 - Quit from the menu bar icon's right-click menu, which shows ⌘Q, or with ⌘Q in the panel.
 - Save the configuration, the access token included, in `~/.neohm`, readable only by the user.

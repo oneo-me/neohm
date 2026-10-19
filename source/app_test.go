@@ -149,8 +149,8 @@ func TestPanelControls(t *testing.T) {
 	if err := tt.Click(locales.Raise()); err != nil {
 		t.Fatal(err)
 	}
-	if a.climate.Target != 17 || a.trayTitle() != "17°" {
-		t.Fatalf("raise: %v %q", a.climate.Target, a.trayTitle())
+	if a.climate.Target != 17 {
+		t.Fatalf("raise: %v", a.climate.Target)
 	}
 	focus(t, tt, locales.Eco())
 	tt.Key(0, ui.KeySpace)
@@ -171,7 +171,7 @@ func TestPanelControls(t *testing.T) {
 	if err := tt.Click(locales.Power()); err != nil {
 		t.Fatal(err)
 	}
-	if a.climate.Mode != "off" || a.trayTitle() != "" {
+	if a.climate.Mode != "off" {
 		t.Fatalf("power off: %q", a.climate.Mode)
 	}
 	tt.Advance(time.Second)
@@ -200,8 +200,7 @@ func TestPanelControls(t *testing.T) {
 }
 
 // The panel opens on the devices as tiles, by area, each with its state; an
-// air conditioner opens its controls and is remembered for the menu bar
-// title.
+// air conditioner opens its controls and is remembered.
 func TestHome(t *testing.T) {
 	a := demoApp(t)
 	a.climate.Target = 21 // A local change the read lacks.
@@ -226,8 +225,8 @@ func TestHome(t *testing.T) {
 	if saved, err := loadConfig(a.path); err != nil || saved.Entity != "climate.living_room" {
 		t.Fatalf("saved %+v %v", saved, err)
 	}
-	if !tt.HasText(locales.Power()) || a.trayTitle() != "" {
-		t.Fatalf("detail: %v %q", tt.Texts(), a.trayTitle())
+	if !tt.HasText(locales.Power()) {
+		t.Fatalf("detail: %v", tt.Texts())
 	}
 	tt.Key(0, ui.KeyEscape)
 	if a.detail || !tt.HasText("Ceiling Light") {
@@ -273,7 +272,7 @@ func TestTileActions(t *testing.T) {
 	if err := tt.Click(locales.QuickSwitch("AC")); err != nil {
 		t.Fatal(err)
 	}
-	if a.climate.Mode != "off" || a.trayTitle() != "" {
+	if a.climate.Mode != "off" {
 		t.Fatalf("opened last: %q", a.climate.Mode)
 	}
 	if err := tt.Click(locales.QuickSwitch("Cabinet AC")); err != nil {

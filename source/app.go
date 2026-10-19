@@ -19,11 +19,10 @@ import (
 	"github.com/oneo-me/onevra/source/shells/plain"
 )
 
-// How often Home Assistant is read while the panel shows, and while it is
-// closed and only the menu bar title needs the device opened last.
+// How often Home Assistant is read while the panel shows. Nothing is read
+// while it is closed.
 const (
-	pollOpen   = 3 * time.Second
-	pollClosed = 20 * time.Second
+	pollOpen = 3 * time.Second
 	// debounce is how long the temperature waits for more slider input
 	// before Home Assistant hears it.
 	debounce = 450 * time.Millisecond
@@ -174,8 +173,7 @@ func (a *application) connect(list bool) {
 }
 
 // follow points the poller at what the panel shows: every device while the
-// list is open, else the device opened last, which the menu bar title
-// follows.
+// list is open, else the air conditioner opened last.
 func (a *application) follow() {
 	a.mu.Lock()
 	a.entity = a.config.Entity
@@ -193,7 +191,7 @@ func (a *application) current(client *ha.Client) bool {
 }
 
 // openClimate shows the controls of air conditioner d in place of the home
-// page. The menu bar title follows the one opened last.
+// page.
 func (a *application) openClimate(d ha.Climate) {
 	if d.EntityID != a.config.Entity {
 		// A temperature still waiting for the slider goes to its own device.
@@ -265,7 +263,8 @@ func (a *application) poll() {
 		a.mu.Lock()
 		client, entity, listing := a.client, a.entity, a.listing
 		a.mu.Unlock()
-		if client != nil && (listing || entity != "") {
+		open := a.panelOpen.Load()
+		if client != nil && open && (listing || entity != "") {
 			edits := a.edits.Load()
 			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 			var (
@@ -292,13 +291,13 @@ func (a *application) poll() {
 				a.post(func() { a.applyState(client, edits, ha.ParseClimate(s), unit, err) })
 			}
 		}
-		wait := pollClosed
-		if a.panelOpen.Load() {
-			wait = pollOpen
+		if !open {
+			<-a.kick
+			continue
 		}
 		select {
 		case <-a.kick:
-		case <-time.After(wait):
+		case <-time.After(pollOpen):
 		}
 	}
 }
@@ -335,7 +334,7 @@ func (a *application) readHome(ctx context.Context, client *ha.Client, always bo
 
 // applyList shows a read of every entity, arranged with the registries last
 // read. The air conditioner opened last takes its state as applyState takes
-// a read of it; once it is gone, the panel and the menu bar title forget it.
+// a read of it; once it is gone, the panel forgets it.
 // The page of a device gone from Home closes.
 func (a *application) applyList(client *ha.Client, edits int64, states []ha.State, reg *ha.Registry, unit string, err error) {
 	if !a.current(client) || !a.reached(unit, err) {
@@ -729,7 +728,8 @@ func (a *application) sendTarget() {
 	a.call("set_temperature", map[string]any{"temperature": a.climate.Target})
 }
 
-// redraw refreshes the panel and the menu bar title after a change.
+// redraw refreshes the panel after a change. The menu bar icon never
+// changes.
 func (a *application) redraw() {
 	if a.panel != nil {
 		a.panel.Invalidate()
@@ -737,18 +737,6 @@ func (a *application) redraw() {
 	if a.window != nil {
 		a.window.Window().Invalidate()
 	}
-	if a.tray != nil {
-		a.tray.SetTitle(a.trayTitle())
-	}
-}
-
-// trayTitle is the target temperature of the device opened last, shown
-// beside the menu bar icon.
-func (a *application) trayTitle() string {
-	if !a.hasClimate || !a.climate.On() || !a.climate.HasTarget {
-		return ""
-	}
-	return formatTemp(a.climate.Target) + "°"
 }
 
 func formatTemp(t float64) string { return strconv.FormatFloat(t, 'f', -1, 64) }

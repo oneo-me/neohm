@@ -40,7 +40,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 
 ## Core flows
 
-**Polling.** One goroutine reads Home Assistant: every entity while Home or a device's page shows, otherwise only the air conditioner opened last, which the menu bar title follows. It reads every 3 seconds while the panel is open and every 20 seconds otherwise; opening the panel, navigating and connecting wake it at once.
+**Polling.** One goroutine reads Home Assistant while the panel is open, every 3 seconds: every entity while Home or a device's page shows, otherwise only the air conditioner shown. It reads nothing while the panel is closed, as the menu bar icon never changes; opening the panel, navigating and connecting wake it at once.
 
 **Arranging Home.** Which device and area each entity belongs to, and what Home Assistant's dashboards hide, come only from the registries of its WebSocket API. The poller reads them in one short session per connection, and again every five minutes. `ha.Arrange` then shows each device's main controls, or one tile of a sensor device's readings, by area.
 
