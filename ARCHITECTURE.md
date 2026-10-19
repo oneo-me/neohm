@@ -12,12 +12,13 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 | `source/panel.go` | The panel's frame, theme and palette, the frame every page shares, and the controls of one air conditioner. |
 | `source/home.go` | Home's tiles by area, which switch their devices and open their pages, and what stands in for them before Home Assistant answers. |
 | `source/tiles.go` | How each kind of device shows on its tile and page. |
-| `source/device.go` | A device's page, laid out as an air conditioner's controls: its drawing, its main value, the slider of its level and its other actions or readings along the bottom. |
-| `source/controls.go` | The controls every device's page shares: the power button at the top right, the slider with its Liquid Glass thumb and the tiles along the bottom. |
+| `source/device.go` | A device's page, laid out as an air conditioner's controls: its drawing, its main value, the slider of its level, a light's colors and its other actions or readings along the bottom. |
+| `source/controls.go` | The controls every device's page shares: the power button at the top right, the slider with its Liquid Glass thumb and the stops below it, and the tiles along the bottom. |
+| `source/colors.go` | A light's swatches below its slider and the picker of any color. |
 | `source/scenes.go` | The drawing of each kind of device at the top of its page. |
 | `source/settings.go` | The Settings page. |
 | `source/config.go` | Reading and atomically saving the configuration file. |
-| `source/internal/ha/` | The REST and WebSocket clients, what entities' states, actions, quick switches and levels mean, which tiles Home shows, and the parsed climate entity. |
+| `source/internal/ha/` | The REST and WebSocket clients, what entities' states, actions, quick switches, levels and their stops, and lights' colors mean, which tiles Home shows, and the parsed climate entity. |
 | `source/locales/` | MyGo message catalogs, `<tag>.json`, and the accessors `go tool mygo generate` writes from them. Their `mygo.*` keys name the app and translate MyGo's own strings where MyGo has no translation. |
 | `source/resources/darwin/` | Translations of `Info.plist` strings, such as the reason macOS shows for local network access, in `<tag>.lproj/InfoPlist.strings`. |
 | `source/icons/` | The Icon Composer app icon `AppIcon.icon`, which `mygo.json`'s `macos.icon` names, its flattened `AppIcon.png` for `mygo.json`'s `icon` and Neorio's project icon, and the unused alternatives `AppIcon-1.icon` and `AppIcon-2.icon`. They stay outside `resources/`, whose contents ship in the app. |
@@ -43,7 +44,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 
 **Arranging Home.** Which device and area each entity belongs to, and what Home Assistant's dashboards hide, come only from the registries of its WebSocket API. The poller reads them in one short session per connection, and again every five minutes. `ha.Arrange` then shows each device's main controls, or one tile of a sensor device's readings, by area.
 
-**Control.** A click on a tile that switches calls one service of its entity's domain at once, as the power button in a device's page header does; the tile's arrow, or a click on any other tile, opens the device's page. A device's page calls the others, and sends a level once its slider rests. An air conditioner's controls call `climate` services on the device shown. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
+**Control.** A click on a tile that switches calls one service of its entity's domain at once, as the power button in a device's page header does; the tile's arrow, or a click on any other tile, opens the device's page. A device's page calls the others, and sends a level, or a color dragged in the picker, once its control rests; a swatch sends its color at once. An air conditioner's controls call `climate` services on the device shown. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
 
 ## Data and state
 

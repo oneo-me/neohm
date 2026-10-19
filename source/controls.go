@@ -70,6 +70,9 @@ type slider struct {
 	Disabled bool
 	// Bound shows Min and Max below the track, as "16°".
 	Bound func(float64) string
+	// Stops, unless empty, are values a click sets, as a cover's quarters,
+	// below the track where it would put them in place of Min and Max.
+	Stops []float64
 	// Set shows a value at once; it is up to it to send it once the slider
 	// rests.
 	Set func(float64)
@@ -84,6 +87,10 @@ func sliderRow(c *ui.Context, s slider) {
 		}
 		ui.Column(c).Grow(1).Basis(0).Gap(8).Children(func() {
 			levelSlider(c, s)
+			if len(s.Stops) > 0 {
+				sliderStops(c, s)
+				return
+			}
 			ui.Row(c).FillWidth().PaddingX(10).Children(func() {
 				components.Text(c, s.Bound(s.Min)).FontSize(13).TextColor(inkMuted)
 				ui.Spacer(c)
@@ -96,11 +103,51 @@ func sliderRow(c *ui.Context, s slider) {
 	})
 }
 
+// sliderStops are buttons below the track of s that set its stops, each
+// below where the thumb would stand, the one at the value lit.
+func sliderStops(c *ui.Context, s slider) {
+	const width, height = 44, 26
+	// The stops span the track as far as the thumb's middle goes.
+	ui.Row(c).FillWidth().PaddingX(sliderInset + sliderThumb/2).Children(func() {
+		ui.Box(c).Grow(1).Height(height).Children(func() {
+			for _, v := range s.Stops {
+				text := s.Bound(v)
+				b := ui.ButtonBase(c.Key(v)).Absolute().LeftPercent(float32((v-s.Min)/(s.Max-s.Min))*100).Margin(0, 0, 0, -width/2).
+					Size(width, height).Radius(height / 2).Center().Label(s.Label + ": " + text).Disabled(s.Disabled)
+				on := math.Round(s.Value) == v
+				face, edge, color := ui.Transparent, ui.Transparent, inkMuted
+				switch {
+				case s.Disabled:
+				case on:
+					face, edge, color = s.Color.Alpha(0.2), s.Color.Alpha(0.45), ink
+				case b.Pressed():
+					face = ui.RGBA(255, 255, 255, 0.12)
+				case b.Hovered():
+					face, color = tileHover, ink
+				}
+				b.Background(face).Border(1, edge).Checked(on)
+				b.Children(func() { components.Text(c, text).FontSize(13).FontWeight(600).TextColor(color).SingleLine() })
+				if b.Clicked() {
+					s.Set(v)
+				}
+			}
+		})
+	})
+}
+
+// The track of a slider: its height, how far in its thumb keeps, and the
+// thumb's size.
+const (
+	sliderHeight = 56
+	sliderInset  = 4
+	sliderThumb  = sliderHeight - 2*sliderInset
+)
+
 // levelSlider is a dark track with ticks, filled in s's color up to a thumb
 // of liquid glass, which shows the fill's edge bent through it.
 func levelSlider(c *ui.Context, s slider) {
-	const height, inset, radius = 56, 4, 18
-	thumb := float32(height - 2*inset)
+	const height, inset, radius = sliderHeight, sliderInset, 18
+	thumb := float32(sliderThumb)
 	value := s.Value
 	e := ui.SliderBase(c, &value, s.Min, s.Max).Step(s.Step).Label(s.Label).Disabled(s.Disabled).
 		FillWidth().Height(height).PaddingX(inset + thumb/2).FocusRing(false)

@@ -82,8 +82,10 @@ type Action struct {
 	Service string
 	Data    map[string]any
 	// Next is the state to show until Home Assistant reports one; empty
-	// keeps the state read.
-	Next string
+	// keeps the state read. Shows are attributes to show meanwhile, as a
+	// light's color.
+	Next  string
+	Shows map[string]any
 	// Current reports that the entity already is where the action leads.
 	Current bool
 	// Disabled reports an action the panel cannot ask for, as one that

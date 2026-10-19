@@ -14,9 +14,9 @@ import (
 
 // devicePage shows the device of tile t, in area, on a page of its own, laid
 // out as an air conditioner's controls: the device drawn, its main value,
-// the slider of its level and what else it does or reads along the bottom,
-// below a header with its power button. radius rounds the corners it
-// scrolls within.
+// the slider of its level, a light's colors and what else it does or reads
+// along the bottom, below a header with its power button. radius rounds
+// the corners it scrolls within.
 func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius float32) {
 	s := a.held(t.Entity)
 	v := a.tileView(t, s)
@@ -51,8 +51,12 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 						Label: title, Lower: locales.Decrease(title), Raise: locales.Increase(title),
 						Color: v.color,
 						Bound: func(f float64) string { return strconv.Itoa(int(math.Round(f))) + "%" },
+						Stops: l.Stops(),
 						Set:   func(f float64) { a.setLevel(s, l, f) },
 					})
+				}
+				if s.Domain() == "light" {
+					a.lightColors(c, s)
 				}
 				a.deviceTiles(c, t, s, v)
 			})

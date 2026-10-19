@@ -43,7 +43,7 @@ const demoStates = `[
 	{"entity_id":"climate.living_room","state":"off","attributes":{
 		"friendly_name":"Living Room Cabinet AC","hvac_modes":["off","cool","heat"],
 		"min_temp":16,"max_temp":30,"current_temperature":26.5,"temperature":24}},
-	{"entity_id":"light.ceiling","state":"on","attributes":{"friendly_name":"Living Room Ceiling Light","brightness":204,"rgb_color":[255,180,107]}},
+	{"entity_id":"light.ceiling","state":"on","attributes":{"friendly_name":"Living Room Ceiling Light","brightness":204,"rgb_color":[255,180,107],"color_mode":"color_temp","color_temp_kelvin":2604,"min_color_temp_kelvin":2000,"max_color_temp_kelvin":6535,"supported_color_modes":["color_temp","hs"]}},
 	{"entity_id":"cover.curtain","state":"open","attributes":{"friendly_name":"Living Room Curtain","device_class":"curtain","current_position":60,"supported_features":15}},
 	{"entity_id":"media_player.tv","state":"playing","attributes":{"friendly_name":"Living Room TV","device_class":"tv","media_title":"Interstellar","supported_features":16817}},
 	{"entity_id":"lock.front_door","state":"locked","attributes":{"friendly_name":"Front Door","supported_features":0}},
@@ -414,6 +414,89 @@ func TestDevicePage(t *testing.T) {
 	}
 }
 
+// A cover's page sets its quarters a click away, and a light's its colors,
+// showing them before Home Assistant reports them.
+func TestQuickSettings(t *testing.T) {
+	var mu sync.Mutex
+	var bodies []map[string]any
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		body["service"] = r.URL.Path[len("/api/services/"):]
+		mu.Lock()
+		bodies = append(bodies, body)
+		mu.Unlock()
+		w.Write([]byte(`[]`))
+	}))
+	defer srv.Close()
+	a := demoApp(t)
+	posted := make(chan func(), 4)
+	a.post = func(fn func()) { posted <- fn }
+	a.client = ha.NewClient(srv.URL, "token")
+	a.panelOpen.Store(true)
+	tt := ui.NewTester(a.panelView, panelWidth, 900)
+	sent := func() map[string]any {
+		t.Helper()
+		mu.Lock()
+		defer mu.Unlock()
+		if len(bodies) != 1 {
+			t.Fatalf("calls %v", bodies)
+		}
+		body := bodies[0]
+		bodies = nil
+		return body
+	}
+
+	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click(locales.LevelPosition() + ": 25%"); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText("25") {
+		t.Fatalf("position not shown: %v", tt.Texts())
+	}
+	returned(t, posted) // The level rests.
+	returned(t, posted) // The call returns.
+	if body := sent(); body["service"] != "cover/set_cover_position" || body["position"] != 25.0 {
+		t.Fatalf("stop sent %v", body)
+	}
+
+	tt.Key(0, ui.KeyEscape)
+	if err := tt.Click(locales.DeviceDetails("Ceiling Light")); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{"2600 K", locales.ColorRed(), locales.ChooseColor()} {
+		if _, ok := tt.Find(s); !ok {
+			t.Fatalf("missing %q in %v", s, tt.Texts())
+		}
+	}
+	if err := tt.Click(locales.ColorBlue()); err != nil {
+		t.Fatal(err)
+	}
+	tile, _, _ := a.tileOf("light.ceiling")
+	if shining, ok := a.held(tile.Entity).Shining(); !ok || !shining.Near(ha.Hues[4]) {
+		t.Fatalf("color not shown: %+v", shining)
+	}
+	returned(t, posted)
+	if body := sent(); body["service"] != "light/turn_on" || !slices.Equal(body["hs_color"].([]any), []any{215.0, 80.0}) {
+		t.Fatalf("color sent %v", body)
+	}
+	if err := tt.Click(locales.ChooseColor()); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := tt.Find(locales.ColorTemperature()); !ok {
+		t.Fatalf("picker not open: %v", tt.Texts())
+	}
+	focus(t, tt, locales.ColorTemperature())
+	tt.Key(0, ui.KeyHome)
+	returned(t, posted) // The slider rests.
+	returned(t, posted)
+	if body := sent(); body["color_temp_kelvin"] != 2000.0 {
+		t.Fatalf("white sent %v", body)
+	}
+}
+
 // A read keeps a local change to the air conditioner opened last, forgets it
 // once it is gone and ignores another connection.
 func TestListRead(t *testing.T) {
@@ -719,4 +802,10 @@ func TestSnapshot(t *testing.T) {
 		a.openDevice(id)
 		write(strings.ReplaceAll(id, ".", "-") + ".png")
 	}
+	a.openDevice("light.ceiling")
+	tt.Frame()
+	if err := tt.Click(locales.ChooseColor()); err != nil {
+		t.Fatal(err)
+	}
+	write("light-ceiling-colors.png")
 }

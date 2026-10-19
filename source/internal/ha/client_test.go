@@ -457,3 +457,59 @@ func TestNormalizeURL(t *testing.T) {
 		}
 	}
 }
+
+// A light offers whites across its color temperatures and, when it takes
+// colors, hues; it shines in the one Home Assistant reports, near enough.
+func TestLightColors(t *testing.T) {
+	s := parse(t, `{"entity_id":"light.a","state":"on","attributes":{"supported_color_modes":["color_temp","hs"],
+		"min_color_temp_kelvin":2000,"max_color_temp_kelvin":6535,"color_mode":"color_temp","color_temp_kelvin":2604}}`)
+	var whites []float64
+	for _, w := range s.Swatches() {
+		whites = append(whites, w.Kelvin)
+	}
+	if !slices.Equal(whites, []float64{2000, 2600, 3700, 6500}) || !s.Colorful() {
+		t.Fatalf("whites %v, colorful %v", whites, s.Colorful())
+	}
+	if shining, ok := s.Shining(); !ok || !shining.Near(White(2600)) || shining.Near(White(3700)) || shining.Near(Hues[0]) {
+		t.Fatalf("shining %+v %v", shining, ok)
+	}
+	// A narrow range offers fewer whites; one with no whites, none.
+	narrow := parse(t, `{"entity_id":"light.a","state":"off","attributes":{"supported_color_modes":["color_temp"],"min_color_temp_kelvin":2700,"max_color_temp_kelvin":2800}}`)
+	if n := len(narrow.Swatches()); n != 2 || narrow.Colorful() {
+		t.Fatalf("narrow: %v", narrow.Swatches())
+	}
+	if _, ok := narrow.Shining(); ok {
+		t.Fatal("a light that is off shines")
+	}
+	rgb := parse(t, `{"entity_id":"light.a","state":"on","attributes":{"supported_color_modes":["rgb"],"color_mode":"rgb","hs_color":[27.6,84.2]}}`)
+	if _, _, ok := rgb.Whites(); ok || rgb.Swatches() != nil {
+		t.Fatal("an RGB light has whites")
+	}
+	if shining, ok := rgb.Shining(); !ok || !shining.Near(Hues[1]) {
+		t.Fatalf("rgb shining %+v", shining)
+	}
+
+	act := Hues[0].Set()
+	if hs, _ := act.Data["hs_color"].([]float64); act.Service != "turn_on" || act.Next != "on" || !slices.Equal(hs, []float64{0, 80}) {
+		t.Fatalf("hue: %+v", act)
+	}
+	if act.Shows["color_mode"] != "hs" || !slices.Equal(act.Shows["rgb_color"].([]any), []any{255.0, 51.0, 51.0}) {
+		t.Fatalf("hue shows %v", act.Shows)
+	}
+	act = White(2700).Set()
+	if act.Data["color_temp_kelvin"] != 2700.0 || act.Shows["color_mode"] != "color_temp" {
+		t.Fatalf("white: %+v", act)
+	}
+}
+
+// Covers and valves stop at their quarters; other levels have no stops.
+func TestStops(t *testing.T) {
+	l, _ := parse(t, `{"entity_id":"cover.a","state":"open","attributes":{"supported_features":15,"current_position":60}}`).Level()
+	if !slices.Equal(l.Stops(), []float64{0, 25, 50, 75, 100}) {
+		t.Fatalf("cover stops %v", l.Stops())
+	}
+	l, _ = parse(t, `{"entity_id":"fan.a","state":"on","attributes":{"supported_features":1,"percentage":40}}`).Level()
+	if l.Stops() != nil {
+		t.Fatalf("fan stops %v", l.Stops())
+	}
+}

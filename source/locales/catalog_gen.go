@@ -566,6 +566,96 @@ func (msgs Messages) LevelHumidity() string {
 	return Catalog.Format(msgs.locale, "level_humidity", nil)
 }
 
+// ChooseColor says "Choose a color"
+// in the language the app shows.
+func ChooseColor() string { return In(i18n.Locale()).ChooseColor() }
+
+// ChooseColor says "Choose a color"
+// in the language of msgs.
+func (msgs Messages) ChooseColor() string {
+	return Catalog.Format(msgs.locale, "chooseColor", nil)
+}
+
+// Color says "Color"
+// in the language the app shows.
+func Color() string { return In(i18n.Locale()).Color() }
+
+// Color says "Color"
+// in the language of msgs.
+func (msgs Messages) Color() string {
+	return Catalog.Format(msgs.locale, "color", nil)
+}
+
+// ColorTemperature says "Color temperature"
+// in the language the app shows.
+func ColorTemperature() string { return In(i18n.Locale()).ColorTemperature() }
+
+// ColorTemperature says "Color temperature"
+// in the language of msgs.
+func (msgs Messages) ColorTemperature() string {
+	return Catalog.Format(msgs.locale, "colorTemperature", nil)
+}
+
+// ColorRed says "Red"
+// in the language the app shows.
+func ColorRed() string { return In(i18n.Locale()).ColorRed() }
+
+// ColorRed says "Red"
+// in the language of msgs.
+func (msgs Messages) ColorRed() string {
+	return Catalog.Format(msgs.locale, "color_red", nil)
+}
+
+// ColorOrange says "Orange"
+// in the language the app shows.
+func ColorOrange() string { return In(i18n.Locale()).ColorOrange() }
+
+// ColorOrange says "Orange"
+// in the language of msgs.
+func (msgs Messages) ColorOrange() string {
+	return Catalog.Format(msgs.locale, "color_orange", nil)
+}
+
+// ColorYellow says "Yellow"
+// in the language the app shows.
+func ColorYellow() string { return In(i18n.Locale()).ColorYellow() }
+
+// ColorYellow says "Yellow"
+// in the language of msgs.
+func (msgs Messages) ColorYellow() string {
+	return Catalog.Format(msgs.locale, "color_yellow", nil)
+}
+
+// ColorGreen says "Green"
+// in the language the app shows.
+func ColorGreen() string { return In(i18n.Locale()).ColorGreen() }
+
+// ColorGreen says "Green"
+// in the language of msgs.
+func (msgs Messages) ColorGreen() string {
+	return Catalog.Format(msgs.locale, "color_green", nil)
+}
+
+// ColorBlue says "Blue"
+// in the language the app shows.
+func ColorBlue() string { return In(i18n.Locale()).ColorBlue() }
+
+// ColorBlue says "Blue"
+// in the language of msgs.
+func (msgs Messages) ColorBlue() string {
+	return Catalog.Format(msgs.locale, "color_blue", nil)
+}
+
+// ColorPurple says "Purple"
+// in the language the app shows.
+func ColorPurple() string { return In(i18n.Locale()).ColorPurple() }
+
+// ColorPurple says "Purple"
+// in the language of msgs.
+func (msgs Messages) ColorPurple() string {
+	return Catalog.Format(msgs.locale, "color_purple", nil)
+}
+
 // StateOn says "On"
 // in the language the app shows.
 func StateOn() string { return In(i18n.Locale()).StateOn() }

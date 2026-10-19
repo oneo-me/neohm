@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"maps"
 	"slices"
 	"strconv"
 	"sync"
@@ -450,9 +451,11 @@ func (a *application) call(service string, data map[string]any) {
 // hold is what a device shows after an action, until a read that started
 // once the action's calls returned and settled.
 type hold struct {
-	// state is the state shown, unless "", and level the level its page
-	// shows, as a light's brightness, when hasLevel says so.
+	// state is the state shown, unless "", attrs attributes shown over
+	// those read, as a light's color, and level the level its page shows,
+	// as a light's brightness, when hasLevel says so.
 	state    string
+	attrs    map[string]any
 	level    float64
 	hasLevel bool
 	// pending counts calls on their way, and a level waiting for its
@@ -491,13 +494,39 @@ func (a *application) tileCount() int {
 	return n
 }
 
-// held is entity s as its tile shows it: in the state its last action leads
-// to, until Home Assistant reports one.
+// held is entity s as its tile shows it: in the state, and with the
+// attributes, its last action leads to, until Home Assistant reports them.
 func (a *application) held(s ha.State) ha.State {
-	if h := a.holds[s.EntityID]; h != nil && h.state != "" {
+	h := a.holds[s.EntityID]
+	if h == nil {
+		return s
+	}
+	if h.state != "" {
 		s.State = h.state
 	}
+	if len(h.attrs) > 0 {
+		attrs := maps.Clone(s.Attributes)
+		if attrs == nil {
+			attrs = map[string]any{}
+		}
+		maps.Copy(attrs, h.attrs)
+		s.Attributes = attrs
+	}
 	return s
+}
+
+// show holds what act leads to: its state, unless it keeps the state read,
+// and the attributes it shows.
+func (h *hold) show(act ha.Action) {
+	if act.Next != "" {
+		h.state = act.Next
+	}
+	if len(act.Shows) > 0 {
+		if h.attrs == nil {
+			h.attrs = map[string]any{}
+		}
+		maps.Copy(h.attrs, act.Shows)
+	}
 }
 
 // holdOf is the hold of entity id, made as needed.
@@ -526,14 +555,19 @@ func (a *application) level(s ha.State, l ha.Level) float64 {
 // rests.
 func (a *application) setLevel(s ha.State, l ha.Level, v float64) {
 	h := a.holdOf(s.EntityID)
+	h.level, h.hasLevel = v, true
+	a.adjust(s, l.Set(v))
+}
+
+// adjust shows what act leads to at once and asks for it once the control
+// setting it rests: of several in a row, only the last.
+func (a *application) adjust(s ha.State, act ha.Action) {
+	h := a.holdOf(s.EntityID)
 	if !h.waiting {
 		h.waiting = true
 		h.pending++
 	}
-	h.level, h.hasLevel = v, true
-	if next := l.Set(v).Next; next != "" {
-		h.state = next
-	}
+	h.show(act)
 	h.gen++
 	gen := h.gen
 	a.edits.Add(1)
@@ -545,7 +579,7 @@ func (a *application) setLevel(s ha.State, l ha.Level, v float64) {
 			}
 			h.waiting = false
 			h.pending--
-			a.perform(s, l.Set(h.level))
+			a.perform(s, act)
 		})
 	})
 }
@@ -571,13 +605,13 @@ func (a *application) perform(s ha.State, act ha.Action) {
 	if client == nil {
 		return
 	}
-	// An action that leads to a state holds it until Home Assistant
-	// reports it; a hold already made, as of a level, waits for the action
-	// too.
+	// An action that leads to a state or shows attributes holds them until
+	// Home Assistant reports them; a hold already made, as of a level,
+	// waits for the action too.
 	h := a.holds[s.EntityID]
-	if act.Next != "" {
+	if act.Next != "" || len(act.Shows) > 0 {
 		h = a.holdOf(s.EntityID)
-		h.state = act.Next
+		h.show(act)
 	}
 	if h != nil {
 		h.pending++
