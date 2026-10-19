@@ -258,7 +258,7 @@ func (a *application) powerButton(c *ui.Context) {
 	if cl.On() {
 		tint = modeColor(cl.Mode)
 	}
-	if powerButton(c, locales.Power(), cl.On(), !cl.Available(), tint).Clicked() {
+	if powerButton(c, locales.Power(), lucide.Power, cl.On(), !cl.Available(), tint, 1).Clicked() {
 		a.togglePower()
 	}
 }
@@ -350,31 +350,18 @@ func abs32(v float32) float32 {
 	return v
 }
 
+// temperatureRow shows the target temperature in the middle, and Eco Mode
+// below it, which a click switches.
 func (a *application) temperatureRow(c *ui.Context) {
 	cl := a.climate
-	ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(10).Margin(0, 0, 14, 0).Children(func() {
-		ui.Row(c).AlignItems(ui.End).Children(func() {
-			value := "--"
-			if cl.HasTarget {
-				value = formatTemp(cl.Target)
-			}
-			components.Text(c, value).FontSize(68).FontWeight(300).TextColor(ink).LetterSpacing(-2)
-			components.Text(c, a.unit).FontSize(20).FontWeight(500).TextColor(accent).Margin(0, 0, 12, 0).MarginStart(4)
-		})
-		ui.Spacer(c)
-		eco := cl.Preset == "eco"
-		pill := ui.Row(c).AlignItems(ui.Center).Gap(10).Padding(10, 12, 10, 14).Radius(18).
-			Background(tileFace).Border(1, tileEdge)
-		pill.Children(func() {
-			components.Icon(c, lucide.Leaf).Size(18, 18).TextColor(inkMuted)
-			components.Text(c, locales.Eco()).FontSize(14).FontWeight(600).TextColor(ink)
-			components.Switch(c, &eco, locales.Eco(), components.SwitchOptions{HideLabel: true}).Disabled(!cl.HasPreset("eco"))
-			if eco != (cl.Preset == "eco") {
-				a.togglePreset("eco")
-			}
-		})
-		if !cl.HasPreset("eco") {
-			pill.Opacity(0.45)
+	value := "--"
+	if cl.HasTarget {
+		value = formatTemp(cl.Target)
+	}
+	ui.Column(c).FillWidth().AlignItems(ui.Center).Margin(0, 0, 14, 0).Children(func() {
+		bigNumber(c, value, a.unit, accent)
+		if toggleChip(c, lucide.Leaf, locales.Eco(), cl.Preset == "eco", !cl.HasPreset("eco") || !cl.Available(), green).Margin(-6, 0, 0, 0).Clicked() {
+			a.togglePreset("eco")
 		}
 	})
 }

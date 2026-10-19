@@ -13,7 +13,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 | `source/home.go` | Home's tiles by area, which switch their devices and open their pages, and what stands in for them before Home Assistant answers. |
 | `source/tiles.go` | How each kind of device shows on its tile and page. |
 | `source/device.go` | A device's page, laid out as an air conditioner's controls: its drawing, its main value, the slider of its level, a light's colors and its other actions or readings along the bottom. |
-| `source/controls.go` | The controls every device's page shares: the power button at the top right, the slider with its Liquid Glass thumb and the stops below it, and the tiles along the bottom. |
+| `source/controls.go` | The controls every device's page shares: the power button at the top right, the main value in the middle, the slider with its Liquid Glass thumb and the stops below it, and the tiles along the bottom. |
 | `source/colors.go` | A light's swatches below its slider and the picker of any color. |
 | `source/scenes.go` | The drawing of each kind of device at the top of its page. |
 | `source/settings.go` | The Settings page. |

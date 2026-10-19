@@ -421,8 +421,8 @@ func TestLevel(t *testing.T) {
 		service, field string
 		sent           any
 	}{
-		{`{"entity_id":"light.a","state":"on","attributes":{"brightness":204,"supported_color_modes":["brightness"]}}`, "brightness", 80, 1, 0, "turn_on", "brightness_pct", 1.0},
-		{`{"entity_id":"light.a","state":"off","attributes":{"supported_color_modes":["color_temp"]}}`, "brightness", 1, 1, 42.4, "turn_on", "brightness_pct", 42.0},
+		{`{"entity_id":"light.a","state":"on","attributes":{"brightness":204,"supported_color_modes":["brightness"]}}`, "brightness", 80, 0, 0, "turn_off", "brightness_pct", nil},
+		{`{"entity_id":"light.a","state":"off","attributes":{"supported_color_modes":["color_temp"]}}`, "brightness", 0, 0, 42.4, "turn_on", "brightness_pct", 42.0},
 		{`{"entity_id":"light.a","state":"on","attributes":{"supported_color_modes":["onoff"]}}`, "", 0, 0, 0, "", "", nil},
 		{`{"entity_id":"fan.a","state":"on","attributes":{"supported_features":1,"percentage":66,"percentage_step":33.3}}`, "speed", 66, 0, 0, "set_percentage", "percentage", 0.0},
 		{`{"entity_id":"cover.a","state":"open","attributes":{"supported_features":15,"current_position":60}}`, "position", 60, 0, 100, "set_cover_position", "position", 100.0},

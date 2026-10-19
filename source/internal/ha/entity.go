@@ -230,7 +230,7 @@ func (s State) Level() (Level, bool) {
 		if !dims && !has {
 			return Level{}, false
 		}
-		l.Name, l.Min, ok = "brightness", 1, true
+		l.Name, ok = "brightness", true
 		if has && s.Active() {
 			l.Value = math.Round(v / 255 * 100)
 		}
@@ -272,11 +272,15 @@ func (s State) Level() (Level, bool) {
 	return l, true
 }
 
-// Set is the action that sets the level to v, a whole percent.
+// Set is the action that sets the level to v, a whole percent. A light's
+// brightness of 0 turns it off.
 func (l Level) Set(v float64) Action {
 	v = math.Round(max(l.Min, min(l.Max, v)))
 	switch l.Name {
 	case "brightness":
+		if v == 0 {
+			return Action{Name: "turn_off", Service: "turn_off", Next: "off"}
+		}
 		return Action{Name: "turn_on", Service: "turn_on", Data: map[string]any{"brightness_pct": v}, Next: "on"}
 	case "speed":
 		next := "on"

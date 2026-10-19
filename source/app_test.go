@@ -347,7 +347,7 @@ func TestDevicePage(t *testing.T) {
 	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
 		t.Fatal(err)
 	}
-	for _, s := range []string{"Living Room", locales.LevelPosition(), "60", locales.ActionOpen(), locales.ActionStop(), locales.ActionClose()} {
+	for _, s := range []string{"Living Room", "60", locales.ActionOpen(), locales.ActionStop(), locales.ActionClose()} {
 		if !tt.HasText(s) {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
@@ -383,15 +383,23 @@ func TestDevicePage(t *testing.T) {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
 	}
-	// A light switches from the power button of its page; a cover has none.
+	// A light turns off at a brightness of 0, and switches from the power
+	// button of its page; a cover opens and closes from the button there.
 	tt.Key(0, ui.KeyEscape)
 	if err := tt.Click(locales.DeviceDetails("Ceiling Light")); err != nil {
 		t.Fatal(err)
 	}
+	focus(t, tt, locales.LevelBrightness())
+	tt.Key(0, ui.KeyHome)
+	if !tt.HasText(locales.StateOff()) {
+		t.Fatalf("brightness 0: %v", tt.Texts())
+	}
+	returned(t, posted) // The slider rests.
+	returned(t, posted) // The call returns.
 	if err := tt.Click(locales.QuickSwitch("Ceiling Light")); err != nil {
 		t.Fatal(err)
 	}
-	if !tt.HasText(locales.StateOff()) {
+	if !tt.HasText(locales.StateOn()) {
 		t.Fatalf("power: %v", tt.Texts())
 	}
 	returned(t, posted)
@@ -399,8 +407,18 @@ func TestDevicePage(t *testing.T) {
 	if err := tt.Click(locales.DeviceDetails("Curtain")); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := tt.Find(locales.QuickSwitch("Curtain")); ok {
-		t.Fatal("a cover has a power button")
+	if err := tt.Click(locales.QuickSwitch("Curtain")); err != nil {
+		t.Fatal(err)
+	}
+	returned(t, posted)
+	mu.Lock()
+	var services []string
+	for _, b := range bodies[1:] {
+		services = append(services, b["service"].(string))
+	}
+	mu.Unlock()
+	if want := []string{"light/turn_off", "light/turn_on", "cover/close_cover"}; !slices.Equal(services, want) {
+		t.Fatalf("calls %v", services)
 	}
 	tt.Key(0, ui.KeyEscape)
 	if err := tt.Click("Thermometer"); err != nil {

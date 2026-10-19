@@ -11,17 +11,25 @@ import (
 )
 
 // The controls every device's page shares: the power button at the top
-// right, the slider of its level and the tiles along the bottom.
+// right, the main value, the slider of its level and the tiles along the
+// bottom.
 
-// powerButton switches a device on and off, glowing in tint while it is on.
-// label names it.
-func powerButton(c *ui.Context, label string, on, disabled bool, tint ui.Color) ui.Element {
+// powerButton switches a device on and off, or opens and closes it, glowing
+// in tint while it is on, the less the dimmer it shines: bright, 0 to 1.
+// icon shows on it, dark while its face is light. label names it.
+func powerButton(c *ui.Context, label string, icon func() *ui.SVG, on, disabled bool, tint ui.Color, bright float32) ui.Element {
 	glow := float32(0)
 	if on {
 		glow = 1
 	}
 	power := ui.ButtonBase(c).Size(44, 44).Radius(22).Shrink(0).Label(label).Checked(on).Disabled(disabled)
 	glow = power.Animate("glow", glow, 220*time.Millisecond)
+	tint = tint.Mix(panelTop, 0.6*(1-power.Animate("bright", bright, 220*time.Millisecond)))
+	dark := float32(0)
+	if on && luminance(tint) > 0.4 {
+		dark = 1
+	}
+	dark = power.Animate("dark", dark, 220*time.Millisecond)
 	face := ui.RGBA(255, 255, 255, 0.08).Mix(tint, glow)
 	switch {
 	case disabled:
@@ -31,11 +39,66 @@ func powerButton(c *ui.Context, label string, on, disabled bool, tint ui.Color) 
 		face = face.Mix(ink, 0.08)
 	}
 	power.Background(face).Shadow(0, 4, 18, 0, tint.Alpha(0.55*glow)).Center()
-	power.Children(func() { components.Icon(c, lucide.Power).Size(21, 21).TextColor(ink) })
+	power.Children(func() { components.Icon(c, icon).Size(21, 21).TextColor(ink.Mix(discInk, dark)) })
 	if disabled {
 		power.Opacity(0.45)
 	}
 	return power
+}
+
+// luminance is how light color c looks, 0 to 1, as WCAG measures it.
+func luminance(c ui.Color) float64 {
+	linear := func(v uint8) float64 {
+		f := float64(v) / 255
+		if f <= 0.04045 {
+			return f / 12.92
+		}
+		return math.Pow((f+0.055)/1.055, 2.4)
+	}
+	return 0.2126*linear(c.R) + 0.7152*linear(c.G) + 0.0722*linear(c.B)
+}
+
+// bigNumber is a device's main value, large in the middle of its page, as
+// an air conditioner's target temperature: number, with unit in color
+// hanging at its right.
+func bigNumber(c *ui.Context, number, unit string, color ui.Color) {
+	ui.Row(c).FillWidth().AlignItems(ui.End).Children(func() {
+		// Sides of one width keep the number, not the unit, in the middle.
+		ui.Box(c).Grow(1).Basis(0)
+		components.Text(c, number).FontSize(68).FontWeight(300).TextColor(ink).LetterSpacing(-2).SingleLine().Shrink(0)
+		ui.Row(c).Grow(1).Basis(0).MinWidth(0).Children(func() {
+			components.Text(c, unit).FontSize(20).FontWeight(500).TextColor(color).Margin(0, 0, 12, 0).MarginStart(4).SingleLine()
+		})
+	})
+}
+
+// toggleChip is a small pill that switches a setting, labeled label, on and
+// off, as an air conditioner's Eco Mode, lit in color while on.
+func toggleChip(c *ui.Context, icon func() *ui.SVG, label string, on, disabled bool, color ui.Color) ui.Element {
+	chip := ui.ButtonBase(c).Height(32).PaddingX(14).Radius(16).Row().AlignItems(ui.Center).Gap(6).
+		Label(label).Role(ui.RoleSwitch).Checked(on).Disabled(disabled)
+	lit := float32(0)
+	if on {
+		lit = 1
+	}
+	lit = chip.Animate("lit", lit, 220*time.Millisecond)
+	face := tileFace.Mix(color.Alpha(0.16), lit)
+	switch {
+	case disabled:
+	case chip.Pressed():
+		face = face.Mix(ink, 0.12)
+	case chip.Hovered():
+		face = face.Mix(ink, 0.05)
+	}
+	chip.Background(face).Border(1, tileEdge.Mix(color.Alpha(0.5), lit))
+	chip.Children(func() {
+		components.Icon(c, icon).Size(15, 15).TextColor(inkMuted.Mix(color, lit))
+		components.Text(c, label).FontSize(13).FontWeight(600).TextColor(inkMuted.Mix(ink, lit)).SingleLine()
+	})
+	if disabled {
+		chip.Opacity(0.45)
+	}
+	return chip
 }
 
 // circleButton is a circular icon button of size DIPs across.

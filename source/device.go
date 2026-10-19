@@ -15,8 +15,8 @@ import (
 // devicePage shows the device of tile t, in area, on a page of its own, laid
 // out as an air conditioner's controls: the device drawn, its main value,
 // the slider of its level, a light's colors and what else it does or reads
-// along the bottom, below a header with its power button. radius rounds
-// the corners it scrolls within.
+// along the bottom, below a header with the button that switches it.
+// radius rounds the corners it scrolls within.
 func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius float32) {
 	s := a.held(t.Entity)
 	v := a.tileView(t, s)
@@ -27,6 +27,13 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 	if hasLevel {
 		value = a.level(s, l)
 	}
+	amount := a.sceneAmount(s, l, hasLevel, value)
+	// A light's button glows as bright as it shines, once its brightness is
+	// known: one turned on at 0 has yet to report it.
+	bright := 1.0
+	if hasLevel && l.Name == "brightness" && value > 0 {
+		bright = amount
+	}
 	pageFrame(c, radius, name, func() {
 		a.titledHeader(c, name, func() {
 			if problem := a.problem(s.Available()); problem != "" {
@@ -34,7 +41,7 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 			} else if area != "" {
 				headerSubtitle(c, area, inkMuted)
 			}
-		}, func() { a.devicePower(c, s, v, name) })
+		}, func() { a.devicePower(c, s, v, name, float32(bright)) })
 	}, func(top float32) {
 		view := components.ScrollView(c, components.ScrollViewOptions{}).Fill().ScrollbarInsets(top, 0, radius)
 		// The controls keep to the bottom, as an air conditioner's, unless
@@ -42,7 +49,7 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 		fill := view.LayoutBounds().H
 		view.Children(func() {
 			ui.Column(c).FillWidth().MinHeight(fill).Padding(top+pageFade, 18, 18, 18).Children(func() {
-				deviceScene(c, s, v, a.sceneAmount(s, l, hasLevel, value))
+				deviceScene(c, s, v, amount)
 				a.readout(c, t, s, v, l, hasLevel, value)
 				if hasLevel {
 					title := message("level_" + l.Name)
@@ -78,15 +85,19 @@ func (a *application) problem(available bool) string {
 	return ""
 }
 
-// devicePower is the power button of a device that switches on and off,
-// as an air conditioner's. Covers and valves open and close from their
-// tiles instead.
-func (a *application) devicePower(c *ui.Context, s ha.State, v tileView, name string) {
+// devicePower is the button of a device that switches it on and off, as an
+// air conditioner's power button, or opens and closes it, as its tile does,
+// glowing at bright, 0 to 1. A cover's or a valve's shows its icon.
+func (a *application) devicePower(c *ui.Context, s ha.State, v tileView, name string, bright float32) {
 	act, ok := s.Toggle()
-	if !ok || act.Name != "turn_on" && act.Name != "turn_off" {
+	if !ok {
 		return
 	}
-	if powerButton(c, locales.QuickSwitch(name), v.lit, !s.Available(), v.color).Role(ui.RoleSwitch).Clicked() {
+	icon := lucide.Power
+	if act.Name == "open" || act.Name == "close" {
+		icon = v.icon
+	}
+	if powerButton(c, locales.QuickSwitch(name), icon, v.lit, !s.Available(), v.color, bright).Role(ui.RoleSwitch).Clicked() {
 		a.toggle(s)
 	}
 }
@@ -103,24 +114,23 @@ func (a *application) sceneAmount(s ha.State, l ha.Level, hasLevel bool, value f
 	return 0
 }
 
-// readout shows the main value of a device large, as an air conditioner's
-// target temperature: the level it is set to, its main reading or its
-// state, with a detail, as the title playing, below it. What the value is
-// shows in a pill beside it, as an air conditioner's Eco Mode.
+// readout shows the main value of a device large in the middle, as an air
+// conditioner's target temperature: the level it is set to, its main
+// reading or its state. Below it shows what the reading is, or a detail, as
+// the title playing.
 func (a *application) readout(c *ui.Context, t ha.Tile, s ha.State, v tileView, l ha.Level, hasLevel bool, value float64) {
-	var caption, number, unit, text, detail string
+	var number, unit, text, detail string
 	switch {
 	case s.Domain() == "sensor" || s.Domain() == "binary_sensor":
 		// One Home Assistant names only by its ID goes by the device's name.
 		if s.Str("friendly_name") != "" {
-			caption = tileName(s.Name(), t.Name)
+			detail = tileName(s.Name(), t.Name)
 		}
 		number, unit = a.readingParts(s)
 		if _, err := strconv.ParseFloat(number, 64); err != nil {
 			text, number, unit = a.readingText(s), "", ""
 		}
-	case hasLevel && (l.Name != "brightness" || s.Active()):
-		caption = message("level_" + l.Name)
+	case hasLevel && (l.Name != "brightness" || s.Active() && value > 0):
 		number, unit = strconv.Itoa(int(math.Round(value))), "%"
 	default:
 		text = stateText(s)
@@ -128,28 +138,15 @@ func (a *application) readout(c *ui.Context, t ha.Tile, s ha.State, v tileView, 
 			detail = rest
 		}
 	}
-	ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(10).Margin(0, 0, 14, 0).Children(func() {
-		ui.Column(c).Grow(1).MinWidth(0).Children(func() {
-			if number != "" {
-				ui.Row(c).AlignItems(ui.End).Children(func() {
-					components.Text(c, number).FontSize(68).FontWeight(300).TextColor(ink).LetterSpacing(-2).SingleLine()
-					components.Text(c, unit).FontSize(20).FontWeight(500).TextColor(v.color).Margin(0, 0, 12, 0).MarginStart(4).SingleLine()
-				})
-			} else {
-				components.Text(c, text).FontSize(40).FontWeight(300).TextColor(ink).MaxLines(2).Ellipsis("…")
-			}
-			if detail != "" {
-				components.Text(c, detail).FontSize(14).TextColor(inkMuted.Mix(v.color, 0.4)).SingleLine().Ellipsis("…")
-			}
-		})
-		if caption == "" {
-			return
+	ui.Column(c).FillWidth().AlignItems(ui.Center).Margin(0, 0, 14, 0).Children(func() {
+		if number != "" {
+			bigNumber(c, number, unit, v.color)
+		} else {
+			components.Text(c, text).FontSize(40).FontWeight(300).TextColor(ink).MaxLines(2).Ellipsis("…").FillWidth().TextAlign(ui.Center)
 		}
-		ui.Row(c).Shrink(1).MinWidth(0).AlignItems(ui.Center).Gap(8).Padding(10, 14).Radius(18).
-			Background(tileFace).Border(1, tileEdge).Children(func() {
-			components.Icon(c, v.icon).Size(18, 18).TextColor(v.color.Mix(ink, 0.15)).Shrink(0)
-			components.Text(c, caption).FontSize(14).FontWeight(600).TextColor(ink).SingleLine().Ellipsis("…")
-		})
+		if detail != "" {
+			components.Text(c, detail).FontSize(14).TextColor(inkMuted.Mix(v.color, 0.4)).SingleLine().Ellipsis("…").FillWidth().TextAlign(ui.Center)
+		}
 	})
 }
 
