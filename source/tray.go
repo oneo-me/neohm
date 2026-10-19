@@ -188,8 +188,9 @@ func (a *application) destroyTray() {
 	}
 }
 
-// trayIcon draws an air conditioner blowing air, as a template image: black
-// on transparent, 18 points at 2x.
+// trayIcon draws a house holding four blocks, the tiles of the home page, as
+// a template image: black on transparent, 18 points at 2x. Its strokes are 3
+// pixels wide, and its walls, floor and blocks fall on whole pixels.
 func trayIcon() []byte {
 	const size = 36
 	img := image.NewNRGBA(image.Rect(0, 0, size, size))
@@ -197,13 +198,16 @@ func trayIcon() []byte {
 	if runtime.GOOS != "darwin" {
 		ink = color.NRGBA{R: 77, G: 141, B: 255, A: 255}
 	}
+	// The outline follows a pentagon rounded by r: its walls at x 5.5 and
+	// 30.5, its floor at 30.5 and its eaves at y 14.5.
+	const r = 2.5
+	house := [][2]float64{{18, 4.5 + 1.25*r}, {30.5 - r, 14.5}, {30.5 - r, 30.5 - r}, {5.5 + r, 30.5 - r}, {5.5 + r, 14.5}}
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
 			px, py := float64(x)+0.5, float64(y)+0.5
-			d := math.Abs(roundRectDist(px, py, 18, 12, 14, 7, 4)) - 1.3
-			d = min(d, segmentDist(px, py, 9, 15, 27, 15)-0.9)
-			for _, l := range [][4]float64{{12, 23, 10, 31}, {18, 23, 18, 31}, {24, 23, 26, 31}} {
-				d = min(d, segmentDist(px, py, l[0], l[1], l[2], l[3])-1.2)
+			d := math.Abs(polygonDist(px, py, house)-r) - 1.5
+			for _, b := range [][2]float64{{14.5, 16.5}, {21.5, 16.5}, {14.5, 23.5}, {21.5, 23.5}} {
+				d = min(d, roundRectDist(px, py, b[0], b[1], 2.5, 2.5, 1.2))
 			}
 			if cov := max(0, min(1, 0.5-d)); cov > 0 {
 				c := ink
@@ -226,8 +230,21 @@ func roundRectDist(px, py, cx, cy, hw, hh, r float64) float64 {
 	return math.Hypot(max(qx, 0), max(qy, 0)) + min(max(qx, qy), 0) - r
 }
 
-func segmentDist(px, py, ax, ay, bx, by float64) float64 {
-	dx, dy := bx-ax, by-ay
-	t := max(0, min(1, ((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)))
-	return math.Hypot(px-ax-t*dx, py-ay-t*dy)
+// polygonDist is the signed distance from (px, py) to the polygon of
+// vertices v, negative inside.
+func polygonDist(px, py float64, v [][2]float64) float64 {
+	d, inside := math.Inf(1), false
+	for i, j := 0, len(v)-1; i < len(v); j, i = i, i+1 {
+		ax, ay, bx, by := v[i][0], v[i][1], v[j][0], v[j][1]
+		ex, ey, wx, wy := bx-ax, by-ay, px-ax, py-ay
+		t := max(0, min(1, (wx*ex+wy*ey)/(ex*ex+ey*ey)))
+		d = min(d, math.Hypot(wx-ex*t, wy-ey*t))
+		if (ay > py) != (by > py) && px < ax+(py-ay)*ex/ey {
+			inside = !inside
+		}
+	}
+	if inside {
+		return -d
+	}
+	return d
 }

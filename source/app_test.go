@@ -8,6 +8,8 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -22,33 +24,107 @@ type memorySecrets map[string][]byte
 func (m memorySecrets) Get(k string) ([]byte, error) { return m[k], nil }
 func (m memorySecrets) Set(k string, v []byte) error { m[k] = v; return nil }
 
-func parseClimate(t *testing.T, state string) ha.Climate {
-	var s ha.State
-	if err := json.Unmarshal([]byte(state), &s); err != nil {
+func parseStates(t *testing.T, list string) []ha.State {
+	t.Helper()
+	var states []ha.State
+	if err := json.Unmarshal([]byte(list), &states); err != nil {
 		t.Fatal(err)
 	}
-	return ha.ParseClimate(s)
+	return states
 }
 
-// demoApp is an application listing two sample units, the first opened last,
-// without a connection: service calls change only what it shows.
-func demoApp(t *testing.T) *application {
-	bedroom := parseClimate(t, `{"entity_id":"climate.bedroom","state":"cool","attributes":{
+// demoStates are a sample home: two air conditioners, the bedroom's first,
+// lights, a curtain, a TV, a lock, a plug, a thermometer, a window sensor
+// and a vacuum.
+const demoStates = `[
+	{"entity_id":"climate.bedroom","state":"cool","attributes":{
 		"friendly_name":"Bedroom AC","hvac_modes":["off","cool","heat","dry","fan_only","auto"],
 		"min_temp":16,"max_temp":30,"target_temp_step":1,"current_temperature":24,"temperature":16,
 		"fan_modes":["auto","low","medium","high"],"fan_mode":"low",
 		"swing_modes":["on","off"],"swing_mode":"on",
-		"preset_modes":["none","eco","sleep"],"preset_mode":"none"}}`)
-	living := parseClimate(t, `{"entity_id":"climate.living_room","state":"off","attributes":{
-		"friendly_name":"Living Room AC","hvac_modes":["off","cool","heat"],
-		"min_temp":16,"max_temp":30,"current_temperature":26.5,"temperature":24}}`)
+		"preset_modes":["none","eco","sleep"],"preset_mode":"none"}},
+	{"entity_id":"climate.living_room","state":"off","attributes":{
+		"friendly_name":"Living Room Cabinet AC","hvac_modes":["off","cool","heat"],
+		"min_temp":16,"max_temp":30,"current_temperature":26.5,"temperature":24}},
+	{"entity_id":"light.ceiling","state":"on","attributes":{"friendly_name":"Living Room Ceiling Light","brightness":204,"rgb_color":[255,180,107]}},
+	{"entity_id":"cover.curtain","state":"open","attributes":{"friendly_name":"Living Room Curtain","device_class":"curtain","current_position":60,"supported_features":15}},
+	{"entity_id":"media_player.tv","state":"playing","attributes":{"friendly_name":"Living Room TV","device_class":"tv","media_title":"Interstellar","supported_features":16817}},
+	{"entity_id":"lock.front_door","state":"locked","attributes":{"friendly_name":"Front Door","supported_features":0}},
+	{"entity_id":"light.lamp","state":"off","attributes":{"friendly_name":"Bedroom Lamp"}},
+	{"entity_id":"switch.heater","state":"off","attributes":{"friendly_name":"Bedroom Heater","device_class":"outlet"}},
+	{"entity_id":"sensor.thermo_temperature","state":"24.27","attributes":{"device_class":"temperature","unit_of_measurement":"°C"}},
+	{"entity_id":"sensor.thermo_humidity","state":"45","attributes":{"device_class":"humidity","unit_of_measurement":"%"}},
+	{"entity_id":"sensor.thermo_battery","state":"88","attributes":{"device_class":"battery","unit_of_measurement":"%"}},
+	{"entity_id":"binary_sensor.window","state":"on","attributes":{"device_class":"window"}},
+	{"entity_id":"vacuum.robot","state":"docked","attributes":{"friendly_name":"Robot Vacuum","supported_features":12316}}
+]`
+
+func demoRegistry() *ha.Registry {
+	return &ha.Registry{
+		Entities: map[string]ha.RegistryEntry{
+			"climate.bedroom": {Device: "ac"}, "light.lamp": {Device: "lamp"}, "switch.heater": {Device: "plug"},
+			"sensor.thermo_temperature": {Device: "thermo", Precision: 1, HasPrecision: true},
+			"sensor.thermo_humidity":    {Device: "thermo"}, "sensor.thermo_battery": {Device: "thermo", Hidden: true},
+			"binary_sensor.window": {Device: "window"}, "vacuum.robot": {Device: "vacuum"},
+			"climate.living_room": {Area: "living_room"}, "light.ceiling": {Area: "living_room"},
+			"cover.curtain": {Area: "living_room"}, "media_player.tv": {Area: "living_room"},
+			"lock.front_door": {Area: "living_room"},
+		},
+		Devices: map[string]ha.Device{
+			"ac": {Name: "Bedroom AC", Area: "bedroom"}, "lamp": {Name: "Bedroom Lamp", Area: "bedroom"},
+			"plug": {Name: "Bedroom Plug", Area: "bedroom"}, "thermo": {Name: "Bedroom Thermometer", Area: "bedroom"},
+			"window": {Name: "Bedroom Window", Area: "bedroom"}, "vacuum": {Name: "Robot Vacuum"},
+		},
+		Areas: []ha.Area{{ID: "living_room", Name: "Living Room"}, {ID: "bedroom", Name: "Bedroom"}},
+	}
+}
+
+// demoApp is an application showing the sample home, the bedroom's air
+// conditioner opened last, without a connection: service calls change only
+// what it shows.
+func demoApp(t *testing.T) *application {
+	states := parseStates(t, demoStates)
 	a := newApplication(filepath.Join(t.TempDir(), "config.json"), memorySecrets{})
 	a.post = func(fn func()) {}
 	a.config = config{Address: "http://ha.test", Entity: "climate.bedroom"}
 	a.token = "token"
-	a.devices, a.listed = []ha.Climate{bedroom, living}, true
-	a.climate, a.hasClimate, a.online = bedroom, true, true
+	a.registry = demoRegistry()
+	a.home, a.listed = ha.Arrange(states, a.registry), true
+	a.climate, a.hasClimate, a.online = ha.ParseClimate(states[0]), true, true
 	return a
+}
+
+// serviceCalls records the service calls of Home Assistant at its URL, as
+// "light/turn_off light.ceiling".
+func serviceCalls(t *testing.T) (string, func() []string) {
+	var mu sync.Mutex
+	var calls []string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		mu.Lock()
+		calls = append(calls, r.URL.Path[len("/api/services/"):]+" "+body["entity_id"].(string))
+		mu.Unlock()
+		w.Write([]byte(`[]`))
+	}))
+	t.Cleanup(srv.Close)
+	return srv.URL, func() []string {
+		mu.Lock()
+		defer mu.Unlock()
+		return slices.Clone(calls)
+	}
+}
+
+// returned runs what a service call posts to the main thread once it
+// returns.
+func returned(t *testing.T, posted chan func()) {
+	t.Helper()
+	select {
+	case fn := <-posted:
+		fn()
+	case <-time.After(5 * time.Second):
+		t.Fatal("no service call returned")
+	}
 }
 
 func TestPanelControls(t *testing.T) {
@@ -107,18 +183,25 @@ func TestPanelControls(t *testing.T) {
 	}
 }
 
-// The panel opens on the device list; a device opens its controls and is
-// remembered for the menu bar title.
-func TestDeviceList(t *testing.T) {
+// The panel opens on the devices as tiles, by area, each with its state; an
+// air conditioner opens its controls and is remembered for the menu bar
+// title.
+func TestHome(t *testing.T) {
 	a := demoApp(t)
-	a.climate.Target = 21 // A local change the list's read lacks.
-	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
-	for _, s := range []string{locales.Devices(), "Bedroom AC", "21°", "Living Room AC", locales.ModeOff() + " · " + locales.Room() + " 26.5°C"} {
-		if !tt.HasText(s) {
+	a.climate.Target = 21 // A local change the read lacks.
+	tt := ui.NewTester(a.panelView, panelWidth, 900)
+	for _, s := range []string{
+		locales.Devices(), "Living Room", "Bedroom", locales.OtherDevices(),
+		"Cabinet AC", locales.ModeOff(), "AC", locales.ModeCool() + " · 21°",
+		"Ceiling Light", locales.StateOn() + " · 80%", "Curtain", locales.StateOpen() + " · 60%",
+		"TV", locales.StatePlaying() + " · Interstellar", "Front Door", locales.StateLocked(),
+		"Thermometer", "24.3 °C · 45%", "Window", "Heater", "Robot Vacuum", locales.StateDocked(),
+	} {
+		if _, ok := tt.Find(s); !ok {
 			t.Fatalf("missing %q in %v", s, tt.Texts())
 		}
 	}
-	if err := tt.Click("Living Room AC"); err != nil {
+	if err := tt.Click("Cabinet AC"); err != nil {
 		t.Fatal(err)
 	}
 	if !a.detail || a.climate.EntityID != "climate.living_room" || a.entity != "climate.living_room" {
@@ -131,36 +214,99 @@ func TestDeviceList(t *testing.T) {
 		t.Fatalf("detail: %v %q", tt.Texts(), a.trayTitle())
 	}
 	tt.Key(0, ui.KeyEscape)
-	if a.detail || !tt.HasText("Bedroom AC") {
+	if a.detail || !tt.HasText("Ceiling Light") {
 		t.Fatalf("escape: %v", tt.Texts())
 	}
 }
 
-// A list read keeps a local change to the device opened last, forgets that
-// device once it is gone and ignores another connection.
+// A tile switches its device, or offers its actions in a menu, and shows the
+// state an action leads to until a fresh read reports it.
+func TestTileActions(t *testing.T) {
+	url, calls := serviceCalls(t)
+	a := demoApp(t)
+	posted := make(chan func(), 4)
+	a.post = func(fn func()) { posted <- fn }
+	client := ha.NewClient(url, "token")
+	a.client = client
+	tt := ui.NewTester(a.panelView, panelWidth, 900)
+
+	edits := a.edits.Load()
+	if err := tt.Click("Ceiling Light"); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(locales.StateOff()) || tt.HasText(locales.StateOn()+" · 80%") {
+		t.Fatalf("turn off: %v", tt.Texts())
+	}
+	returned(t, posted)
+	states := parseStates(t, demoStates)
+	a.applyList(client, edits, states, nil, "", nil)
+	tt.Frame()
+	if tt.HasText(locales.StateOn() + " · 80%") {
+		t.Fatal("a read from before the action undid it")
+	}
+	a.holds["light.ceiling"].until = time.Time{} // As if it settled.
+	states[2].State = "off"
+	a.applyList(client, a.edits.Load(), states, nil, "", nil)
+	if len(a.holds) != 0 {
+		t.Fatalf("holds %v", a.holds)
+	}
+
+	if err := tt.Click("Front Door"); err != nil {
+		t.Fatal(err)
+	}
+	if got := tt.Menu(); !slices.Equal(got, []string{locales.ActionLock(), locales.ActionUnlock()}) {
+		t.Fatalf("lock menu %v", got)
+	}
+	if err := tt.ChooseMenuItem(locales.ActionUnlock()); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText(locales.StateUnlocking()) {
+		t.Fatalf("unlock: %v", tt.Texts())
+	}
+	returned(t, posted)
+	if err := tt.Click("Robot Vacuum"); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.ChooseMenuItem(locales.ActionStart()); err != nil {
+		t.Fatalf("%v: %v", err, tt.Menu())
+	}
+	returned(t, posted)
+	want := []string{"light/turn_off light.ceiling", "lock/unlock lock.front_door", "vacuum/start vacuum.robot"}
+	if got := calls(); !slices.Equal(got, want) {
+		t.Fatalf("calls %v", got)
+	}
+}
+
+// A read keeps a local change to the air conditioner opened last, forgets it
+// once it is gone and ignores another connection.
 func TestListRead(t *testing.T) {
 	a := demoApp(t)
 	client := ha.NewClient("http://ha.test", "token")
 	a.client, a.detail = client, true
 	a.panelOpen.Store(true)
-	read := a.devices
+	read := parseStates(t, demoStates)
 	edits := a.edits.Load()
 	a.climate.Target = 20
 	a.edits.Add(1)
-	a.applyList(client, edits, read, "", nil)
-	if a.climate.Target != 20 || a.shown(read[0]).Target != 20 {
-		t.Fatal("stale read replaced a local change")
+	a.applyList(client, edits, read, nil, "", nil)
+	cl := ha.ParseClimate(read[0])
+	if a.climate.Target != 20 || a.shown(cl).Target != 20 || a.tileCount() != 11 {
+		t.Fatalf("stale read replaced a local change: %v, %d tiles", a.climate.Target, a.tileCount())
 	}
-	a.applyList(client, a.edits.Load(), read[1:], "", nil)
-	if a.hasClimate || a.detail || len(a.devices) != 1 || !a.listing || a.config.Entity != "" || a.entity != "" {
+	a.applyList(client, a.edits.Load(), read[1:], nil, "", nil)
+	if a.hasClimate || a.detail || a.tileCount() != 10 || !a.listing || a.config.Entity != "" || a.entity != "" {
 		t.Fatalf("gone device: %v %v %v %q", a.hasClimate, a.detail, a.listing, a.config.Entity)
 	}
 	if saved, err := loadConfig(a.path); err != nil || saved.Entity != "" {
 		t.Fatalf("saved %+v %v", saved, err)
 	}
-	a.applyList(ha.NewClient("http://ha.test", "old"), a.edits.Load(), read, "", nil)
-	if len(a.devices) != 1 {
+	a.applyList(ha.NewClient("http://ha.test", "old"), a.edits.Load(), read, nil, "", nil)
+	if a.tileCount() != 10 {
 		t.Fatal("read of another connection shown")
+	}
+	// The registries last read keep arranging the tiles.
+	if a.registry == nil || len(a.home) != 3 || a.home[0].Area != "Living Room" {
+		t.Fatalf("sections %+v", a.home)
 	}
 }
 
@@ -183,13 +329,8 @@ func TestOpenDeviceSendsWaitingTarget(t *testing.T) {
 	a.post = func(fn func()) { posted <- fn }
 	a.client, a.entity, a.detail = ha.NewClient(srv.URL, "token"), "climate.bedroom", true
 	a.setTarget(22)
-	a.openDevice(a.devices[1])
-	select {
-	case fn := <-posted:
-		fn()
-	case <-time.After(5 * time.Second):
-		t.Fatal("no service call")
-	}
+	a.openClimate(ha.ParseClimate(parseStates(t, demoStates)[1]))
+	returned(t, posted)
 	mu.Lock()
 	defer mu.Unlock()
 	if len(calls) != 1 || calls[0]["entity_id"] != "climate.bedroom" || calls[0]["temperature"] != 22.0 {
@@ -218,6 +359,22 @@ func TestStaleReadIgnored(t *testing.T) {
 	}
 }
 
+func TestTileName(t *testing.T) {
+	for _, tc := range []struct{ name, area, want string }{
+		{"Bedroom Lamp", "Bedroom", "Lamp"},
+		{"bedroom lamp", "Bedroom", "lamp"},
+		{"卧室空调", "卧室", "空调"},
+		{"Bedroom", "Bedroom", "Bedroom"},
+		{"Bedroom - ", "Bedroom", "Bedroom - "},
+		{"Lamp", "Bedroom", "Lamp"},
+		{"Lamp", "", "Lamp"},
+	} {
+		if got := tileName(tc.name, tc.area); got != tc.want {
+			t.Errorf("%q in %q: %q", tc.name, tc.area, got)
+		}
+	}
+}
+
 func TestSetupView(t *testing.T) {
 	a := newApplication(filepath.Join(t.TempDir(), "config.json"), memorySecrets{})
 	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
@@ -234,7 +391,7 @@ func TestSetupView(t *testing.T) {
 	a.settingsOpen = false
 	a.resetPanel()
 	if !a.settingsOpen {
-		t.Fatal("reset to the list before setup")
+		t.Fatal("reset to the home page before setup")
 	}
 }
 
@@ -253,7 +410,7 @@ func TestSettingsPage(t *testing.T) {
 	if err := tt.Click(locales.CloseSettings()); err != nil {
 		t.Fatal(err)
 	}
-	if a.settingsOpen || !tt.HasText("Living Room AC") {
+	if a.settingsOpen || !tt.HasText("Cabinet AC") {
 		t.Fatal(tt.Texts())
 	}
 	a.detail = true
@@ -279,18 +436,34 @@ func TestConfigRoundTrip(t *testing.T) {
 	}
 }
 
+// The menu bar icon is a template image, centered on the menu bar.
 func TestTrayIcon(t *testing.T) {
-	img, err := png.Decode(bytesReader(trayIcon()))
-	if err != nil || img.Bounds().Dx() != 36 {
+	img, err := png.Decode(bytes.NewReader(trayIcon()))
+	if err != nil || img.Bounds().Dx() != 36 || img.Bounds().Dy() != 36 {
 		t.Fatal(err)
+	}
+	for y := range 36 {
+		for x := range 18 {
+			r, g, b, a := img.At(x, y).RGBA()
+			if _, _, _, mirror := img.At(35-x, y).RGBA(); a != mirror {
+				t.Fatalf("not symmetric at %d,%d", x, y)
+			}
+			if runtime.GOOS == "darwin" && r|g|b != 0 {
+				t.Fatalf("not black at %d,%d", x, y)
+			}
+		}
 	}
 }
 
-// TestSnapshot writes the panel's pages to $HA_SNAPSHOT_DIR for review.
+// TestSnapshot writes the panel's pages and the menu bar icon to
+// $HA_SNAPSHOT_DIR for review.
 func TestSnapshot(t *testing.T) {
 	dir := os.Getenv("HA_SNAPSHOT_DIR")
 	if dir == "" {
 		t.Skip("set HA_SNAPSHOT_DIR to write snapshots")
+	}
+	if err := os.WriteFile(filepath.Join(dir, "tray.png"), trayIcon(), 0o644); err != nil {
+		t.Fatal(err)
 	}
 	a := demoApp(t)
 	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
@@ -307,7 +480,7 @@ func TestSnapshot(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	write("list.png")
+	write("home.png")
 	a.settingsOpen = true
 	write("settings.png")
 	a.settingsOpen, a.detail = false, true
@@ -316,5 +489,3 @@ func TestSnapshot(t *testing.T) {
 	a.climate.Preset = "sleep"
 	write("panel-heat.png")
 }
-
-func bytesReader(b []byte) *bytes.Reader { return bytes.NewReader(b) }

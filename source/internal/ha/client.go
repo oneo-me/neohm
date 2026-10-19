@@ -91,36 +91,28 @@ func (c *Client) TemperatureUnit(ctx context.Context) (string, error) {
 	return cfg.UnitSystem.Temperature, nil
 }
 
-// Climates lists the climate entities, sorted as Home Assistant returns them.
-func (c *Client) Climates(ctx context.Context) ([]Climate, error) {
+// States reads the state of every entity, in Home Assistant's order.
+func (c *Client) States(ctx context.Context) ([]State, error) {
 	var states []State
 	if err := c.do(ctx, http.MethodGet, "/api/states", nil, &states); err != nil {
 		return nil, err
 	}
-	var out []Climate
-	for _, s := range states {
-		if strings.HasPrefix(s.EntityID, "climate.") {
-			out = append(out, ParseClimate(s))
-		}
-	}
-	return out, nil
+	return states, nil
 }
 
-// Climate fetches one climate entity.
-func (c *Client) Climate(ctx context.Context, entity string) (Climate, error) {
+// State reads the state of one entity.
+func (c *Client) State(ctx context.Context, entity string) (State, error) {
 	var s State
-	if err := c.do(ctx, http.MethodGet, "/api/states/"+url.PathEscape(entity), nil, &s); err != nil {
-		return Climate{}, err
-	}
-	return ParseClimate(s), nil
+	err := c.do(ctx, http.MethodGet, "/api/states/"+url.PathEscape(entity), nil, &s)
+	return s, err
 }
 
-// Call calls a climate service, such as "set_temperature", on entity with
-// the extra fields of data.
-func (c *Client) Call(ctx context.Context, service, entity string, data map[string]any) error {
+// Call calls a service of domain, such as "climate" and "set_temperature",
+// on entity with the extra fields of data.
+func (c *Client) Call(ctx context.Context, domain, service, entity string, data map[string]any) error {
 	body := map[string]any{"entity_id": entity}
 	for k, v := range data {
 		body[k] = v
 	}
-	return c.do(ctx, http.MethodPost, "/api/services/climate/"+url.PathEscape(service), body, nil)
+	return c.do(ctx, http.MethodPost, "/api/services/"+url.PathEscape(domain)+"/"+url.PathEscape(service), body, nil)
 }

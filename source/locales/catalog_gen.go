@@ -54,21 +54,21 @@ func (msgs Messages) Devices() string {
 	return Catalog.Format(msgs.locale, "devices", nil)
 }
 
-// NoDevices says "No air conditioners"
+// NoDevices says "No devices"
 // in the language the app shows.
 func NoDevices() string { return In(i18n.Locale()).NoDevices() }
 
-// NoDevices says "No air conditioners"
+// NoDevices says "No devices"
 // in the language of msgs.
 func (msgs Messages) NoDevices() string {
 	return Catalog.Format(msgs.locale, "noDevices", nil)
 }
 
-// NoDevicesBody says "Home Assistant has no climate entities."
+// NoDevicesBody says "Home Assistant has no devices to show here."
 // in the language the app shows.
 func NoDevicesBody() string { return In(i18n.Locale()).NoDevicesBody() }
 
-// NoDevicesBody says "Home Assistant has no climate entities."
+// NoDevicesBody says "Home Assistant has no devices to show here."
 // in the language of msgs.
 func (msgs Messages) NoDevicesBody() string {
 	return Catalog.Format(msgs.locale, "noDevicesBody", nil)
@@ -474,6 +474,826 @@ func (msgs Messages) SwingBoth() string {
 	return Catalog.Format(msgs.locale, "swing_both", nil)
 }
 
+// OtherDevices says "Other"
+// in the language the app shows.
+func OtherDevices() string { return In(i18n.Locale()).OtherDevices() }
+
+// OtherDevices says "Other"
+// in the language of msgs.
+func (msgs Messages) OtherDevices() string {
+	return Catalog.Format(msgs.locale, "otherDevices", nil)
+}
+
+// StateOn says "On"
+// in the language the app shows.
+func StateOn() string { return In(i18n.Locale()).StateOn() }
+
+// StateOn says "On"
+// in the language of msgs.
+func (msgs Messages) StateOn() string {
+	return Catalog.Format(msgs.locale, "state_on", nil)
+}
+
+// StateOff says "Off"
+// in the language the app shows.
+func StateOff() string { return In(i18n.Locale()).StateOff() }
+
+// StateOff says "Off"
+// in the language of msgs.
+func (msgs Messages) StateOff() string {
+	return Catalog.Format(msgs.locale, "state_off", nil)
+}
+
+// StateOpen says "Open"
+// in the language the app shows.
+func StateOpen() string { return In(i18n.Locale()).StateOpen() }
+
+// StateOpen says "Open"
+// in the language of msgs.
+func (msgs Messages) StateOpen() string {
+	return Catalog.Format(msgs.locale, "state_open", nil)
+}
+
+// StateClosed says "Closed"
+// in the language the app shows.
+func StateClosed() string { return In(i18n.Locale()).StateClosed() }
+
+// StateClosed says "Closed"
+// in the language of msgs.
+func (msgs Messages) StateClosed() string {
+	return Catalog.Format(msgs.locale, "state_closed", nil)
+}
+
+// StateOpening says "Opening"
+// in the language the app shows.
+func StateOpening() string { return In(i18n.Locale()).StateOpening() }
+
+// StateOpening says "Opening"
+// in the language of msgs.
+func (msgs Messages) StateOpening() string {
+	return Catalog.Format(msgs.locale, "state_opening", nil)
+}
+
+// StateClosing says "Closing"
+// in the language the app shows.
+func StateClosing() string { return In(i18n.Locale()).StateClosing() }
+
+// StateClosing says "Closing"
+// in the language of msgs.
+func (msgs Messages) StateClosing() string {
+	return Catalog.Format(msgs.locale, "state_closing", nil)
+}
+
+// StateLocked says "Locked"
+// in the language the app shows.
+func StateLocked() string { return In(i18n.Locale()).StateLocked() }
+
+// StateLocked says "Locked"
+// in the language of msgs.
+func (msgs Messages) StateLocked() string {
+	return Catalog.Format(msgs.locale, "state_locked", nil)
+}
+
+// StateUnlocked says "Unlocked"
+// in the language the app shows.
+func StateUnlocked() string { return In(i18n.Locale()).StateUnlocked() }
+
+// StateUnlocked says "Unlocked"
+// in the language of msgs.
+func (msgs Messages) StateUnlocked() string {
+	return Catalog.Format(msgs.locale, "state_unlocked", nil)
+}
+
+// StateLocking says "Locking"
+// in the language the app shows.
+func StateLocking() string { return In(i18n.Locale()).StateLocking() }
+
+// StateLocking says "Locking"
+// in the language of msgs.
+func (msgs Messages) StateLocking() string {
+	return Catalog.Format(msgs.locale, "state_locking", nil)
+}
+
+// StateUnlocking says "Unlocking"
+// in the language the app shows.
+func StateUnlocking() string { return In(i18n.Locale()).StateUnlocking() }
+
+// StateUnlocking says "Unlocking"
+// in the language of msgs.
+func (msgs Messages) StateUnlocking() string {
+	return Catalog.Format(msgs.locale, "state_unlocking", nil)
+}
+
+// StateJammed says "Jammed"
+// in the language the app shows.
+func StateJammed() string { return In(i18n.Locale()).StateJammed() }
+
+// StateJammed says "Jammed"
+// in the language of msgs.
+func (msgs Messages) StateJammed() string {
+	return Catalog.Format(msgs.locale, "state_jammed", nil)
+}
+
+// StatePlaying says "Playing"
+// in the language the app shows.
+func StatePlaying() string { return In(i18n.Locale()).StatePlaying() }
+
+// StatePlaying says "Playing"
+// in the language of msgs.
+func (msgs Messages) StatePlaying() string {
+	return Catalog.Format(msgs.locale, "state_playing", nil)
+}
+
+// StatePaused says "Paused"
+// in the language the app shows.
+func StatePaused() string { return In(i18n.Locale()).StatePaused() }
+
+// StatePaused says "Paused"
+// in the language of msgs.
+func (msgs Messages) StatePaused() string {
+	return Catalog.Format(msgs.locale, "state_paused", nil)
+}
+
+// StateIdle says "Idle"
+// in the language the app shows.
+func StateIdle() string { return In(i18n.Locale()).StateIdle() }
+
+// StateIdle says "Idle"
+// in the language of msgs.
+func (msgs Messages) StateIdle() string {
+	return Catalog.Format(msgs.locale, "state_idle", nil)
+}
+
+// StateBuffering says "Buffering"
+// in the language the app shows.
+func StateBuffering() string { return In(i18n.Locale()).StateBuffering() }
+
+// StateBuffering says "Buffering"
+// in the language of msgs.
+func (msgs Messages) StateBuffering() string {
+	return Catalog.Format(msgs.locale, "state_buffering", nil)
+}
+
+// StateStandby says "Standby"
+// in the language the app shows.
+func StateStandby() string { return In(i18n.Locale()).StateStandby() }
+
+// StateStandby says "Standby"
+// in the language of msgs.
+func (msgs Messages) StateStandby() string {
+	return Catalog.Format(msgs.locale, "state_standby", nil)
+}
+
+// StateCleaning says "Cleaning"
+// in the language the app shows.
+func StateCleaning() string { return In(i18n.Locale()).StateCleaning() }
+
+// StateCleaning says "Cleaning"
+// in the language of msgs.
+func (msgs Messages) StateCleaning() string {
+	return Catalog.Format(msgs.locale, "state_cleaning", nil)
+}
+
+// StateDocked says "Docked"
+// in the language the app shows.
+func StateDocked() string { return In(i18n.Locale()).StateDocked() }
+
+// StateDocked says "Docked"
+// in the language of msgs.
+func (msgs Messages) StateDocked() string {
+	return Catalog.Format(msgs.locale, "state_docked", nil)
+}
+
+// StateReturning says "Returning"
+// in the language the app shows.
+func StateReturning() string { return In(i18n.Locale()).StateReturning() }
+
+// StateReturning says "Returning"
+// in the language of msgs.
+func (msgs Messages) StateReturning() string {
+	return Catalog.Format(msgs.locale, "state_returning", nil)
+}
+
+// StateError says "Error"
+// in the language the app shows.
+func StateError() string { return In(i18n.Locale()).StateError() }
+
+// StateError says "Error"
+// in the language of msgs.
+func (msgs Messages) StateError() string {
+	return Catalog.Format(msgs.locale, "state_error", nil)
+}
+
+// StateMowing says "Mowing"
+// in the language the app shows.
+func StateMowing() string { return In(i18n.Locale()).StateMowing() }
+
+// StateMowing says "Mowing"
+// in the language of msgs.
+func (msgs Messages) StateMowing() string {
+	return Catalog.Format(msgs.locale, "state_mowing", nil)
+}
+
+// StateRecording says "Recording"
+// in the language the app shows.
+func StateRecording() string { return In(i18n.Locale()).StateRecording() }
+
+// StateRecording says "Recording"
+// in the language of msgs.
+func (msgs Messages) StateRecording() string {
+	return Catalog.Format(msgs.locale, "state_recording", nil)
+}
+
+// StateStreaming says "Streaming"
+// in the language the app shows.
+func StateStreaming() string { return In(i18n.Locale()).StateStreaming() }
+
+// StateStreaming says "Streaming"
+// in the language of msgs.
+func (msgs Messages) StateStreaming() string {
+	return Catalog.Format(msgs.locale, "state_streaming", nil)
+}
+
+// StateDisarmed says "Disarmed"
+// in the language the app shows.
+func StateDisarmed() string { return In(i18n.Locale()).StateDisarmed() }
+
+// StateDisarmed says "Disarmed"
+// in the language of msgs.
+func (msgs Messages) StateDisarmed() string {
+	return Catalog.Format(msgs.locale, "state_disarmed", nil)
+}
+
+// StateArmedHome says "Armed home"
+// in the language the app shows.
+func StateArmedHome() string { return In(i18n.Locale()).StateArmedHome() }
+
+// StateArmedHome says "Armed home"
+// in the language of msgs.
+func (msgs Messages) StateArmedHome() string {
+	return Catalog.Format(msgs.locale, "state_armed_home", nil)
+}
+
+// StateArmedAway says "Armed away"
+// in the language the app shows.
+func StateArmedAway() string { return In(i18n.Locale()).StateArmedAway() }
+
+// StateArmedAway says "Armed away"
+// in the language of msgs.
+func (msgs Messages) StateArmedAway() string {
+	return Catalog.Format(msgs.locale, "state_armed_away", nil)
+}
+
+// StateArmedNight says "Armed night"
+// in the language the app shows.
+func StateArmedNight() string { return In(i18n.Locale()).StateArmedNight() }
+
+// StateArmedNight says "Armed night"
+// in the language of msgs.
+func (msgs Messages) StateArmedNight() string {
+	return Catalog.Format(msgs.locale, "state_armed_night", nil)
+}
+
+// StateArmedVacation says "Armed vacation"
+// in the language the app shows.
+func StateArmedVacation() string { return In(i18n.Locale()).StateArmedVacation() }
+
+// StateArmedVacation says "Armed vacation"
+// in the language of msgs.
+func (msgs Messages) StateArmedVacation() string {
+	return Catalog.Format(msgs.locale, "state_armed_vacation", nil)
+}
+
+// StateArmedCustomBypass says "Armed custom bypass"
+// in the language the app shows.
+func StateArmedCustomBypass() string { return In(i18n.Locale()).StateArmedCustomBypass() }
+
+// StateArmedCustomBypass says "Armed custom bypass"
+// in the language of msgs.
+func (msgs Messages) StateArmedCustomBypass() string {
+	return Catalog.Format(msgs.locale, "state_armed_custom_bypass", nil)
+}
+
+// StatePending says "Pending"
+// in the language the app shows.
+func StatePending() string { return In(i18n.Locale()).StatePending() }
+
+// StatePending says "Pending"
+// in the language of msgs.
+func (msgs Messages) StatePending() string {
+	return Catalog.Format(msgs.locale, "state_pending", nil)
+}
+
+// StateArming says "Arming"
+// in the language the app shows.
+func StateArming() string { return In(i18n.Locale()).StateArming() }
+
+// StateArming says "Arming"
+// in the language of msgs.
+func (msgs Messages) StateArming() string {
+	return Catalog.Format(msgs.locale, "state_arming", nil)
+}
+
+// StateDisarming says "Disarming"
+// in the language the app shows.
+func StateDisarming() string { return In(i18n.Locale()).StateDisarming() }
+
+// StateDisarming says "Disarming"
+// in the language of msgs.
+func (msgs Messages) StateDisarming() string {
+	return Catalog.Format(msgs.locale, "state_disarming", nil)
+}
+
+// StateTriggered says "Triggered"
+// in the language the app shows.
+func StateTriggered() string { return In(i18n.Locale()).StateTriggered() }
+
+// StateTriggered says "Triggered"
+// in the language of msgs.
+func (msgs Messages) StateTriggered() string {
+	return Catalog.Format(msgs.locale, "state_triggered", nil)
+}
+
+// StateUnknown says "Unknown"
+// in the language the app shows.
+func StateUnknown() string { return In(i18n.Locale()).StateUnknown() }
+
+// StateUnknown says "Unknown"
+// in the language of msgs.
+func (msgs Messages) StateUnknown() string {
+	return Catalog.Format(msgs.locale, "state_unknown", nil)
+}
+
+// SensorClear says "Clear"
+// in the language the app shows.
+func SensorClear() string { return In(i18n.Locale()).SensorClear() }
+
+// SensorClear says "Clear"
+// in the language of msgs.
+func (msgs Messages) SensorClear() string {
+	return Catalog.Format(msgs.locale, "sensor_clear", nil)
+}
+
+// SensorDetected says "Detected"
+// in the language the app shows.
+func SensorDetected() string { return In(i18n.Locale()).SensorDetected() }
+
+// SensorDetected says "Detected"
+// in the language of msgs.
+func (msgs Messages) SensorDetected() string {
+	return Catalog.Format(msgs.locale, "sensor_detected", nil)
+}
+
+// SensorDry says "Dry"
+// in the language the app shows.
+func SensorDry() string { return In(i18n.Locale()).SensorDry() }
+
+// SensorDry says "Dry"
+// in the language of msgs.
+func (msgs Messages) SensorDry() string {
+	return Catalog.Format(msgs.locale, "sensor_dry", nil)
+}
+
+// SensorWet says "Wet"
+// in the language the app shows.
+func SensorWet() string { return In(i18n.Locale()).SensorWet() }
+
+// SensorWet says "Wet"
+// in the language of msgs.
+func (msgs Messages) SensorWet() string {
+	return Catalog.Format(msgs.locale, "sensor_wet", nil)
+}
+
+// SensorSafe says "Safe"
+// in the language the app shows.
+func SensorSafe() string { return In(i18n.Locale()).SensorSafe() }
+
+// SensorSafe says "Safe"
+// in the language of msgs.
+func (msgs Messages) SensorSafe() string {
+	return Catalog.Format(msgs.locale, "sensor_safe", nil)
+}
+
+// SensorUnsafe says "Unsafe"
+// in the language the app shows.
+func SensorUnsafe() string { return In(i18n.Locale()).SensorUnsafe() }
+
+// SensorUnsafe says "Unsafe"
+// in the language of msgs.
+func (msgs Messages) SensorUnsafe() string {
+	return Catalog.Format(msgs.locale, "sensor_unsafe", nil)
+}
+
+// SensorNormal says "Normal"
+// in the language the app shows.
+func SensorNormal() string { return In(i18n.Locale()).SensorNormal() }
+
+// SensorNormal says "Normal"
+// in the language of msgs.
+func (msgs Messages) SensorNormal() string {
+	return Catalog.Format(msgs.locale, "sensor_normal", nil)
+}
+
+// SensorHot says "Hot"
+// in the language the app shows.
+func SensorHot() string { return In(i18n.Locale()).SensorHot() }
+
+// SensorHot says "Hot"
+// in the language of msgs.
+func (msgs Messages) SensorHot() string {
+	return Catalog.Format(msgs.locale, "sensor_hot", nil)
+}
+
+// SensorCold says "Cold"
+// in the language the app shows.
+func SensorCold() string { return In(i18n.Locale()).SensorCold() }
+
+// SensorCold says "Cold"
+// in the language of msgs.
+func (msgs Messages) SensorCold() string {
+	return Catalog.Format(msgs.locale, "sensor_cold", nil)
+}
+
+// SensorDark says "Dark"
+// in the language the app shows.
+func SensorDark() string { return In(i18n.Locale()).SensorDark() }
+
+// SensorDark says "Dark"
+// in the language of msgs.
+func (msgs Messages) SensorDark() string {
+	return Catalog.Format(msgs.locale, "sensor_dark", nil)
+}
+
+// SensorLight says "Light"
+// in the language the app shows.
+func SensorLight() string { return In(i18n.Locale()).SensorLight() }
+
+// SensorLight says "Light"
+// in the language of msgs.
+func (msgs Messages) SensorLight() string {
+	return Catalog.Format(msgs.locale, "sensor_light", nil)
+}
+
+// SensorUnplugged says "Unplugged"
+// in the language the app shows.
+func SensorUnplugged() string { return In(i18n.Locale()).SensorUnplugged() }
+
+// SensorUnplugged says "Unplugged"
+// in the language of msgs.
+func (msgs Messages) SensorUnplugged() string {
+	return Catalog.Format(msgs.locale, "sensor_unplugged", nil)
+}
+
+// SensorPlugged says "Plugged in"
+// in the language the app shows.
+func SensorPlugged() string { return In(i18n.Locale()).SensorPlugged() }
+
+// SensorPlugged says "Plugged in"
+// in the language of msgs.
+func (msgs Messages) SensorPlugged() string {
+	return Catalog.Format(msgs.locale, "sensor_plugged", nil)
+}
+
+// SensorStill says "Still"
+// in the language the app shows.
+func SensorStill() string { return In(i18n.Locale()).SensorStill() }
+
+// SensorStill says "Still"
+// in the language of msgs.
+func (msgs Messages) SensorStill() string {
+	return Catalog.Format(msgs.locale, "sensor_still", nil)
+}
+
+// SensorMoving says "Moving"
+// in the language the app shows.
+func SensorMoving() string { return In(i18n.Locale()).SensorMoving() }
+
+// SensorMoving says "Moving"
+// in the language of msgs.
+func (msgs Messages) SensorMoving() string {
+	return Catalog.Format(msgs.locale, "sensor_moving", nil)
+}
+
+// SensorStopped says "Stopped"
+// in the language the app shows.
+func SensorStopped() string { return In(i18n.Locale()).SensorStopped() }
+
+// SensorStopped says "Stopped"
+// in the language of msgs.
+func (msgs Messages) SensorStopped() string {
+	return Catalog.Format(msgs.locale, "sensor_stopped", nil)
+}
+
+// SensorRunning says "Running"
+// in the language the app shows.
+func SensorRunning() string { return In(i18n.Locale()).SensorRunning() }
+
+// SensorRunning says "Running"
+// in the language of msgs.
+func (msgs Messages) SensorRunning() string {
+	return Catalog.Format(msgs.locale, "sensor_running", nil)
+}
+
+// WaterEco says "Eco"
+// in the language the app shows.
+func WaterEco() string { return In(i18n.Locale()).WaterEco() }
+
+// WaterEco says "Eco"
+// in the language of msgs.
+func (msgs Messages) WaterEco() string {
+	return Catalog.Format(msgs.locale, "water_eco", nil)
+}
+
+// WaterElectric says "Electric"
+// in the language the app shows.
+func WaterElectric() string { return In(i18n.Locale()).WaterElectric() }
+
+// WaterElectric says "Electric"
+// in the language of msgs.
+func (msgs Messages) WaterElectric() string {
+	return Catalog.Format(msgs.locale, "water_electric", nil)
+}
+
+// WaterGas says "Gas"
+// in the language the app shows.
+func WaterGas() string { return In(i18n.Locale()).WaterGas() }
+
+// WaterGas says "Gas"
+// in the language of msgs.
+func (msgs Messages) WaterGas() string {
+	return Catalog.Format(msgs.locale, "water_gas", nil)
+}
+
+// WaterHeatPump says "Heat pump"
+// in the language the app shows.
+func WaterHeatPump() string { return In(i18n.Locale()).WaterHeatPump() }
+
+// WaterHeatPump says "Heat pump"
+// in the language of msgs.
+func (msgs Messages) WaterHeatPump() string {
+	return Catalog.Format(msgs.locale, "water_heat_pump", nil)
+}
+
+// WaterHighDemand says "High demand"
+// in the language the app shows.
+func WaterHighDemand() string { return In(i18n.Locale()).WaterHighDemand() }
+
+// WaterHighDemand says "High demand"
+// in the language of msgs.
+func (msgs Messages) WaterHighDemand() string {
+	return Catalog.Format(msgs.locale, "water_high_demand", nil)
+}
+
+// WaterPerformance says "Performance"
+// in the language the app shows.
+func WaterPerformance() string { return In(i18n.Locale()).WaterPerformance() }
+
+// WaterPerformance says "Performance"
+// in the language of msgs.
+func (msgs Messages) WaterPerformance() string {
+	return Catalog.Format(msgs.locale, "water_performance", nil)
+}
+
+// WaterOff says "Off"
+// in the language the app shows.
+func WaterOff() string { return In(i18n.Locale()).WaterOff() }
+
+// WaterOff says "Off"
+// in the language of msgs.
+func (msgs Messages) WaterOff() string {
+	return Catalog.Format(msgs.locale, "water_off", nil)
+}
+
+// ActionTurnOn says "Turn On"
+// in the language the app shows.
+func ActionTurnOn() string { return In(i18n.Locale()).ActionTurnOn() }
+
+// ActionTurnOn says "Turn On"
+// in the language of msgs.
+func (msgs Messages) ActionTurnOn() string {
+	return Catalog.Format(msgs.locale, "action_turn_on", nil)
+}
+
+// ActionTurnOff says "Turn Off"
+// in the language the app shows.
+func ActionTurnOff() string { return In(i18n.Locale()).ActionTurnOff() }
+
+// ActionTurnOff says "Turn Off"
+// in the language of msgs.
+func (msgs Messages) ActionTurnOff() string {
+	return Catalog.Format(msgs.locale, "action_turn_off", nil)
+}
+
+// ActionOpen says "Open"
+// in the language the app shows.
+func ActionOpen() string { return In(i18n.Locale()).ActionOpen() }
+
+// ActionOpen says "Open"
+// in the language of msgs.
+func (msgs Messages) ActionOpen() string {
+	return Catalog.Format(msgs.locale, "action_open", nil)
+}
+
+// ActionClose says "Close"
+// in the language the app shows.
+func ActionClose() string { return In(i18n.Locale()).ActionClose() }
+
+// ActionClose says "Close"
+// in the language of msgs.
+func (msgs Messages) ActionClose() string {
+	return Catalog.Format(msgs.locale, "action_close", nil)
+}
+
+// ActionStop says "Stop"
+// in the language the app shows.
+func ActionStop() string { return In(i18n.Locale()).ActionStop() }
+
+// ActionStop says "Stop"
+// in the language of msgs.
+func (msgs Messages) ActionStop() string {
+	return Catalog.Format(msgs.locale, "action_stop", nil)
+}
+
+// ActionLock says "Lock"
+// in the language the app shows.
+func ActionLock() string { return In(i18n.Locale()).ActionLock() }
+
+// ActionLock says "Lock"
+// in the language of msgs.
+func (msgs Messages) ActionLock() string {
+	return Catalog.Format(msgs.locale, "action_lock", nil)
+}
+
+// ActionUnlock says "Unlock"
+// in the language the app shows.
+func ActionUnlock() string { return In(i18n.Locale()).ActionUnlock() }
+
+// ActionUnlock says "Unlock"
+// in the language of msgs.
+func (msgs Messages) ActionUnlock() string {
+	return Catalog.Format(msgs.locale, "action_unlock", nil)
+}
+
+// ActionOpenDoor says "Open Door"
+// in the language the app shows.
+func ActionOpenDoor() string { return In(i18n.Locale()).ActionOpenDoor() }
+
+// ActionOpenDoor says "Open Door"
+// in the language of msgs.
+func (msgs Messages) ActionOpenDoor() string {
+	return Catalog.Format(msgs.locale, "action_open_door", nil)
+}
+
+// ActionPlay says "Play"
+// in the language the app shows.
+func ActionPlay() string { return In(i18n.Locale()).ActionPlay() }
+
+// ActionPlay says "Play"
+// in the language of msgs.
+func (msgs Messages) ActionPlay() string {
+	return Catalog.Format(msgs.locale, "action_play", nil)
+}
+
+// ActionPause says "Pause"
+// in the language the app shows.
+func ActionPause() string { return In(i18n.Locale()).ActionPause() }
+
+// ActionPause says "Pause"
+// in the language of msgs.
+func (msgs Messages) ActionPause() string {
+	return Catalog.Format(msgs.locale, "action_pause", nil)
+}
+
+// ActionNext says "Next Track"
+// in the language the app shows.
+func ActionNext() string { return In(i18n.Locale()).ActionNext() }
+
+// ActionNext says "Next Track"
+// in the language of msgs.
+func (msgs Messages) ActionNext() string {
+	return Catalog.Format(msgs.locale, "action_next", nil)
+}
+
+// ActionPrevious says "Previous Track"
+// in the language the app shows.
+func ActionPrevious() string { return In(i18n.Locale()).ActionPrevious() }
+
+// ActionPrevious says "Previous Track"
+// in the language of msgs.
+func (msgs Messages) ActionPrevious() string {
+	return Catalog.Format(msgs.locale, "action_previous", nil)
+}
+
+// ActionStart says "Start"
+// in the language the app shows.
+func ActionStart() string { return In(i18n.Locale()).ActionStart() }
+
+// ActionStart says "Start"
+// in the language of msgs.
+func (msgs Messages) ActionStart() string {
+	return Catalog.Format(msgs.locale, "action_start", nil)
+}
+
+// ActionReturn says "Return to Dock"
+// in the language the app shows.
+func ActionReturn() string { return In(i18n.Locale()).ActionReturn() }
+
+// ActionReturn says "Return to Dock"
+// in the language of msgs.
+func (msgs Messages) ActionReturn() string {
+	return Catalog.Format(msgs.locale, "action_return", nil)
+}
+
+// ActionLocate says "Locate"
+// in the language the app shows.
+func ActionLocate() string { return In(i18n.Locale()).ActionLocate() }
+
+// ActionLocate says "Locate"
+// in the language of msgs.
+func (msgs Messages) ActionLocate() string {
+	return Catalog.Format(msgs.locale, "action_locate", nil)
+}
+
+// ActionDock says "Return to Dock"
+// in the language the app shows.
+func ActionDock() string { return In(i18n.Locale()).ActionDock() }
+
+// ActionDock says "Return to Dock"
+// in the language of msgs.
+func (msgs Messages) ActionDock() string {
+	return Catalog.Format(msgs.locale, "action_dock", nil)
+}
+
+// ActionDisarm says "Disarm"
+// in the language the app shows.
+func ActionDisarm() string { return In(i18n.Locale()).ActionDisarm() }
+
+// ActionDisarm says "Disarm"
+// in the language of msgs.
+func (msgs Messages) ActionDisarm() string {
+	return Catalog.Format(msgs.locale, "action_disarm", nil)
+}
+
+// ActionArmHome says "Arm Home"
+// in the language the app shows.
+func ActionArmHome() string { return In(i18n.Locale()).ActionArmHome() }
+
+// ActionArmHome says "Arm Home"
+// in the language of msgs.
+func (msgs Messages) ActionArmHome() string {
+	return Catalog.Format(msgs.locale, "action_arm_home", nil)
+}
+
+// ActionArmAway says "Arm Away"
+// in the language the app shows.
+func ActionArmAway() string { return In(i18n.Locale()).ActionArmAway() }
+
+// ActionArmAway says "Arm Away"
+// in the language of msgs.
+func (msgs Messages) ActionArmAway() string {
+	return Catalog.Format(msgs.locale, "action_arm_away", nil)
+}
+
+// ActionArmNight says "Arm Night"
+// in the language the app shows.
+func ActionArmNight() string { return In(i18n.Locale()).ActionArmNight() }
+
+// ActionArmNight says "Arm Night"
+// in the language of msgs.
+func (msgs Messages) ActionArmNight() string {
+	return Catalog.Format(msgs.locale, "action_arm_night", nil)
+}
+
+// ActionArmVacation says "Arm Vacation"
+// in the language the app shows.
+func ActionArmVacation() string { return In(i18n.Locale()).ActionArmVacation() }
+
+// ActionArmVacation says "Arm Vacation"
+// in the language of msgs.
+func (msgs Messages) ActionArmVacation() string {
+	return Catalog.Format(msgs.locale, "action_arm_vacation", nil)
+}
+
+// ActionArmCustomBypass says "Arm Custom Bypass"
+// in the language the app shows.
+func ActionArmCustomBypass() string { return In(i18n.Locale()).ActionArmCustomBypass() }
+
+// ActionArmCustomBypass says "Arm Custom Bypass"
+// in the language of msgs.
+func (msgs Messages) ActionArmCustomBypass() string {
+	return Catalog.Format(msgs.locale, "action_arm_custom_bypass", nil)
+}
+
+// ActionPress says "Press"
+// in the language the app shows.
+func ActionPress() string { return In(i18n.Locale()).ActionPress() }
+
+// ActionPress says "Press"
+// in the language of msgs.
+func (msgs Messages) ActionPress() string {
+	return Catalog.Format(msgs.locale, "action_press", nil)
+}
+
 // Settings says "Settings…"
 // in the language the app shows.
 func Settings() string { return In(i18n.Locale()).Settings() }
@@ -594,11 +1414,11 @@ func (msgs Messages) Connecting() string {
 	return Catalog.Format(msgs.locale, "connecting", nil)
 }
 
-// ConnectedTo says "{count, plural, =0 {Connected, but no climate entities were found} one {Connected, # climate entity} other {Connected…"
+// ConnectedTo says "{count, plural, =0 {Connected, but no devices were found} one {Connected, # device} other {Connected, # devices}}"
 // in the language the app shows.
 func ConnectedTo(count int) string { return In(i18n.Locale()).ConnectedTo(count) }
 
-// ConnectedTo says "{count, plural, =0 {Connected, but no climate entities were found} one {Connected, # climate entity} other {Connected…"
+// ConnectedTo says "{count, plural, =0 {Connected, but no devices were found} one {Connected, # device} other {Connected, # devices}}"
 // in the language of msgs.
 func (msgs Messages) ConnectedTo(count int) string {
 	return Catalog.Format(msgs.locale, "connectedTo", map[string]any{"count": count})
@@ -614,11 +1434,11 @@ func (msgs Messages) SetupTitle() string {
 	return Catalog.Format(msgs.locale, "setupTitle", nil)
 }
 
-// SetupBody says "Enter your Home Assistant address and an access token, then choose an air conditioner."
+// SetupBody says "Enter your Home Assistant address and an access token to see your devices."
 // in the language the app shows.
 func SetupBody() string { return In(i18n.Locale()).SetupBody() }
 
-// SetupBody says "Enter your Home Assistant address and an access token, then choose an air conditioner."
+// SetupBody says "Enter your Home Assistant address and an access token to see your devices."
 // in the language of msgs.
 func (msgs Messages) SetupBody() string {
 	return Catalog.Format(msgs.locale, "setupBody", nil)

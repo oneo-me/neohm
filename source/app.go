@@ -29,6 +29,10 @@ const (
 	// settle is how long after a service call the panel trusts what it
 	// shows over what Home Assistant reports.
 	settle = 1500 * time.Millisecond
+	// Home Assistant's registries change rarely: they are read again after
+	// registryAge, or registryRetry after a failure.
+	registryAge   = 5 * time.Minute
+	registryRetry = time.Minute
 )
 
 type secretStore interface {
@@ -56,10 +60,15 @@ type application struct {
 	// its place, and settingsOpen shows Settings over either.
 	detail, settingsOpen bool
 
-	// devices are the climate entities the list shows, as last read, which
-	// listed reports.
-	devices []ha.Climate
-	listed  bool
+	// home is what the home page shows, as last read, which listed
+	// reports. registry is what Home Assistant's registries said, nil
+	// until they could be read.
+	home     []ha.Section
+	listed   bool
+	registry *ha.Registry
+	// holds keep what tiles show after an action until Home Assistant
+	// reports it.
+	holds map[string]*hold
 	// climate is the device opened last, config.Entity, once hasClimate says
 	// it is known.
 	climate    ha.Climate
@@ -83,6 +92,10 @@ type application struct {
 	entity string
 	// listing has the poller read every device instead of entity alone.
 	listing bool
+	// The registries were read for regFor, and are read again after
+	// regNext.
+	regFor  *ha.Client
+	regNext time.Time
 
 	// edits counts local changes, so that a read started before one does
 	// not undo it on screen.
@@ -136,7 +149,7 @@ func (a *application) connect(list bool) {
 	client := a.client
 	a.mu.Unlock()
 	// What the old connection read may not exist on this one.
-	a.devices, a.listed, a.hasClimate, a.detail = nil, false, false, false
+	a.home, a.listed, a.registry, a.holds, a.hasClimate, a.detail = nil, false, nil, nil, false, false
 	a.follow()
 	if !list || client == nil {
 		return
@@ -146,16 +159,17 @@ func (a *application) connect(list bool) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		list, err := client.Climates(ctx)
+		// The registries too, for Settings to count the tiles Home shows.
+		states, reg, err := a.readHome(ctx, client, true)
 		a.post(func() {
 			if !a.current(client) {
 				return
 			}
 			a.connecting = false
+			a.applyList(client, edits, states, reg, "", err)
 			if err == nil {
-				a.connectMsg = locales.ConnectedTo(len(list))
+				a.connectMsg = locales.ConnectedTo(a.tileCount())
 			}
-			a.applyList(client, edits, list, "", err)
 		})
 	}()
 }
@@ -179,9 +193,9 @@ func (a *application) current(client *ha.Client) bool {
 	return a.client == client
 }
 
-// openDevice shows the controls of device d in place of the list. The menu
-// bar title follows the device opened last.
-func (a *application) openDevice(d ha.Climate) {
+// openClimate shows the controls of air conditioner d in place of the home
+// page. The menu bar title follows the one opened last.
+func (a *application) openClimate(d ha.Climate) {
 	if d.EntityID != a.config.Entity {
 		// A temperature still waiting for the slider goes to its own device.
 		a.sendTarget()
@@ -197,7 +211,7 @@ func (a *application) openDevice(d ha.Climate) {
 	a.redraw()
 }
 
-// closeDevice returns the panel to the device list.
+// closeDevice returns the panel to the home page.
 func (a *application) closeDevice() {
 	a.detail = false
 	a.follow()
@@ -243,14 +257,15 @@ func (a *application) poll() {
 			edits := a.edits.Load()
 			ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 			var (
-				list []ha.Climate
-				c    ha.Climate
-				err  error
+				states []ha.State
+				reg    *ha.Registry
+				s      ha.State
+				err    error
 			)
 			if listing {
-				list, err = client.Climates(ctx)
+				states, reg, err = a.readHome(ctx, client, false)
 			} else {
-				c, err = client.Climate(ctx, entity)
+				s, err = client.State(ctx, entity)
 			}
 			unit := ""
 			if err == nil && unitFor != client {
@@ -260,9 +275,9 @@ func (a *application) poll() {
 			}
 			cancel()
 			if listing {
-				a.post(func() { a.applyList(client, edits, list, unit, err) })
+				a.post(func() { a.applyList(client, edits, states, reg, unit, err) })
 			} else {
-				a.post(func() { a.applyState(client, edits, c, unit, err) })
+				a.post(func() { a.applyState(client, edits, ha.ParseClimate(s), unit, err) })
 			}
 		}
 		wait := pollClosed
@@ -276,16 +291,50 @@ func (a *application) poll() {
 	}
 }
 
-// applyList shows a read of every device. The device opened last takes its
-// entry as applyState takes a read of it; once it is gone, the panel and the
-// menu bar title forget it.
-func (a *application) applyList(client *ha.Client, edits int64, list []ha.Climate, unit string, err error) {
+// readHome reads every entity, and the registries when always says so or
+// this connection has not read them lately; reg is nil when it did not. The
+// registries only arrange the home page, so failing to read them is no
+// failure.
+func (a *application) readHome(ctx context.Context, client *ha.Client, always bool) (states []ha.State, reg *ha.Registry, err error) {
+	if states, err = client.States(ctx); err != nil {
+		return nil, nil, err
+	}
+	a.mu.Lock()
+	due := always || a.regFor != client || !time.Now().Before(a.regNext)
+	if due {
+		a.regFor, a.regNext = client, time.Now().Add(registryRetry)
+	}
+	a.mu.Unlock()
+	if !due {
+		return states, nil, nil
+	}
+	r, err := client.Registry(ctx)
+	if err != nil {
+		log.Printf("registry: %v", err)
+		return states, nil, nil
+	}
+	a.mu.Lock()
+	if a.regFor == client {
+		a.regNext = time.Now().Add(registryAge)
+	}
+	a.mu.Unlock()
+	return states, &r, nil
+}
+
+// applyList shows a read of every entity, arranged with the registries last
+// read. The air conditioner opened last takes its state as applyState takes
+// a read of it; once it is gone, the panel and the menu bar title forget it.
+func (a *application) applyList(client *ha.Client, edits int64, states []ha.State, reg *ha.Registry, unit string, err error) {
 	if !a.current(client) || !a.reached(unit, err) {
 		return
 	}
-	a.devices, a.listed = list, true
-	if i := slices.IndexFunc(list, func(c ha.Climate) bool { return c.EntityID == a.config.Entity }); i >= 0 {
-		a.update(edits, list[i])
+	if reg != nil {
+		a.registry = reg
+	}
+	a.home, a.listed = ha.Arrange(states, a.registry), true
+	a.release(edits)
+	if i := slices.IndexFunc(states, func(s ha.State) bool { return s.EntityID == a.config.Entity }); i >= 0 {
+		a.update(edits, ha.ParseClimate(states[i]))
 	} else if a.config.Entity != "" {
 		a.config.Entity, a.hasClimate, a.detail = "", false, false
 		a.save()
@@ -336,9 +385,9 @@ func (a *application) update(edits int64, c ha.Climate) {
 	}
 }
 
-// shown is what the list shows of device d: the device opened last as the
-// panel controls it, with changes Home Assistant may not report yet, else the
-// list's read.
+// shown is what the home page shows of air conditioner d: the one opened
+// last as the panel controls it, with changes Home Assistant may not report
+// yet, else the read.
 func (a *application) shown(d ha.Climate) ha.Climate {
 	if a.hasClimate && a.climate.EntityID == d.EntityID {
 		return a.climate
@@ -361,7 +410,7 @@ func (a *application) call(service string, data map[string]any) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		err := client.Call(ctx, service, entity, data)
+		err := client.Call(ctx, "climate", service, entity, data)
 		a.post(func() {
 			a.pending--
 			a.edits.Add(1)
@@ -381,6 +430,99 @@ func (a *application) call(service string, data map[string]any) {
 			a.redraw()
 		})
 	}()
+}
+
+// hold is what a tile shows after an action, until a read that started once
+// the action's calls returned and settled.
+type hold struct {
+	state string
+	// pending counts calls on their way; edits is the count of local
+	// changes once the last returned, and until when it settles.
+	pending int
+	edits   int64
+	until   time.Time
+}
+
+// tileCount is how many tiles the home page shows.
+func (a *application) tileCount() int {
+	n := 0
+	for _, s := range a.home {
+		n += len(s.Tiles)
+	}
+	return n
+}
+
+// held is entity s as its tile shows it: in the state its last action leads
+// to, until Home Assistant reports one.
+func (a *application) held(s ha.State) ha.State {
+	if h := a.holds[s.EntityID]; h != nil {
+		s.State = h.state
+	}
+	return s
+}
+
+// perform asks Home Assistant for action act of entity s, showing at once the
+// state it leads to.
+func (a *application) perform(s ha.State, act ha.Action) {
+	a.mu.Lock()
+	client := a.client
+	a.mu.Unlock()
+	if client == nil {
+		return
+	}
+	var h *hold
+	if act.Next != "" {
+		if h = a.holds[s.EntityID]; h == nil {
+			h = &hold{}
+			if a.holds == nil {
+				a.holds = map[string]*hold{}
+			}
+			a.holds[s.EntityID] = h
+		}
+		h.state = act.Next
+		h.pending++
+	}
+	a.edits.Add(1)
+	a.redraw()
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		err := client.Call(ctx, s.Domain(), act.Service, s.EntityID, act.Data)
+		a.post(func() {
+			if !a.current(client) {
+				return
+			}
+			if h != nil && a.holds[s.EntityID] == h {
+				h.pending--
+				h.edits, h.until = a.edits.Add(1), time.Now().Add(settle)
+				if err != nil {
+					// Show what the device really does.
+					delete(a.holds, s.EntityID)
+				}
+			}
+			if err != nil {
+				a.report("requestError", err)
+				if errors.Is(err, ha.ErrUnauthorized) {
+					a.errorKey = "unauthorized"
+				}
+				a.wake()
+			} else {
+				time.AfterFunc(settle, a.wake)
+			}
+			a.redraw()
+		})
+	}()
+}
+
+// release lets go of the holds a read is fresh for: one that started once
+// their calls returned and settled.
+func (a *application) release(edits int64) {
+	now := time.Now()
+	for id, h := range a.holds {
+		if h.pending == 0 && edits >= h.edits && !now.Before(h.until) {
+			delete(a.holds, id)
+		}
+	}
 }
 
 func (a *application) togglePower() {
@@ -477,15 +619,23 @@ func (a *application) trayTitle() string {
 
 func formatTemp(t float64) string { return strconv.FormatFloat(t, 'f', -1, 64) }
 
-// optionText names a Home Assistant option, as "fan_only", in the app's
-// language; options it has no message for show as they are.
-func optionText(kind, value string) string {
-	key := kind + "_" + value
+// message is the message of key in the app's language, or key itself when
+// the catalogs have none.
+func message(key string) string {
 	if _, _, ok := locales.Catalog.Message(i18n.Locale(), key); ok {
 		return locales.Catalog.Format(i18n.Locale(), key, nil)
 	}
+	return key
+}
+
+// optionText names a Home Assistant option, as "fan_only", in the app's
+// language; options it has no message for show as they are.
+func optionText(kind, value string) string {
 	if value == "" {
 		return "—"
+	}
+	if m := message(kind + "_" + value); m != kind+"_"+value {
+		return m
 	}
 	return value
 }

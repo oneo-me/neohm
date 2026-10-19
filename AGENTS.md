@@ -1,6 +1,6 @@
 # HA Climate
 
-HA Climate is a macOS menu bar app that controls Home Assistant air conditioners, built with Onevra components on MyGo. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
+HA Climate is a macOS menu bar app that controls Home Assistant devices, built with Onevra components on MyGo. Read [ARCHITECTURE.md](ARCHITECTURE.md) before changing code.
 
 ## Principles
 

@@ -23,6 +23,15 @@ var (
 	tileHover   = ui.RGBA(255, 255, 255, 0.08)
 	tileEdge    = ui.RGBA(255, 255, 255, 0.08)
 	danger      = ui.RGB(255, 99, 99)
+	// Devices glow in these while on; discInk draws on them.
+	amber    = ui.RGB(255, 190, 70)
+	green    = ui.RGB(95, 210, 140)
+	cyan     = ui.RGB(90, 205, 245)
+	teal     = ui.RGB(84, 214, 200)
+	orange   = ui.RGB(255, 150, 82)
+	lavender = ui.RGB(168, 140, 255)
+	pink     = ui.RGB(255, 120, 180)
+	discInk  = ui.RGB(14, 20, 38)
 )
 
 const (
@@ -54,13 +63,13 @@ func windowTheme(*ui.Context) *ui.Theme {
 func modeColor(mode string) ui.Color {
 	switch mode {
 	case "heat":
-		return ui.RGB(255, 150, 82)
+		return orange
 	case "dry":
-		return ui.RGB(84, 214, 200)
+		return teal
 	case "fan_only":
 		return ui.RGB(170, 190, 230)
 	case "auto", "heat_cool":
-		return ui.RGB(168, 140, 255)
+		return lavender
 	}
 	return accent
 }
@@ -122,9 +131,9 @@ func (a *application) windowView(c *ui.Context) {
 	}).Children(func() { a.page(c, 0) })
 }
 
-// page builds Settings, the device opened or the device list, whichever the
-// panel shows. radius rounds the bottom corners of the surface they scroll
-// within.
+// page builds Settings, the air conditioner opened or the home page,
+// whichever the panel shows. radius rounds the bottom corners of the
+// surface they scroll within.
 func (a *application) page(c *ui.Context, radius float32) {
 	switch {
 	case a.settingsOpen:
@@ -132,7 +141,7 @@ func (a *application) page(c *ui.Context, radius float32) {
 	case a.showsDetail():
 		a.climatePage(c)
 	default:
-		a.listPage(c, radius)
+		a.homePage(c, radius)
 	}
 }
 
@@ -146,7 +155,7 @@ func pageHeader(c *ui.Context, title string, actions func()) {
 	})
 }
 
-// climatePage controls the device opened.
+// climatePage controls the air conditioner opened.
 func (a *application) climatePage(c *ui.Context) {
 	ui.Column(c).Fill().Padding(20, 18, 18, 18).Gap(0).Children(func() {
 		a.headerRow(c)
@@ -158,8 +167,8 @@ func (a *application) climatePage(c *ui.Context) {
 	})
 }
 
-// headerRow leads back to the list and names the device, the room
-// temperature and the connection, beside the power button.
+// headerRow leads back to the home page and names the air conditioner, the
+// room temperature and the connection, beside the power button.
 func (a *application) headerRow(c *ui.Context) {
 	cl := a.climate
 	ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(10).Children(func() {
