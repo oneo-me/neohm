@@ -20,14 +20,11 @@ func (a *application) devicePage(c *ui.Context, t ha.Tile, area string, radius f
 	v := a.tileView(t, s)
 	name := tileName(t.Name, area)
 	pageFrame(c, radius, name, func() {
-		a.backButton(c)
-		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(2).MarginStart(4).Children(func() {
-			components.Text(c, name).FontSize(16).Bold().TextColor(ink).SingleLine().Ellipsis("…")
+		a.titledHeader(c, name, func() {
 			if area != "" {
-				components.Text(c, area).FontSize(12).TextColor(inkMuted).SingleLine().Ellipsis("…")
+				headerSubtitle(c, area, inkMuted)
 			}
-		})
-		a.quickSwitch(c, s, v, name).MarginEnd(8)
+		}, func() { a.quickSwitch(c, s, v, name).MarginEnd(8) })
 	}, func(top float32) {
 		scrollContent(c, top, radius, func() {
 			deviceHero(c, s, v)

@@ -196,16 +196,6 @@ func (msgs Messages) Target() string {
 	return Catalog.Format(msgs.locale, "target", nil)
 }
 
-// Connected says "Connected"
-// in the language the app shows.
-func Connected() string { return In(i18n.Locale()).Connected() }
-
-// Connected says "Connected"
-// in the language of msgs.
-func (msgs Messages) Connected() string {
-	return Catalog.Format(msgs.locale, "connected", nil)
-}
-
 // Offline says "Offline"
 // in the language the app shows.
 func Offline() string { return In(i18n.Locale()).Offline() }

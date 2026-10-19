@@ -192,6 +192,28 @@ func (a *application) backButton(c *ui.Context) {
 	}
 }
 
+// headerSide is the width of each side of a titled header: the back button
+// at the left, the quick switch and its margin or the power button at the
+// right.
+const headerSide = 44
+
+// titledHeader centers title, and what subtitle adds below it, between the
+// back button and the controls trailing builds. Sides of one width keep it
+// centered with or without them.
+func (a *application) titledHeader(c *ui.Context, title string, subtitle, trailing func()) {
+	ui.Row(c).Width(headerSide).Shrink(0).Children(func() { a.backButton(c) })
+	ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(2).Children(func() {
+		components.Text(c, title).FontSize(16).Bold().TextColor(ink).SingleLine().Ellipsis("…").FillWidth().TextAlign(ui.Center)
+		subtitle()
+	})
+	ui.Row(c).Width(headerSide).Shrink(0).Justify(ui.End).Children(trailing)
+}
+
+// headerSubtitle is a line below a header's title.
+func headerSubtitle(c *ui.Context, text string, color ui.Color) {
+	components.Text(c, text).FontSize(12).TextColor(color).SingleLine().Ellipsis("…").FillWidth().TextAlign(ui.Center)
+}
+
 // climatePage controls the air conditioner opened. radius rounds the
 // corners of the surface it shows on.
 func (a *application) climatePage(c *ui.Context, radius float32) {
@@ -206,38 +228,40 @@ func (a *application) climatePage(c *ui.Context, radius float32) {
 	})
 }
 
-// climateHeader leads back to the home page and names the air conditioner,
-// the room temperature and the connection, beside the power button.
+// climateHeader leads back to the home page and names the air conditioner
+// and the room temperature, or what keeps it from being controlled, beside
+// the power button.
 func (a *application) climateHeader(c *ui.Context) {
 	cl := a.climate
-	a.backButton(c)
-	ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(4).MarginStart(4).Children(func() {
-		ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(8).Children(func() {
-			components.Text(c, cl.Name).FontSize(16).Bold().TextColor(ink).SingleLine().Ellipsis("…").Shrink(1).MinWidth(0)
-			status, tip := accent, locales.Connected()
-			switch {
-			case !a.online:
-				status, tip = danger, locales.Offline()
-			case !cl.Available():
-				status, tip = danger, locales.Unavailable()
-			}
-			if e := a.errorDisplay(); e != "" {
-				status, tip = danger, e
-			}
-			dot := ui.Box(c).Size(8, 8).Radius(4).Background(status).Shrink(0).Label(tip)
-			dot.Shadow(0, 0, 8, 0, status.Alpha(0.7))
-			components.Tooltip(c, dot, tip)
+	a.titledHeader(c, cl.Name, func() {
+		problem := a.errorDisplay()
+		switch {
+		case problem != "":
+		case !a.online:
+			problem = locales.Offline()
+		case !cl.Available():
+			problem = locales.Unavailable()
+		}
+		if problem != "" {
+			headerSubtitle(c, problem, danger)
+			return
+		}
+		current := "—"
+		if cl.HasCurrent {
+			current = formatTemp(math.Round(cl.Current*10)/10) + a.unit
+		}
+		ui.Row(c).Justify(ui.Center).AlignItems(ui.Center).Gap(4).Children(func() {
+			components.Icon(c, lucide.Thermometer).Size(13, 13).TextColor(accent)
+			components.Text(c, locales.Room()).FontSize(12).TextColor(inkMuted)
+			components.Text(c, current).FontSize(12).Bold().TextColor(ink)
 		})
-		ui.Row(c).AlignItems(ui.Center).Gap(5).Children(func() {
-			components.Icon(c, lucide.Thermometer).Size(14, 14).TextColor(accent)
-			components.Text(c, locales.Room()).FontSize(13).TextColor(inkMuted)
-			current := "—"
-			if cl.HasCurrent {
-				current = formatTemp(math.Round(cl.Current*10)/10) + a.unit
-			}
-			components.Text(c, current).FontSize(13).Bold().TextColor(ink)
-		})
-	})
+	}, func() { a.powerButton(c) })
+}
+
+// powerButton turns the air conditioner on or off, glowing in its mode's
+// color while it is on.
+func (a *application) powerButton(c *ui.Context) {
+	cl := a.climate
 	on := cl.On()
 	glow := float32(0)
 	if on {
