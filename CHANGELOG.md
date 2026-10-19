@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2026.1] - 2026-10-20
 
 - Run on macOS 13 or later, Windows and Linux.
 - Show Home Assistant devices in a menu bar or tray panel as tiles by room, lit while they are on.
