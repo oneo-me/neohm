@@ -2,7 +2,7 @@ export const ko = {
   meta: {
     title: "NeoHM — 메뉴 막대의 Home Assistant",
     description:
-      "Home Assistant를 위한 메뉴 막대 앱입니다. 기기를 방별로 전환하고, 메뉴 막대에서 여는 패널로 에어컨을 제어하세요. macOS는 모든 아키텍처를 지원하며, Windows와 Linux도 모든 아키텍처를 지원할 예정입니다.",
+      "Home Assistant를 위한 메뉴 막대·트레이 앱입니다. 기기를 방별로 전환하고, 메뉴 막대나 트레이에서 여는 패널로 에어컨을 제어하세요. macOS, Windows, Linux용 네이티브 빌드를 제공합니다.",
   },
   nav: {
     features: "기능",
@@ -21,7 +21,7 @@ export const ko = {
     primary: "NeoHM 다운로드",
     secondary: "GitHub에서 보기",
     meta: ["macOS · Windows · Linux", "모든 아키텍처", "5개 언어"],
-    note: "무료 오픈 소스. macOS 버전은 지금, Windows와 Linux 버전은 곧 만나보세요.",
+    note: "무료 오픈 소스. macOS, Windows, Linux를 지원합니다.",
   },
   features: {
     eyebrow: "NeoHM을 선택하는 이유",
@@ -111,11 +111,11 @@ export const ko = {
   setup: {
     eyebrow: "설치",
     title: "다운로드에서 메뉴 막대까지.",
-    body: "NeoHM은 macOS 13 이상에서 사용할 수 있으며, Windows와 Linux 버전도 준비 중입니다. 설치하고 액세스 토큰을 만들면 우리 집이 바로 눈앞에 있습니다.",
+    body: "NeoHM은 macOS 13 이상, Windows, Linux에서 사용할 수 있습니다. 설치하고 액세스 토큰을 만들면 우리 집이 바로 눈앞에 있습니다.",
     steps: [
       {
         title: "NeoHM 다운로드",
-        body: "GitHub에서 최신 macOS 릴리스를 받아 NeoHM을 응용 프로그램 폴더로 드래그하세요. Apple 공증을 받지 않았으므로 처음 실행하기 전에 터미널에서 xattr -dr com.apple.quarantine /Applications/NeoHM.app을(를) 실행하세요.",
+        body: "GitHub에서 최신 릴리스를 받으세요. macOS에서는 NeoHM을 응용 프로그램 폴더로 드래그하세요. Apple 공증을 받지 않았으므로 처음 실행하기 전에 터미널에서 xattr -dr com.apple.quarantine /Applications/NeoHM.app을(를) 실행하세요. Windows에서는 설치 프로그램을 실행하세요. Linux에서는 curl -fsSL https://github.com/oneo-me/neohm/releases/latest/download/install.sh | sh을(를) 실행하세요.",
       },
       {
         title: "액세스 토큰 만들기",
@@ -126,15 +126,15 @@ export const ko = {
         body: "NeoHM을 열고 주소와 토큰을 입력해 연결하세요. 방이 기다리고 있습니다.",
       },
     ],
-    downloadTitle: "macOS용 NeoHM",
-    downloadBody: "최신 릴리스 · macOS 13 이상",
-    download: ".dmg 다운로드",
+    downloadTitle: "macOS, Windows, Linux용 NeoHM",
+    downloadBody: "최신 릴리스 · macOS 13 이상, Windows, Linux",
+    download: "GitHub에서 다운로드",
     releases: "모든 릴리스",
     free: "무료 오픈 소스",
     platforms: [
-      { name: "macOS", status: "지금 사용 가능" },
-      { name: "Windows", status: "준비 중" },
-      { name: "Linux", status: "준비 중" },
+      { name: "macOS", status: ".dmg" },
+      { name: "Windows", status: "설치 프로그램" },
+      { name: "Linux", status: "install.sh · .deb" },
     ],
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "설계부터 로컬",
@@ -142,7 +142,7 @@ export const ko = {
       "주소, 토큰, 언어는 ~/.neohm/config.json에 저장되며 사용자만 읽을 수 있습니다. NeoHM은 입력한 Home Assistant와 통신하며, 업데이트를 확인할 때만 GitHub에 접속합니다. 확인은 하루에 한 번이며 설정에서 끌 수 있습니다.",
     requirements: [
       "macOS 13+",
-      "Windows & Linux 준비 중",
+      "Windows · Linux",
       "모든 아키텍처",
       "Home Assistant",
     ],
@@ -162,7 +162,7 @@ export const ko = {
       {
         question: "어떤 플랫폼을 지원하나요?",
         answer:
-          "NeoHM은 현재 macOS 13 이상에서 사용할 수 있습니다. Windows와 Linux 버전도 준비 중이며, 각 플랫폼의 모든 아키텍처용 빌드를 제공할 예정입니다. macOS는 Apple silicon과 Intel, Windows와 Linux는 x64와 ARM64를 지원합니다.",
+          "macOS 13 이상, Windows, Linux를 지원하며 모든 아키텍처용 빌드를 제공합니다. macOS는 Apple silicon과 Intel, Windows와 Linux는 x64와 ARM64입니다. Linux의 트레이 아이콘에는 libayatana-appindicator3이 필요합니다.",
       },
       {
         question: "어떤 Home Assistant 환경이 필요한가요?",

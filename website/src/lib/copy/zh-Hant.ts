@@ -2,7 +2,7 @@ export const zhHant = {
   meta: {
     title: "NeoHM — 選單列裡的 Home Assistant",
     description:
-      "NeoHM 是一款選單列應用程式，把 Home Assistant 的裝置依房間排成卡片，在選單列開啟面板控制空調，並為 macOS 提供全架構版本，Windows 和 Linux 版即將到來。",
+      "NeoHM 是一款選單列與系統匣應用程式，把 Home Assistant 的裝置依房間排成卡片，從選單列或系統匣開啟面板控制空調，為 macOS、Windows 和 Linux 提供原生版本。",
   },
   nav: {
     features: "功能",
@@ -21,7 +21,7 @@ export const zhHant = {
     primary: "下載 NeoHM",
     secondary: "在 GitHub 查看",
     meta: ["macOS · Windows · Linux", "全架構版本", "5 種語言"],
-    note: "免費開源。macOS 版現已推出，Windows 與 Linux 版即將到來。",
+    note: "免費開源，支援 macOS、Windows 和 Linux。",
   },
   features: {
     eyebrow: "為什麼選 NeoHM",
@@ -111,11 +111,11 @@ export const zhHant = {
   setup: {
     eyebrow: "安裝",
     title: "從下載到選單列。",
-    body: "NeoHM 現支援 macOS 13 或以上，Windows 和 Linux 版也在路上。下載安裝，建立存取權杖，你的家就在一次點擊之外。",
+    body: "NeoHM 支援 macOS 13 或以上、Windows 和 Linux。下載安裝，建立存取權杖，你的家就在一次點擊之外。",
     steps: [
       {
         title: "下載 NeoHM",
-        body: "在 GitHub 取得最新的 macOS 版本，把 NeoHM 拖進「應用程式」資料夾。它沒有經過 Apple 公證，首次啟動前請在終端機執行 xattr -dr com.apple.quarantine /Applications/NeoHM.app。",
+        body: "在 GitHub 取得最新版本。macOS 上把 NeoHM 拖進「應用程式」資料夾；它沒有經過 Apple 公證，首次啟動前請在終端機執行 xattr -dr com.apple.quarantine /Applications/NeoHM.app。Windows 上執行安裝程式。Linux 上執行 curl -fsSL https://github.com/oneo-me/neohm/releases/latest/download/install.sh | sh。",
       },
       {
         title: "建立存取權杖",
@@ -126,26 +126,21 @@ export const zhHant = {
         body: "開啟 NeoHM，填入位址和權杖並連線，房間就在眼前。",
       },
     ],
-    downloadTitle: "NeoHM macOS 版",
-    downloadBody: "最新版本 · 支援 macOS 13 或以上",
-    download: "下載 .dmg",
+    downloadTitle: "NeoHM macOS、Windows 與 Linux 版",
+    downloadBody: "最新版本 · macOS 13 或以上、Windows、Linux",
+    download: "從 GitHub 下載",
     releases: "查看所有版本",
     free: "免費開源",
     platforms: [
-      { name: "macOS", status: "現已推出" },
-      { name: "Windows", status: "即將到來" },
-      { name: "Linux", status: "即將到來" },
+      { name: "macOS", status: ".dmg" },
+      { name: "Windows", status: "安裝程式" },
+      { name: "Linux", status: "install.sh · .deb" },
     ],
     architectures: "Apple 晶片 · Intel · x64 · ARM64",
     privacyTitle: "資料留在本機",
     privacyBody:
       "位址、權杖和語言儲存在 ~/.neohm/config.json，只有你的使用者能讀取。NeoHM 只與你填寫的 Home Assistant 通訊，僅在檢查更新時存取 GitHub，預設每天一次，可在設定中關閉。",
-    requirements: [
-      "macOS 13+",
-      "Windows 與 Linux 即將到來",
-      "全架構",
-      "Home Assistant",
-    ],
+    requirements: ["macOS 13+", "Windows · Linux", "全架構", "Home Assistant"],
   },
   faq: {
     eyebrow: "答疑",
@@ -161,7 +156,7 @@ export const zhHant = {
       {
         question: "支援哪些平台？",
         answer:
-          "NeoHM 目前支援 macOS 13 或以上，Windows 和 Linux 版本正在開發中。每個平台都會提供全架構版本：macOS 的 Apple 晶片與 Intel，Windows 和 Linux 的 x64 與 ARM64。",
+          "macOS 13 或以上、Windows 和 Linux，並提供全架構版本：macOS 的 Apple 晶片與 Intel，Windows 和 Linux 的 x64 與 ARM64。Linux 上的系統匣圖示需要 libayatana-appindicator3。",
       },
       {
         question: "需要怎樣的 Home Assistant 環境？",

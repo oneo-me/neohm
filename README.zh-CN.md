@@ -30,7 +30,7 @@ NeoHM 需要一个这台电脑能访问到的 Home Assistant。从 [Releases](ht
   xattr -dr com.apple.quarantine /Applications/NeoHM.app
   ```
 
-- **Windows**：运行 `NeoHM Setup <版本> amd64.exe`，ARM 设备请用 `arm64` 版本。NeoHM 没有签名，SmartScreen 会在首次启动前警告：点击**更多信息**，再点击**仍要运行**。
+- **Windows**：运行 `NeoHM.Setup.<版本>.amd64.exe`，ARM 设备请用 `arm64` 版本。NeoHM 没有签名，SmartScreen 会在首次启动前警告：点击**更多信息**，再点击**仍要运行**。
 - **Linux**：用下面的命令为当前用户安装。托盘图标需要 `libayatana-appindicator3`，脚本会列出缺少的其他库。`.deb` 软件包则为所有用户安装，但不会自行更新。
 
   ```sh

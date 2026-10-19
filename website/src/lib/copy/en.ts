@@ -2,7 +2,7 @@ export const en = {
   meta: {
     title: "NeoHM — Home Assistant in your menu bar",
     description:
-      "A menu bar app for Home Assistant. Switch devices by room and control air conditioners from a panel that opens in the menu bar. Native builds for macOS, with Windows and Linux on the way.",
+      "A menu bar app for Home Assistant. Switch devices by room and control air conditioners from a panel that opens in the menu bar or tray. Native builds for macOS, Windows and Linux.",
   },
   nav: {
     features: "Features",
@@ -21,7 +21,7 @@ export const en = {
     primary: "Download NeoHM",
     secondary: "View on GitHub",
     meta: ["macOS · Windows · Linux", "All architectures", "5 languages"],
-    note: "Free and open source. macOS today; Windows and Linux on the way.",
+    note: "Free and open source, for macOS, Windows and Linux.",
   },
   features: {
     eyebrow: "Why NeoHM",
@@ -111,11 +111,11 @@ export const en = {
   setup: {
     eyebrow: "Install",
     title: "From download to your menu bar.",
-    body: "NeoHM is available for macOS 13 or later, with Windows and Linux on the way. Install it, create an access token, and your home is one click away.",
+    body: "NeoHM is available for macOS 13 or later, Windows and Linux. Install it, create an access token, and your home is one click away.",
     steps: [
       {
         title: "Download NeoHM",
-        body: "Get the latest macOS release from GitHub and drag NeoHM into your Applications folder. It is not notarized by Apple, so allow its first launch in Terminal with xattr -dr com.apple.quarantine /Applications/NeoHM.app.",
+        body: "Get the latest release from GitHub. On macOS, drag NeoHM into Applications; it is not notarized by Apple, so allow its first launch in Terminal with xattr -dr com.apple.quarantine /Applications/NeoHM.app. On Windows, run the installer. On Linux, run curl -fsSL https://github.com/oneo-me/neohm/releases/latest/download/install.sh | sh.",
       },
       {
         title: "Create an access token",
@@ -126,15 +126,15 @@ export const en = {
         body: "Open NeoHM, enter the address and token, and connect. Your rooms are waiting.",
       },
     ],
-    downloadTitle: "NeoHM for macOS",
-    downloadBody: "Latest release · macOS 13 or later",
-    download: "Download .dmg",
+    downloadTitle: "NeoHM for macOS, Windows and Linux",
+    downloadBody: "Latest release · macOS 13 or later, Windows, Linux",
+    download: "Download from GitHub",
     releases: "All releases",
     free: "Free and open source",
     platforms: [
-      { name: "macOS", status: "Available now" },
-      { name: "Windows", status: "Coming soon" },
-      { name: "Linux", status: "Coming soon" },
+      { name: "macOS", status: ".dmg" },
+      { name: "Windows", status: "Installer" },
+      { name: "Linux", status: "install.sh · .deb" },
     ],
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "Local by design",
@@ -142,7 +142,7 @@ export const en = {
       "The address, token and language are saved in ~/.neohm/config.json, readable only by your user. NeoHM talks to your Home Assistant instance, and to GitHub only to check for updates, once a day unless you turn that off in Settings.",
     requirements: [
       "macOS 13+",
-      "Windows & Linux next",
+      "Windows · Linux",
       "All architectures",
       "Home Assistant",
     ],
@@ -160,9 +160,9 @@ export const en = {
           "Yes. NeoHM is free and open source. Download the latest release from GitHub; the source is there too.",
       },
       {
-        question: "Which platforms will it support?",
+        question: "Which platforms does it support?",
         answer:
-          "NeoHM is available for macOS 13 or later today. Windows and Linux versions are on the way, with builds for every architecture: Apple silicon and Intel on macOS, x64 and ARM64 on Windows and Linux.",
+          "macOS 13 or later, Windows and Linux, with builds for every architecture: Apple silicon and Intel on macOS, x64 and ARM64 on Windows and Linux. On Linux, the tray icon needs libayatana-appindicator3.",
       },
       {
         question: "Which Home Assistant setup does it need?",

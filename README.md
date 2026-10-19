@@ -30,7 +30,7 @@ NeoHM needs a Home Assistant instance the computer can reach. Download the lates
   xattr -dr com.apple.quarantine /Applications/NeoHM.app
   ```
 
-- **Windows**: run `NeoHM Setup <version> amd64.exe`, or the `arm64` one on ARM. NeoHM is not signed, so SmartScreen warns before its first launch: click **More info**, then **Run anyway**.
+- **Windows**: run `NeoHM.Setup.<version>.amd64.exe`, or the `arm64` one on ARM. NeoHM is not signed, so SmartScreen warns before its first launch: click **More info**, then **Run anyway**.
 - **Linux**: install it for your user with the command below. Its tray icon needs `libayatana-appindicator3`, and the script names any other library missing. The `.deb` package installs it for every user instead, but does not update itself.
 
   ```sh
