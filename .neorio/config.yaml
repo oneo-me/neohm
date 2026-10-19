@@ -13,3 +13,8 @@ tasks:
     options:
       cwd: source
     outputDirectory: ../dist
+  - label: Website
+    type: shell
+    command: bun install && bun run dev
+    options:
+      cwd: website

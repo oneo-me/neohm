@@ -5,6 +5,7 @@ NeoHM is a macOS menu bar app that controls Home Assistant devices, built with O
 ## Principles
 
 - Keep all Go code, the MyGo packaging configuration and the message catalogs in `source/`; run Go and MyGo commands there. Keep documentation at the repository root.
+- Keep the website's React and Vite sources in `website/`; run Bun commands there.
 - Use Onevra components instead of MyGo's styled widgets, in the panel's own theme.
 - Add user-visible text to every catalog in `source/locales/`, then run `go tool mygo generate`.
 

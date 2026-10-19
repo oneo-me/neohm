@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070c16" />
+    <title>NeoHM — Home Assistant in your menu bar</title>
+    <meta
+      name="description"
+      content="A menu bar app for Home Assistant. Switch devices by room and control air conditioners from a panel that opens in the menu bar. Native builds for macOS, with Windows and Linux on the way."
+    />
+
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="%BASE_URL%favicon-32.png"
+    />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <link rel="manifest" href="%BASE_URL%site.webmanifest" />
+    <link rel="canonical" href="%VITE_SITE_URL%" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NeoHM" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="zh_TW" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:locale:alternate" content="ko_KR" />
+    <meta
+      property="og:title"
+      content="NeoHM — Home Assistant in your menu bar"
+    />
+    <meta
+      property="og:description"
+      content="A menu bar app for Home Assistant. Native builds for macOS, with Windows and Linux on the way, and full air conditioner controls."
+    />
+    <meta property="og:url" content="%VITE_SITE_URL%" />
+    <meta property="og:image" content="%VITE_SITE_URL%og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="NeoHM — Home Assistant in your menu bar"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="NeoHM — Home Assistant in your menu bar"
+    />
+    <meta
+      name="twitter:description"
+      content="A menu bar app for Home Assistant. Native builds for macOS, with Windows and Linux on the way, and full air conditioner controls."
+    />
+    <meta name="twitter:image" content="%VITE_SITE_URL%og.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "NeoHM",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "macOS 13 or later, Windows, Linux",
+        "description": "A menu bar app that controls a Home Assistant instance, with full controls for air conditioners and native builds for macOS, plus Windows and Linux on the way.",
+        "processorRequirements": "Apple silicon, Intel, x64, ARM64",
+        "url": "%VITE_SITE_URL%",
+        "downloadUrl": "https://github.com/oneo-me/ha-go/releases/latest",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>
+      NeoHM is a menu bar app for Home Assistant on macOS, Windows and Linux.
+      Enable JavaScript to view the website.
+    </noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

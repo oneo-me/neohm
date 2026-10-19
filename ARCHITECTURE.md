@@ -22,6 +22,8 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 | `source/locales/` | MyGo message catalogs, `<tag>.json`, and the accessors `go tool mygo generate` writes from them. Their `mygo.*` keys name the app and translate MyGo's own strings where MyGo has no translation. |
 | `source/resources/darwin/` | Translations of `Info.plist` strings, such as the reason macOS shows for local network access, in `<tag>.lproj/InfoPlist.strings`. |
 | `source/icons/` | The Icon Composer app icon `AppIcon.icon`, which `mygo.json`'s `macos.icon` names, its flattened `AppIcon.png` for `mygo.json`'s `icon` and Neorio's project icon, and the unused alternatives `AppIcon-1.icon` and `AppIcon-2.icon`. They stay outside `resources/`, whose contents ship in the app. |
+| `website/` | The landing page: a React and Vite site in English, Simplified Chinese, Traditional Chinese, Japanese and Korean, with the app's screenshots and install steps. |
+| `.github/workflows/website.yml` | Builds `website/` with Bun and deploys it to GitHub Pages. |
 
 ## Boundaries
 
@@ -37,6 +39,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 - Show a local change at once, and keep it over reads that started before it until Home Assistant reports it.
 - Keep what Home Assistant's domains, states and services mean in `internal/ha`, and how the panel shows them in the main package.
 - Treat the registries as optional: without them, Home still shows each switch and main control, ungrouped.
+- Keep the website a static Vite build in `website/`. CI deploys it to GitHub Pages; the app build never includes it.
 
 ## Core flows
 
@@ -55,6 +58,8 @@ The [configuration file](README.md#getting-started) holds the address, the acces
 Tests never open a window. Logic tests cover the REST and WebSocket clients, which tiles Home shows, the configuration file, the catalogs and how reads merge with local changes. Headless UI tests drive the panel's pages with MyGo's tester.
 
 From `source/`, `HA_SNAPSHOT_DIR=<dir> go test -run Snapshot .` renders each page and the menu bar icon to PNG for review. Prefix `MYGO_LOCALE=<tag>` to render another language. `go tool mygo dev -lang <tag>` runs the app in one. The menu bar icon, the panel's placement, keyboard focus, each language's menus and system prompts, and a live Home Assistant need manual review in a desktop session.
+
+From `website/`, `bun run build` type-checks and bundles the site. Review layout changes in a browser at every language and viewport size.
 
 ## Subjects
 

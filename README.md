@@ -38,3 +38,16 @@ go tool mygo build    # .app and .dmg in ../dist
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
+
+## Website
+
+The landing page is a React and Vite app in `website/`, built with [Bun](https://bun.sh). Run its commands from that directory:
+
+```sh
+cd website
+bun install       # once
+bun run dev       # local preview
+bun run build     # static site in dist
+```
+
+Pushes to `main` that change `website/` deploy it to GitHub Pages with Actions. Set Settings → Pages → Source to **GitHub Actions** once.

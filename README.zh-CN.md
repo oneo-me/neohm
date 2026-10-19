@@ -38,3 +38,16 @@ go tool mygo build    # 在 ../dist 生成 .app 和 .dmg
 ```
 
 代码布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
+
+## 官网
+
+官网是 `website/` 中的 React + Vite 应用，使用 [Bun](https://bun.sh) 构建，请在该目录下运行命令：
+
+```sh
+cd website
+bun install       # 首次安装依赖
+bun run dev       # 本地预览
+bun run build     # 生成 dist 静态站点
+```
+
+推送到 `main` 且改动 `website/` 时，会通过 Actions 发布到 GitHub Pages。首次使用前，请在 Settings → Pages 中将 Source 设为 **GitHub Actions**。
