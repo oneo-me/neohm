@@ -2,18 +2,10 @@
 
 ## [Unreleased]
 
-- Add a project website with screenshots, install steps, platform availability and all five languages, deployed to GitHub Pages.
-- Add a menu bar panel that shows the Home Assistant devices as tiles by room, lit while they are on.
-- Give the app an icon of the panel and its lit tiles, in Liquid Glass on macOS 26 and later, filling its canvas.
-- Switch devices by clicking their tiles, and open a page for each device, from its tile's arrow, laid out as the air conditioner's: the device drawn, its main value in the middle, a button at the top right that switches it or opens and closes it, as a click on the device drawn does, a slider with a Liquid Glass thumb and its actions or readings along the bottom.
-- Dim a light down to off, its button glowing as bright as it shines, set its color from swatches of its whites and colors, or any color and white from a picker, and move a cover or valve to 0, 25, 50, 75 or 100% from stops below its slider.
-- Float each page's header over its content, blurred as it scrolls beneath.
-- Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, with its room temperature, or why it cannot be controlled, under its name.
-- Keep the menu bar icon static, with nothing shown beside it.
-- Check for a new version from the button left of Settings, which shows its notes in a popover and installs it in place.
-- Publish each version as a GitHub release, its notes from this changelog.
-- Keep Settings inside the panel, opened from its gear button, with the language first and each group on a card.
-- Quit from the menu bar icon's right-click menu, which shows ⌘Q, or with ⌘Q in the panel.
-- Save the configuration, the access token included, in `~/.neohm`, readable only by the user.
+- Show Home Assistant devices in a menu bar panel as tiles by room, lit while they are on.
+- Switch a device from its tile, and open its page from the tile's arrow.
+- Dim, color, move, play, lock or start a device from its page, with presets for a light's colors and a cover's position.
+- Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep.
+- Connect to Home Assistant from Settings in the panel with its address and a long-lived access token.
 - Show the app in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS or the language chosen in Settings.
-- Keep the app named NeoHM in every language, Home's header included.
+- Check for new versions from the panel and install them in place.
