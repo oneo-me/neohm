@@ -17,6 +17,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 | `source/internal/ha/` | The REST and WebSocket clients, what entities' states and actions mean, which tiles Home shows, and the parsed climate entity. |
 | `source/locales/` | MyGo message catalogs, `<tag>.json`, and the accessors `go tool mygo generate` writes from them. Their `mygo.*` keys name the app and translate MyGo's own strings where MyGo has no translation. |
 | `source/resources/darwin/` | Translations of `Info.plist` strings, such as the reason macOS shows for local network access, in `<tag>.lproj/InfoPlist.strings`. |
+| `source/icons/` | The Icon Composer app icon `AppIcon.icon`, which `mygo.json`'s `macos.icon` names, and the unused alternatives `AppIcon-1.icon` and `AppIcon-2.icon`. They stay outside `resources/`, whose contents ship in the app. |
 
 ## Boundaries
 

@@ -1,0 +1,60 @@
+{
+  "fill-specializations": [
+    {
+      "value": {
+        "automatic-gradient": "srgb:0.95686,0.95294,0.94118,1.00000"
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "automatic-gradient": "srgb:0.14902,0.15294,0.16863,1.00000"
+      }
+    }
+  ],
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "01-tiles-lit.png",
+          "name": "01-tiles-lit"
+        },
+        {
+          "image-name": "02-tile-off.png",
+          "name": "02-tile-off",
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.27451,0.35294,0.54118,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "name": "tiles"
+    },
+    {
+      "layers": [
+        {
+          "image-name": "03-panel.png",
+          "name": "03-panel",
+          "fill-specializations": [
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:0.14902,0.21176,0.36078,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "name": "panel"
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  }
+}

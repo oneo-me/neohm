@@ -4,6 +4,7 @@
   "version": "0.2.0",
   "out": "../dist",
   "macos": {
+    "icon": "icons/AppIcon.icon",
     "minimumSystemVersion": "13.0",
     "infoPlist": {
       "LSUIElement": true,

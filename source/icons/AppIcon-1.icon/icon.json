@@ -1,0 +1,70 @@
+{
+  "groups": [
+    {
+      "layers": [
+        {
+          "image-name": "01-tile-lit.png",
+          "name": "01-tile-lit"
+        },
+        {
+          "image-name": "02-tiles-off.png",
+          "name": "02-tiles-off"
+        }
+      ],
+      "name": "tiles"
+    },
+    {
+      "layers": [
+        {
+          "image-name": "03-house.png",
+          "name": "03-house"
+        }
+      ],
+      "name": "house"
+    }
+  ],
+  "supported-platforms": {
+    "squares": [
+      "macOS"
+    ]
+  },
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.12157,0.17647,0.31373,1.00000",
+          "srgb:0.03529,0.05490,0.11765,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.06667,0.09804,0.18039,1.00000",
+          "srgb:0.01569,0.02745,0.06275,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
+      }
+    }
+  ]
+}
