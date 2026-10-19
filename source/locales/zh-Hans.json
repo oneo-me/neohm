@@ -135,7 +135,7 @@
   "address": "地址",
   "addressHint": "打开 Home Assistant 的网址，例如 http://homeassistant.local:8123。",
   "token": "访问令牌",
-  "tokenHint": "在 Home Assistant 个人资料页底部创建长期访问令牌。令牌保存在系统钥匙串中。",
+  "tokenHint": "在 Home Assistant 个人资料页底部创建长期访问令牌。",
   "connect": "连接",
   "connecting": "正在连接…",
   "connectedTo": "{count, plural, =0 {已连接，但没有找到设备} other {已连接，共 # 个设备}}",
@@ -145,6 +145,6 @@
   "requestError": "无法连接 Home Assistant。",
   "saveError": "无法保存偏好设置。",
   "loadError": "无法读取偏好设置。",
-  "secretError": "无法将访问令牌存入钥匙串。",
-  "trayError": "无法创建菜单栏图标。"
+  "trayError": "无法创建菜单栏图标。",
+  "mygo.appName": "HA 空调"
 }

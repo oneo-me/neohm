@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"log"
 	"os"
 	"path/filepath"
@@ -9,8 +8,6 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/oneo-me/ha-go/source/locales"
 )
-
-const tokenKey = "access-token"
 
 func main() {
 	mygo.App.SetName(locales.Title())
@@ -23,17 +20,12 @@ func main() {
 	}
 	dir := filepath.Join(home, ".ha-go")
 	mygo.App.SetPath(mygo.PathUserData, dir)
-	a := newApplication(filepath.Join(dir, "config.json"), keychain{})
+	a := newApplication(filepath.Join(dir, "config.json"))
 	a.config, err = loadConfig(a.path)
 	if err != nil {
 		a.report("loadError", err)
 	}
-	if token, err := a.secrets.Get(tokenKey); err == nil {
-		a.token = string(token)
-	} else if !errors.Is(err, mygo.ErrSecretNotFound) {
-		a.report("secretError", err)
-	}
-	a.address = a.config.Address
+	a.address, a.token = a.config.Address, a.config.Token
 	mygo.App.SetActivationPolicy(mygo.ActivationPolicyAccessory)
 	mygo.App.OnWindowAllClosed(func() {})
 	mygo.App.OnBeforeQuit(func(*mygo.QuitEvent) { a.quitting = true })
@@ -43,14 +35,13 @@ func main() {
 			a.reopen()
 		}
 	})
+	mygo.App.OnLocaleChanged(func(string) {
+		if a.ready {
+			a.relabel()
+		}
+	})
 	mygo.App.WhenReady(a.start)
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)
 	}
 }
-
-// keychain stores the access token in the system's credential store.
-type keychain struct{}
-
-func (keychain) Get(key string) ([]byte, error)     { return mygo.Secrets.Get(key) }
-func (keychain) Set(key string, value []byte) error { return mygo.Secrets.Set(key, value) }

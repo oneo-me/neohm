@@ -7,10 +7,11 @@ import (
 	"path/filepath"
 )
 
-// config holds the preferences saved in ~/.ha-go. The access token is kept
-// in the system keychain instead.
+// config holds the preferences saved in ~/.ha-go, the access token
+// included.
 type config struct {
 	Address string `json:"address"`
+	Token   string `json:"token"`
 	// Entity is the device opened last, which the menu bar title follows.
 	Entity string `json:"entity"`
 }
@@ -31,7 +32,8 @@ func loadConfig(path string) (config, error) {
 }
 
 // saveConfig replaces the file atomically so an interrupted save leaves the
-// old preferences.
+// old preferences. The file is the user's alone to read, as os.CreateTemp
+// makes it, for it holds the token.
 func saveConfig(path string, c config) error {
 	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {

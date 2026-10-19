@@ -9,13 +9,15 @@ import (
 
 	// MyGo's own strings in the app's languages.
 	_ "github.com/egoist/mygo/locales/zh-Hans"
+	_ "github.com/egoist/mygo/locales/zh-Hant"
 )
 
 //go:embed *.json
 var files embed.FS
 
-// Catalog holds the messages in en, the source language, and zh-Hans. It is
-// registered with package i18n, which makes its languages the app's.
+// Catalog holds the messages in en, the source language, and ja, ko,
+// zh-Hans and zh-Hant. It is registered with package i18n, which makes its
+// languages the app's.
 var Catalog *i18n.Catalog
 
 func init() {
@@ -1384,11 +1386,11 @@ func (msgs Messages) Token() string {
 	return Catalog.Format(msgs.locale, "token", nil)
 }
 
-// TokenHint says "Create a long-lived access token at the bottom of your Home Assistant profile. It is kept in the system keychain."
+// TokenHint says "Create a long-lived access token at the bottom of your Home Assistant profile."
 // in the language the app shows.
 func TokenHint() string { return In(i18n.Locale()).TokenHint() }
 
-// TokenHint says "Create a long-lived access token at the bottom of your Home Assistant profile. It is kept in the system keychain."
+// TokenHint says "Create a long-lived access token at the bottom of your Home Assistant profile."
 // in the language of msgs.
 func (msgs Messages) TokenHint() string {
 	return Catalog.Format(msgs.locale, "tokenHint", nil)
@@ -1482,16 +1484,6 @@ func LoadError() string { return In(i18n.Locale()).LoadError() }
 // in the language of msgs.
 func (msgs Messages) LoadError() string {
 	return Catalog.Format(msgs.locale, "loadError", nil)
-}
-
-// SecretError says "The access token could not be stored in the keychain."
-// in the language the app shows.
-func SecretError() string { return In(i18n.Locale()).SecretError() }
-
-// SecretError says "The access token could not be stored in the keychain."
-// in the language of msgs.
-func (msgs Messages) SecretError() string {
-	return Catalog.Format(msgs.locale, "secretError", nil)
 }
 
 // TrayError says "The menu bar icon could not be created."

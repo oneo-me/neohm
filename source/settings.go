@@ -37,8 +37,8 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 				case a.connecting:
 					components.Spinner(c, components.SpinnerRing).Size(16, 16)
 					components.Text(c, locales.Connecting()).TextColor(t.TextMuted)
-				case a.connectMsg != "":
-					components.Text(c, a.connectMsg).Wrap().Grow(1).Basis(0).TextColor(t.TextMuted)
+				case a.connected:
+					components.Text(c, locales.ConnectedTo(a.tileCount())).Wrap().Grow(1).Basis(0).TextColor(t.TextMuted)
 				}
 			})
 			if e := a.errorDisplay(); e != "" {

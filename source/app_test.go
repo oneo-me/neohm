@@ -10,19 +10,16 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/egoist/mygo/i18n"
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/ha-go/source/internal/ha"
 	"github.com/oneo-me/ha-go/source/locales"
 )
-
-type memorySecrets map[string][]byte
-
-func (m memorySecrets) Get(k string) ([]byte, error) { return m[k], nil }
-func (m memorySecrets) Set(k string, v []byte) error { m[k] = v; return nil }
 
 func parseStates(t *testing.T, list string) []ha.State {
 	t.Helper()
@@ -84,10 +81,10 @@ func demoRegistry() *ha.Registry {
 // what it shows.
 func demoApp(t *testing.T) *application {
 	states := parseStates(t, demoStates)
-	a := newApplication(filepath.Join(t.TempDir(), "config.json"), memorySecrets{})
+	a := newApplication(filepath.Join(t.TempDir(), "config.json"))
 	a.post = func(fn func()) {}
-	a.config = config{Address: "http://ha.test", Entity: "climate.bedroom"}
-	a.token = "token"
+	a.config = config{Address: "http://ha.test", Token: "token", Entity: "climate.bedroom"}
+	a.address, a.token = a.config.Address, a.config.Token
 	a.registry = demoRegistry()
 	a.home, a.listed = ha.Arrange(states, a.registry), true
 	a.climate, a.hasClimate, a.online = ha.ParseClimate(states[0]), true, true
@@ -376,7 +373,7 @@ func TestTileName(t *testing.T) {
 }
 
 func TestSetupView(t *testing.T) {
-	a := newApplication(filepath.Join(t.TempDir(), "config.json"), memorySecrets{})
+	a := newApplication(filepath.Join(t.TempDir(), "config.json"))
 	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
 	if !tt.HasText(locales.SetupTitle()) {
 		t.Fatal(tt.Texts())
@@ -392,6 +389,18 @@ func TestSetupView(t *testing.T) {
 	a.resetPanel()
 	if !a.settingsOpen {
 		t.Fatal("reset to the home page before setup")
+	}
+	// Connect saves the token with the address, for the next launch to read.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(`[]`)) }))
+	defer srv.Close()
+	a.post = func(func()) {}
+	a.address, a.token = srv.URL, "secret"
+	tt.Frame()
+	if err := tt.Click(locales.Connect()); err != nil {
+		t.Fatal(err)
+	}
+	if saved, err := loadConfig(a.path); err != nil || saved.Address != srv.URL || saved.Token != "secret" || !a.configured() {
+		t.Fatalf("saved %+v %v", saved, err)
 	}
 }
 
@@ -425,14 +434,55 @@ func TestSettingsPage(t *testing.T) {
 	}
 }
 
+// The configuration file holds the token, so only the user can read it.
 func TestConfigRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "x", "config.json")
-	want := config{Address: "http://ha.local:8123", Entity: "climate.a"}
+	want := config{Address: "http://ha.local:8123", Token: "secret", Entity: "climate.a"}
 	if err := saveConfig(path, want); err != nil {
 		t.Fatal(err)
 	}
 	if got, err := loadConfig(path); err != nil || got != want {
 		t.Fatalf("%+v %v", got, err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm != 0o600 && runtime.GOOS != "windows" {
+		t.Fatalf("mode %v", perm)
+	}
+}
+
+// Readers of each language the app is written in get its catalog, and every
+// catalog says every message.
+func TestLanguages(t *testing.T) {
+	for system, want := range map[string]string{
+		"en-US": "en", "zh-CN": "zh-Hans", "zh-SG": "zh-Hans", "zh-TW": "zh-Hant", "zh-HK": "zh-Hant",
+		"ja-JP": "ja", "ko-KR": "ko",
+	} {
+		if got := i18n.Match([]string{system}, locales.Catalog.Languages()); got != want {
+			t.Errorf("%s reads %q, not %q", system, got, want)
+		}
+	}
+	catalog := func(tag string) map[string]any {
+		data, err := os.ReadFile(filepath.Join("locales", tag+".json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var m map[string]any
+		if err := json.Unmarshal(data, &m); err != nil {
+			t.Fatal(err)
+		}
+		return m
+	}
+	source := catalog(locales.Catalog.Source())
+	for _, tag := range locales.Catalog.Languages() {
+		m := catalog(tag)
+		for key := range source {
+			if _, ok := m[key]; !ok && !strings.HasPrefix(key, "@") {
+				t.Errorf("%s lacks %s", tag, key)
+			}
+		}
 	}
 }
 

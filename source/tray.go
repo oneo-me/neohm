@@ -66,6 +66,19 @@ func (a *application) installMenus() {
 	}
 }
 
+// relabel says again, in the language the app shows now, what was said only
+// once: the menus, the menu bar icon's tooltip and the window's title. The
+// panel follows by itself, as it is built anew every frame.
+func (a *application) relabel() {
+	a.installMenus()
+	if a.tray != nil {
+		a.tray.SetToolTip(locales.Title())
+	}
+	if a.window != nil {
+		a.window.Window().SetTitle(locales.Title())
+	}
+}
+
 func (a *application) reopen() {
 	if !a.quitting {
 		a.showPanel()
@@ -156,7 +169,7 @@ func (a *application) openSettings() {
 // showSettings shows Settings over the page the panel shows.
 func (a *application) showSettings() {
 	if !a.connecting {
-		a.connectMsg = ""
+		a.connected = false
 	}
 	a.settingsOpen = true
 	a.redraw()

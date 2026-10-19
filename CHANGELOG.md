@@ -7,4 +7,5 @@
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep.
 - Show the target temperature of the air conditioner opened last beside the menu bar icon.
 - Keep Settings inside the panel, opened from its gear button.
-- Save the configuration in `~/.ha-go` and the access token in the system keychain.
+- Save the configuration, the access token included, in `~/.ha-go`, readable only by the user.
+- Show the app in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS's language settings.

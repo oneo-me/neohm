@@ -12,6 +12,7 @@ Left-click the menu bar icon to open the panel. It shows the devices as tiles by
 - Switch lights, switches and fans with a click, and lock, open, play or start other devices from a tile's menu.
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, as far as it offers them.
 - Show the target temperature of the air conditioner opened last beside the menu bar icon.
+- Show the interface in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS's language settings.
 
 ## Install
 
@@ -24,7 +25,7 @@ No release is published yet. Build from source with the [Development](#developme
 3. Enter the address, for example `http://homeassistant.local:8123`, and the token, then click **Connect**.
 4. Close Settings to see your devices, and choose an air conditioner to open its controls.
 
-The address and the air conditioner opened last are saved in `~/.ha-go/config.json`. The token is kept in the system keychain.
+The address, the token and the air conditioner opened last are saved in `~/.ha-go/config.json`, which only your user account can read.
 
 ## Development
 

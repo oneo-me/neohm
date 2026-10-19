@@ -35,17 +35,11 @@ const (
 	registryRetry = time.Minute
 )
 
-type secretStore interface {
-	Get(key string) ([]byte, error)
-	Set(key string, value []byte) error
-}
-
 // application keeps the state of the menu bar app. Everything but the fields
 // under mu and the atomics is owned by the main thread.
 type application struct {
-	path    string
-	config  config
-	secrets secretStore
+	path   string
+	config config
 	// address and token are the values being edited in Settings.
 	address, token string
 
@@ -78,8 +72,10 @@ type application struct {
 	errorKey   string
 	errorText  string
 	connecting bool
-	connectMsg string
-	tempGen    int
+	// connected reports that the last Connect reached Home Assistant, which
+	// Settings says until it opens again.
+	connected bool
+	tempGen   int
 	// pending counts service calls on their way, and tempPending a
 	// temperature waiting for the slider to rest; holdUntil lets the unit
 	// report a change. Reads do not replace the state shown meanwhile.
@@ -106,8 +102,8 @@ type application struct {
 	post func(func())
 }
 
-func newApplication(path string, secrets secretStore) *application {
-	return &application{path: path, secrets: secrets, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain}
+func newApplication(path string) *application {
+	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain}
 }
 
 func (a *application) report(key string, err error) {
@@ -134,7 +130,7 @@ func (a *application) start() {
 }
 
 func (a *application) configured() bool {
-	return a.config.Address != "" && a.token != ""
+	return a.config.Address != "" && a.config.Token != ""
 }
 
 // connect points the poller at the saved address and token, and with list
@@ -142,7 +138,7 @@ func (a *application) configured() bool {
 func (a *application) connect(list bool) {
 	a.mu.Lock()
 	if a.configured() {
-		a.client = ha.NewClient(a.config.Address, a.token)
+		a.client = ha.NewClient(a.config.Address, a.config.Token)
 	} else {
 		a.client = nil
 	}
@@ -154,7 +150,7 @@ func (a *application) connect(list bool) {
 	if !list || client == nil {
 		return
 	}
-	a.connecting, a.connectMsg = true, ""
+	a.connecting, a.connected = true, false
 	edits := a.edits.Load()
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -165,11 +161,8 @@ func (a *application) connect(list bool) {
 			if !a.current(client) {
 				return
 			}
-			a.connecting = false
+			a.connecting, a.connected = false, err == nil
 			a.applyList(client, edits, states, reg, "", err)
-			if err == nil {
-				a.connectMsg = locales.ConnectedTo(a.tileCount())
-			}
 		})
 	}()
 }
@@ -228,11 +221,8 @@ func (a *application) save() {
 
 // saveConnection applies the address and token edited in Settings.
 func (a *application) saveConnection() {
-	a.config.Address = ha.NormalizeURL(a.address)
+	a.config.Address, a.config.Token = ha.NormalizeURL(a.address), a.token
 	a.address = a.config.Address
-	if err := a.secrets.Set(tokenKey, []byte(a.token)); err != nil {
-		a.report("secretError", err)
-	}
 	a.save()
 	a.connect(true)
 	a.redraw()

@@ -6,7 +6,7 @@ HA Climate is a macOS menu bar app that reads and controls the devices of one Ho
 
 | Path | Responsibility |
 | --- | --- |
-| `source/main.go` | Entry point: the MyGo lifecycle, the menu bar activation policy, the configuration directory and the keychain. |
+| `source/main.go` | Entry point: the MyGo lifecycle, the menu bar activation policy and the configuration directory. |
 | `source/app.go` | Application state, the poller, merging reads with local changes and sending service calls. |
 | `source/tray.go` | The menu bar icon and menus, the panel's lifecycle and navigation, and the window used without a menu bar icon. |
 | `source/panel.go` | The panel's frame, theme and palette, and the controls of one air conditioner. |
@@ -15,7 +15,8 @@ HA Climate is a macOS menu bar app that reads and controls the devices of one Ho
 | `source/settings.go` | The Settings page. |
 | `source/config.go` | Reading and atomically saving the configuration file. |
 | `source/internal/ha/` | The REST and WebSocket clients, what entities' states and actions mean, which tiles Home shows, and the parsed climate entity. |
-| `source/locales/` | MyGo message catalogs, `<tag>.json`, and the accessors `go tool mygo generate` writes from them. |
+| `source/locales/` | MyGo message catalogs, `<tag>.json`, and the accessors `go tool mygo generate` writes from them. Their `mygo.*` keys name the app and translate MyGo's own strings where MyGo has no translation. |
+| `source/resources/darwin/` | Translations of `Info.plist` strings, such as the reason macOS shows for local network access, in `<tag>.lproj/InfoPlist.strings`. |
 
 ## Boundaries
 
@@ -23,7 +24,8 @@ HA Climate is a macOS menu bar app that reads and controls the devices of one Ho
 - Keep Settings a page of the panel, never a window of its own. A window shows the panel's pages only when the menu bar icon cannot be created.
 - Open the panel on Home, or on Settings until Home Assistant is set up. Closing the panel returns it there.
 - Run network work off the main thread and apply its results on the main thread. Builders never start work.
-- Keep the access token in the system keychain, never in the configuration file.
+- Keep the access token in the configuration file, readable only by the user, rather than the keychain.
+- When the language changes, set again what was set only once: the menus, the menu bar icon's tooltip and the window's title.
 - Show a local change at once, and keep it over reads that started before it until Home Assistant reports it.
 - Keep what Home Assistant's domains, states and services mean in `internal/ha`, and how the panel shows them in the main package.
 - Treat the registries as optional: without them, Home still shows each switch and main control, ungrouped.
@@ -38,11 +40,13 @@ HA Climate is a macOS menu bar app that reads and controls the devices of one Ho
 
 ## Data and state
 
-The [configuration file](README.md#getting-started) holds the address and the air conditioner opened last, and each save replaces it atomically. A read of every entity that no longer contains that one forgets it. The access token lives only in the system keychain. Device states and the registries stay in memory and are read again after each launch.
+The [configuration file](README.md#getting-started) holds the address, the access token and the air conditioner opened last. Each save replaces it atomically with a file only the user can read. A read of every entity that no longer contains that air conditioner forgets it. Device states and the registries stay in memory and are read again after each launch.
 
 ## Verification
 
-Tests never open a window. Logic tests cover the REST and WebSocket clients, which tiles Home shows, the configuration file and how reads merge with local changes; headless UI tests drive the panel's pages with MyGo's tester. From `source/`, `HA_SNAPSHOT_DIR=<dir> go test -run Snapshot .` renders each page and the menu bar icon to PNG for review. The menu bar icon, the panel's placement, keyboard focus, the keychain and a live Home Assistant need manual review in a desktop session.
+Tests never open a window. Logic tests cover the REST and WebSocket clients, which tiles Home shows, the configuration file, the catalogs and how reads merge with local changes. Headless UI tests drive the panel's pages with MyGo's tester.
+
+From `source/`, `HA_SNAPSHOT_DIR=<dir> go test -run Snapshot .` renders each page and the menu bar icon to PNG for review. Prefix `MYGO_LOCALE=<tag>` to render another language. `go tool mygo dev -lang <tag>` runs the app in one. The menu bar icon, the panel's placement, keyboard focus, each language's menus and system prompts, and a live Home Assistant need manual review in a desktop session.
 
 ## Subjects
 
