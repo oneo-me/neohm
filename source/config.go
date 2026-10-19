@@ -21,6 +21,9 @@ type config struct {
 	// Language is the catalog the app shows, as "zh-Hans", or "" for the
 	// one that suits the system's languages best.
 	Language string `json:"language,omitempty"`
+	// ManualUpdates checks for updates only when Settings asks, not by
+	// itself every day.
+	ManualUpdates bool `json:"manualUpdates,omitempty"`
 }
 
 func loadConfig(path string) (config, error) {

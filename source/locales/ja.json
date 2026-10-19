@@ -183,5 +183,10 @@
   "updateAvailable": "NeoHM {version} が利用可能です",
   "updateInstall": "インストールして再起動",
   "updateInstalling": "NeoHM {version} をダウンロード中…",
-  "updateRelaunch": "インストールが終わると NeoHM が再起動します。"
+  "updateRelaunch": "インストールが終わると NeoHM が再起動します。",
+  "updates": "アップデート",
+  "autoCheckUpdates": "自動で確認",
+  "autoCheckUpdatesHint": "1 日に 1 回確認し、新しいバージョンが出たらお知らせします。",
+  "updateNotificationBody": "設定を開いてインストールできます。",
+  "settingsUpdate": "設定、アップデートがあります"
 }

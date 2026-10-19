@@ -8,9 +8,9 @@ import (
 	"github.com/oneo-me/onevra/source/icons/lucide"
 )
 
-// settingsPage edits the connection to Home Assistant and the language in
-// the panel, over the page it covers. radius rounds the corners it scrolls
-// within.
+// settingsPage edits the language, the connection to Home Assistant and
+// updates in the panel, over the page it covers. radius rounds the corners
+// it scrolls within.
 func (a *application) settingsPage(c *ui.Context, radius float32) {
 	t := c.Theme()
 	pageFrame(c, radius, locales.SettingsTitle(), func() {
@@ -48,6 +48,7 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 					components.Text(c, e).Wrap().FontSize(12).TextColor(t.Danger)
 				}
 			})
+			a.updatesGroup(c)
 		})
 	})
 }

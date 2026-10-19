@@ -139,7 +139,7 @@ export const zhHans = {
     architectures: "Apple 芯片 · Intel · x64 · ARM64",
     privacyTitle: "数据留在本机",
     privacyBody:
-      "地址、令牌和语言保存在 ~/.neohm/config.json，只有你的用户能读取。NeoHM 只与你填写的 Home Assistant 通信，仅在你检查更新时访问 GitHub。",
+      "地址、令牌和语言保存在 ~/.neohm/config.json，只有你的用户能读取。NeoHM 只与你填写的 Home Assistant 通信，仅在检查更新时访问 GitHub，默认每天一次，可在设置中关闭。",
     requirements: [
       "macOS 13+",
       "Windows 与 Linux 即将到来",

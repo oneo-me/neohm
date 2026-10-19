@@ -20,12 +20,7 @@ const tileHeight = 112
 func (a *application) homePage(c *ui.Context, radius float32) {
 	pageFrame(c, radius, locales.Title(), func() {
 		pageHeader(c, locales.Title(), func() {
-			ui.Row(c).Gap(8).Shrink(0).Children(func() {
-				a.updateButton(c)
-				if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
-					a.showSettings()
-				}
-			})
+			a.settingsButton(c)
 		})
 	}, func(top float32) {
 		switch {
@@ -64,6 +59,23 @@ func (a *application) homePage(c *ui.Context, radius float32) {
 				}
 			})
 		}
+	})
+}
+
+// settingsButton opens Settings, marked with a dot while a newer version
+// waits there to be installed.
+func (a *application) settingsButton(c *ui.Context) {
+	if a.upd.phase != updateAvailable {
+		if circleButton(c, lucide.Settings, locales.SettingsTitle(), 36, false).Clicked() {
+			a.showSettings()
+		}
+		return
+	}
+	ui.Box(c).Shrink(0).Children(func() {
+		if circleButton(c, lucide.Settings, locales.SettingsUpdate(), 36, false).Clicked() {
+			a.showSettings()
+		}
+		ui.Box(c).Size(10, 10).Radius(5).Background(accent).Border(2, panelTop).Absolute().Top(0).Right(0)
 	})
 }
 

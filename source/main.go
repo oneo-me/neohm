@@ -35,6 +35,11 @@ func main() {
 			a.reopen()
 		}
 	})
+	mygo.App.OnNotificationClick(func(id string) {
+		if id == updateNotification && a.ready {
+			a.openSettings()
+		}
+	})
 	mygo.App.OnLocaleChanged(func(string) {
 		if a.ready {
 			a.relabel()

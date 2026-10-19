@@ -139,7 +139,7 @@ export const ja = {
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "ローカルに保存",
     privacyBody:
-      "アドレス、トークン、言語は ~/.neohm/config.json に保存され、あなたのユーザーだけが読み取れます。NeoHM は入力した Home Assistant と通信し、GitHub にはアップデートを確認するときだけアクセスします。",
+      "アドレス、トークン、言語は ~/.neohm/config.json に保存され、あなたのユーザーだけが読み取れます。NeoHM は入力した Home Assistant と通信し、GitHub にはアップデートの確認でのみアクセスします。確認は 1 日に 1 回で、設定でオフにできます。",
     requirements: [
       "macOS 13+",
       "Windows・Linux 準備中",

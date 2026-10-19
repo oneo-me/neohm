@@ -1815,3 +1815,53 @@ func UpdateRelaunch() string { return In(i18n.Locale()).UpdateRelaunch() }
 func (msgs Messages) UpdateRelaunch() string {
 	return Catalog.Format(msgs.locale, "updateRelaunch", nil)
 }
+
+// Updates says "Updates"
+// in the language the app shows.
+func Updates() string { return In(i18n.Locale()).Updates() }
+
+// Updates says "Updates"
+// in the language of msgs.
+func (msgs Messages) Updates() string {
+	return Catalog.Format(msgs.locale, "updates", nil)
+}
+
+// AutoCheckUpdates says "Check automatically"
+// in the language the app shows.
+func AutoCheckUpdates() string { return In(i18n.Locale()).AutoCheckUpdates() }
+
+// AutoCheckUpdates says "Check automatically"
+// in the language of msgs.
+func (msgs Messages) AutoCheckUpdates() string {
+	return Catalog.Format(msgs.locale, "autoCheckUpdates", nil)
+}
+
+// AutoCheckUpdatesHint says "Checks once a day and lets you know when a new version is out."
+// in the language the app shows.
+func AutoCheckUpdatesHint() string { return In(i18n.Locale()).AutoCheckUpdatesHint() }
+
+// AutoCheckUpdatesHint says "Checks once a day and lets you know when a new version is out."
+// in the language of msgs.
+func (msgs Messages) AutoCheckUpdatesHint() string {
+	return Catalog.Format(msgs.locale, "autoCheckUpdatesHint", nil)
+}
+
+// UpdateNotificationBody says "Open Settings to install it."
+// in the language the app shows.
+func UpdateNotificationBody() string { return In(i18n.Locale()).UpdateNotificationBody() }
+
+// UpdateNotificationBody says "Open Settings to install it."
+// in the language of msgs.
+func (msgs Messages) UpdateNotificationBody() string {
+	return Catalog.Format(msgs.locale, "updateNotificationBody", nil)
+}
+
+// SettingsUpdate says "Settings, an update is available"
+// in the language the app shows.
+func SettingsUpdate() string { return In(i18n.Locale()).SettingsUpdate() }
+
+// SettingsUpdate says "Settings, an update is available"
+// in the language of msgs.
+func (msgs Messages) SettingsUpdate() string {
+	return Catalog.Format(msgs.locale, "settingsUpdate", nil)
+}

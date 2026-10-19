@@ -139,7 +139,7 @@ export const zhHant = {
     architectures: "Apple 晶片 · Intel · x64 · ARM64",
     privacyTitle: "資料留在本機",
     privacyBody:
-      "位址、權杖和語言儲存在 ~/.neohm/config.json，只有你的使用者能讀取。NeoHM 只與你填寫的 Home Assistant 通訊，僅在你檢查更新時存取 GitHub。",
+      "位址、權杖和語言儲存在 ~/.neohm/config.json，只有你的使用者能讀取。NeoHM 只與你填寫的 Home Assistant 通訊，僅在檢查更新時存取 GitHub，預設每天一次，可在設定中關閉。",
     requirements: [
       "macOS 13+",
       "Windows 與 Linux 即將到來",

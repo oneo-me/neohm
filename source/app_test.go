@@ -844,14 +844,18 @@ func TestSnapshot(t *testing.T) {
 	}
 	write("light-ceiling-colors.png")
 	a.closeDevice()
-	a.upd = updateState{open: true, phase: updateAvailable, notes: a.upd.notes,
+	a.upd = updateState{phase: updateAvailable, notes: a.upd.notes,
 		found: &mygo.Update{Version: "9.0.0", Notes: "- Something new.\n- Something better."}}
-	write("update.png")
+	write("home-update.png")
+	a.settingsOpen = true
+	tt.Frame()
+	tt.Scroll(panelWidth/2, 300, 0, 600)
+	write("settings-update.png")
 }
 
 // fakeUpdates finds found, or fails with err, and installs it in two steps,
-// counting relaunches.
-func fakeUpdates(found *mygo.Update, err error, relaunched *int) updates {
+// counting relaunches and the versions the user is told of.
+func fakeUpdates(found *mygo.Update, err error, relaunched *int, notified *[]string) updates {
 	return updates{
 		check: func(context.Context) (*mygo.Update, error) { return found, err },
 		install: func(_ context.Context, _ *mygo.Update, progress func(downloaded, total int64)) error {
@@ -859,18 +863,20 @@ func fakeUpdates(found *mygo.Update, err error, relaunched *int) updates {
 			return err
 		},
 		relaunch: func() { *relaunched++ },
+		notify:   func(version string) { *notified = append(*notified, version) },
 	}
 }
 
-// The update button, left of Settings, says in a popover below it whether a
-// newer version is out, and installs it.
+// Settings say whether a newer version is out, and install it.
 func TestUpdates(t *testing.T) {
 	a := demoApp(t)
 	posted := make(chan func(), 8)
 	a.post = func(fn func()) { posted <- fn }
-	relaunched := 0
-	a.updates = fakeUpdates(nil, nil, &relaunched)
+	relaunched, notified := 0, []string(nil)
+	a.updates = fakeUpdates(nil, nil, &relaunched, &notified)
+	a.settingsOpen = true
 	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
+	tt.Scroll(panelWidth/2, 300, 0, 600) // To the updates, below the connection.
 
 	if err := tt.Click(locales.CheckForUpdates()); err != nil {
 		t.Fatal(err)
@@ -883,31 +889,22 @@ func TestUpdates(t *testing.T) {
 	if !tt.HasText(locales.UpdateCurrent()) {
 		t.Fatalf("up to date: %v", tt.Texts())
 	}
-	tt.Key(0, ui.KeyEscape)
-	if a.upd.open {
-		t.Fatal("Escape left the popover open")
-	}
 
 	// A development build cannot update itself, and says so.
-	a.updates = fakeUpdates(nil, mygo.ErrUpdatesDisabled, &relaunched)
-	if err := tt.Click(locales.CheckForUpdates()); err != nil {
-		t.Fatal(err)
-	}
+	a.updates = fakeUpdates(nil, mygo.ErrUpdatesDisabled, &relaunched, &notified)
+	a.checkForUpdates(false)
 	returned(t, posted)
 	tt.Frame()
 	if !tt.HasText(locales.UpdateDisabled()) {
 		t.Fatalf("disabled: %v", tt.Texts())
 	}
-	tt.Key(0, ui.KeyEscape)
 
-	a.updates = fakeUpdates(&mygo.Update{Version: "9.0.0", Notes: "- Something new."}, nil, &relaunched)
-	if err := tt.Click(locales.CheckForUpdates()); err != nil {
-		t.Fatal(err)
-	}
+	a.updates = fakeUpdates(&mygo.Update{Version: "9.0.0", Notes: "- Something new."}, nil, &relaunched, &notified)
+	a.checkForUpdates(false)
 	returned(t, posted)
 	tt.Frame()
-	if !tt.HasText(locales.UpdateAvailable("9.0.0")) || !tt.HasText("Something new.") {
-		t.Fatalf("available: %v", tt.Texts())
+	if !tt.HasText(locales.UpdateAvailable("9.0.0")) || !tt.HasText("Something new.") || notified != nil {
+		t.Fatalf("available: %v, notified %v", tt.Texts(), notified)
 	}
 	if err := tt.Click(locales.UpdateInstall()); err != nil {
 		t.Fatal(err)
@@ -924,9 +921,9 @@ func TestUpdates(t *testing.T) {
 		t.Fatalf("relaunched %d times", relaunched)
 	}
 
-	// A failed install tries again from the popover.
+	// A failed install tries again.
 	a.upd.phase = updateAvailable
-	a.updates = fakeUpdates(a.upd.found, errors.New("offline"), &relaunched)
+	a.updates = fakeUpdates(a.upd.found, errors.New("offline"), &relaunched, &notified)
 	tt.Frame()
 	if err := tt.Click(locales.UpdateInstall()); err != nil {
 		t.Fatal(err)
@@ -937,8 +934,75 @@ func TestUpdates(t *testing.T) {
 	if !tt.HasText(locales.UpdateInstallError()) || !tt.HasText(locales.UpdateRetry()) || relaunched != 1 {
 		t.Fatalf("failed: %v, relaunched %d", tt.Texts(), relaunched)
 	}
-	a.resetPanel()
-	if a.upd.open {
-		t.Fatal("the popover outlived the panel")
+}
+
+// The app checks for updates by itself once a day, quietly when it fails,
+// tells the user of each new version once and marks Settings' button.
+func TestAutoCheck(t *testing.T) {
+	a := demoApp(t)
+	posted := make(chan func(), 8)
+	a.post = func(fn func()) { posted <- fn }
+	relaunched, notified := 0, []string(nil)
+	a.updates = fakeUpdates(nil, errors.New("offline"), &relaunched, &notified)
+	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
+
+	a.autoCheck()
+	returned(t, posted)
+	if a.upd.phase != updateIdle {
+		t.Fatalf("a failed check shows phase %d", a.upd.phase)
 	}
+	// A day has not passed.
+	a.updates = fakeUpdates(&mygo.Update{Version: "9.0.0"}, nil, &relaunched, &notified)
+	a.autoCheck()
+	if a.upd.phase != updateIdle {
+		t.Fatal("checked again within a day")
+	}
+	a.upd.checked = time.Now().Add(-autoCheckEvery)
+	a.autoCheck()
+	returned(t, posted)
+	tt.Frame()
+	if a.upd.phase != updateAvailable || !slices.Equal(notified, []string{"9.0.0"}) || !tt.HasText(locales.SettingsUpdate()) {
+		t.Fatalf("phase %d, notified %v, texts %v", a.upd.phase, notified, tt.Texts())
+	}
+	// A version found is not checked for again until it is installed.
+	a.upd.checked = time.Time{}
+	a.autoCheck()
+	if a.upd.phase != updateAvailable {
+		t.Fatal("checked again with a version found")
+	}
+	a.upd.phase = updateCurrent
+	a.autoCheck()
+	returned(t, posted)
+	if len(notified) != 1 {
+		t.Fatalf("told of 9.0.0 again: %v", notified)
+	}
+
+	// Turned off in Settings, it never checks by itself, and turning it on
+	// again checks at once.
+	a.settingsOpen = true
+	a.upd.phase = updateCurrent
+	tt.Frame()
+	tt.Scroll(panelWidth/2, 300, 0, 600)
+	if err := tt.Click(locales.AutoCheckUpdates()); err != nil {
+		t.Fatal(err)
+	}
+	if !a.config.ManualUpdates {
+		t.Fatal("still checking by itself")
+	}
+	if c, err := loadConfig(a.path); err != nil || !c.ManualUpdates {
+		t.Fatalf("not saved: %v %+v", err, c)
+	}
+	a.upd.checked = time.Time{}
+	a.autoCheck()
+	if a.upd.phase != updateCurrent {
+		t.Fatal("checked by itself while off")
+	}
+	tt.Frame()
+	if err := tt.Click(locales.AutoCheckUpdates()); err != nil {
+		t.Fatal(err)
+	}
+	if a.config.ManualUpdates || a.upd.phase != updateChecking {
+		t.Fatalf("manual %v, phase %d", a.config.ManualUpdates, a.upd.phase)
+	}
+	returned(t, posted)
 }

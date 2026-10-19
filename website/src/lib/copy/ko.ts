@@ -139,7 +139,7 @@ export const ko = {
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "설계부터 로컬",
     privacyBody:
-      "주소, 토큰, 언어는 ~/.neohm/config.json에 저장되며 사용자만 읽을 수 있습니다. NeoHM은 입력한 Home Assistant와 통신하며, 업데이트를 확인할 때만 GitHub에 접속합니다.",
+      "주소, 토큰, 언어는 ~/.neohm/config.json에 저장되며 사용자만 읽을 수 있습니다. NeoHM은 입력한 Home Assistant와 통신하며, 업데이트를 확인할 때만 GitHub에 접속합니다. 확인은 하루에 한 번이며 설정에서 끌 수 있습니다.",
     requirements: [
       "macOS 13+",
       "Windows & Linux 준비 중",

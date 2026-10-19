@@ -35,6 +35,9 @@ type updates struct {
 	check    func(context.Context) (*mygo.Update, error)
 	install  func(context.Context, *mygo.Update, func(downloaded, total int64)) error
 	relaunch func()
+	// notify tells the user a newer version is out, in a notification that
+	// opens Settings.
+	notify func(version string)
 }
 
 var mygoUpdates = updates{
@@ -43,12 +46,30 @@ var mygoUpdates = updates{
 		return up.Install(ctx, progress)
 	},
 	relaunch: mygo.App.Relaunch,
+	notify: func(version string) {
+		n := mygo.NewNotification(mygo.NotificationOptions{
+			ID: updateNotification, Title: locales.UpdateAvailable(version), Body: locales.UpdateNotificationBody(),
+		})
+		// Show waits for the user to allow notifications the first time.
+		go func() {
+			if err := n.Show(); err != nil {
+				log.Printf("updateNotifyError: %v", err)
+			}
+		}()
+	},
 }
 
-// updateState is what the update button's popover shows: the phase, the
-// newer version found and how far its download got.
+// autoCheckEvery is how often the app checks for a newer version by
+// itself, unless Settings turned that off.
+const autoCheckEvery = 24 * time.Hour
+
+// updateNotification identifies the notification of a newer version, which
+// opens Settings when clicked.
+const updateNotification = "update"
+
+// updateState is what Settings' updates show: the phase, the newer version
+// found and how far its download got.
 type updateState struct {
-	open     bool
 	phase    updatePhase
 	found    *mygo.Update
 	progress float64
@@ -56,26 +77,42 @@ type updateState struct {
 	// from a failed check.
 	installFailed bool
 	notes         *markdown.Options
+	// checked is when the last check started, on the wall clock, which
+	// keeps running while the Mac sleeps; notified is the version the user
+	// was last told of.
+	checked  time.Time
+	notified string
 }
 
-// updateButton, left of Settings in Home's header, checks for a newer
-// version and says what it found in a popover below it.
-func (a *application) updateButton(c *ui.Context) {
+// updatesGroup, in Settings, says whether a newer version is out, checks for
+// one and installs it, and turns checking by itself on or off.
+func (a *application) updatesGroup(c *ui.Context) {
 	u := &a.upd
-	b := circleButton(c, lucide.CircleArrowUp, locales.CheckForUpdates(), 36, false)
-	if b.Clicked() {
-		u.open = !u.open
-		if u.open {
-			switch u.phase {
-			case updateIdle, updateCurrent, updateFailed, updateDisabled:
-				a.checkForUpdates()
+	settingsGroup(c, locales.Updates(), func() {
+		ui.Column(c).FillWidth().Gap(12).Children(func() { a.updateView(c) })
+		switch {
+		case u.phase == updateFailed && u.installFailed:
+			if components.Button(c, locales.UpdateRetry(), components.ButtonSecondary).Clicked() {
+				a.installUpdate()
+			}
+		case u.phase == updateFailed:
+			if components.Button(c, locales.UpdateRetry(), components.ButtonSecondary).Clicked() {
+				a.checkForUpdates(false)
+			}
+		case u.phase != updateAvailable && u.phase != updateInstalling && u.phase != updateDisabled:
+			b := components.Button(c, locales.CheckForUpdates(), components.ButtonSecondary).Disabled(u.phase == updateChecking)
+			if b.Clicked() {
+				a.checkForUpdates(false)
 			}
 		}
-	}
-	b.Expanded(u.open)
-	components.Popover(c, b, &u.open, func(panel ui.Element) {
-		panel.Width(268).Label(locales.CheckForUpdates())
-		a.updateView(c)
+		auto := !a.config.ManualUpdates
+		ui.Column(c).FillWidth().Gap(6).Children(func() {
+			components.Switch(c, &auto, locales.AutoCheckUpdates())
+			if auto == a.config.ManualUpdates {
+				a.setAutoCheck(auto)
+			}
+			components.Text(c, locales.AutoCheckUpdatesHint()).FontSize(12).TextColor(c.Theme().TextMuted).Wrap()
+		})
 	})
 }
 
@@ -83,6 +120,8 @@ func (a *application) updateView(c *ui.Context) {
 	u := &a.upd
 	current := mygo.App.Version()
 	switch u.phase {
+	case updateIdle:
+		updateHeading(c, lucide.CircleArrowUp, inkMuted, locales.Title(), locales.UpdateVersion(current))
 	case updateChecking:
 		ui.Row(c).FillWidth().Gap(10).AlignItems(ui.Center).Children(func() {
 			components.Spinner(c, components.SpinnerSpokes).Size(16, 16)
@@ -98,13 +137,6 @@ func (a *application) updateView(c *ui.Context) {
 			title = locales.UpdateInstallError()
 		}
 		updateHeading(c, lucide.TriangleAlert, danger, title, locales.UpdateVersion(current))
-		if components.Button(c, locales.UpdateRetry(), components.ButtonSecondary).FillWidth().Clicked() {
-			if u.installFailed {
-				a.installUpdate()
-			} else {
-				a.checkForUpdates()
-			}
-		}
 	case updateAvailable:
 		updateHeading(c, lucide.CircleArrowUp, accent, locales.UpdateAvailable(u.found.Version), locales.UpdateYours(current))
 		if u.found.Notes != "" {
@@ -123,7 +155,7 @@ func (a *application) updateView(c *ui.Context) {
 	}
 }
 
-// updateHeading is the popover's title, after an icon in color, above a
+// updateHeading says where updates got, after an icon in color, above a
 // line that says more.
 func updateHeading(c *ui.Context, icon func() *ui.SVG, color ui.Color, title, detail string) {
 	ui.Row(c).FillWidth().Gap(10).AlignItems(ui.Start).Children(func() {
@@ -135,10 +167,54 @@ func updateHeading(c *ui.Context, icon func() *ui.SVG, color ui.Color, title, de
 	})
 }
 
-// checkForUpdates asks GitHub for a version newer than this one.
-func (a *application) checkForUpdates() {
+// autoCheck checks for a newer version when checking by itself is on and
+// the last check is a day old, unless one was found or is being checked.
+func (a *application) autoCheck() {
 	u := &a.upd
-	u.phase, u.found, u.installFailed = updateChecking, nil, false
+	if a.config.ManualUpdates || time.Since(u.checked) < autoCheckEvery {
+		return
+	}
+	switch u.phase {
+	case updateIdle, updateCurrent, updateDisabled:
+		a.checkForUpdates(true)
+	case updateFailed:
+		if !u.installFailed {
+			a.checkForUpdates(true)
+		}
+	}
+}
+
+// watchUpdates checks for updates soon after launch and, every half hour,
+// whether the last check is a day old.
+func (a *application) watchUpdates() {
+	time.Sleep(10 * time.Second)
+	t := time.NewTicker(30 * time.Minute)
+	defer t.Stop()
+	for {
+		a.post(a.autoCheck)
+		<-t.C
+	}
+}
+
+// setAutoCheck turns checking for updates by itself on or off, checking at
+// once when it turns on.
+func (a *application) setAutoCheck(on bool) {
+	a.config.ManualUpdates = !on
+	a.save()
+	if on {
+		a.upd.checked = time.Time{}
+		a.autoCheck()
+	}
+	a.redraw()
+}
+
+// checkForUpdates asks GitHub for a version newer than this one. A check of
+// the app's own fails quietly, and tells the user of a version they were not
+// told of yet.
+func (a *application) checkForUpdates(auto bool) {
+	u := &a.upd
+	before := u.phase
+	u.phase, u.found, u.installFailed, u.checked = updateChecking, nil, false, time.Now().Round(0)
 	a.redraw()
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -151,10 +227,17 @@ func (a *application) checkForUpdates() {
 			case err != nil:
 				log.Printf("updateCheckError: %v", err)
 				u.phase = updateFailed
+				if auto {
+					u.phase = before
+				}
 			case found == nil:
 				u.phase = updateCurrent
 			default:
 				u.phase, u.found = updateAvailable, found
+				if auto && u.notified != found.Version {
+					u.notified = found.Version
+					a.updates.notify(found.Version)
+				}
 			}
 			a.redraw()
 		})

@@ -8,4 +8,4 @@
 - Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep.
 - Connect to Home Assistant from Settings in the panel with its address and a long-lived access token.
 - Show the app in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS or the language chosen in Settings.
-- Check for new versions from the panel and install them in place.
+- Check for new versions daily or from Settings, notify you of each and install them in place.

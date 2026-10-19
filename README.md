@@ -31,7 +31,7 @@ NeoHM needs macOS 13 or later and a Home Assistant instance the Mac can reach.
    xattr -dr com.apple.quarantine /Applications/NeoHM.app
    ```
 
-Later versions install from the panel: click the arrow button left of the gear to check for one, then **Install and Relaunch**. NeoHM updates itself only from Applications, or another folder you can write to.
+Later versions install from Settings: NeoHM checks once a day and notifies you of a new one, or click **Check for Updates** under Updates, then **Install and Relaunch**. NeoHM updates itself only from Applications, or another folder you can write to.
 
 ## Getting started
 
@@ -40,7 +40,7 @@ Later versions install from the panel: click the arrow button left of the gear t
 3. Enter the address, for example `http://homeassistant.local:8123`, and the token, then click **Connect**.
 4. Close Settings to see your devices. Click a tile to switch its device, or its arrow to open the device's page.
 
-The address, the token, the language chosen and the air conditioner opened last are saved in `~/.neohm/config.json`, which only your user account can read.
+The address, the token, the language chosen, whether updates are checked automatically and the air conditioner opened last are saved in `~/.neohm/config.json`, which only your user account can read.
 
 ## Contributing
 

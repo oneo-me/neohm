@@ -101,7 +101,7 @@ type application struct {
 	edits     atomic.Int64
 	panelOpen atomic.Bool
 	kick      chan struct{}
-	// upd is what the update button found, with updates.
+	// upd is what Settings' updates found, with updates.
 	upd     updateState
 	updates updates
 	// post runs a function on the main thread, setLocale shows a language
@@ -131,6 +131,7 @@ func (a *application) start() {
 	a.ready = true
 	a.connect(false)
 	go a.poll()
+	go a.watchUpdates()
 	switch {
 	case !a.configured():
 		a.openSettings()

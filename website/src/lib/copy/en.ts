@@ -139,7 +139,7 @@ export const en = {
     architectures: "Apple silicon · Intel · x64 · ARM64",
     privacyTitle: "Local by design",
     privacyBody:
-      "The address, token and language are saved in ~/.neohm/config.json, readable only by your user. NeoHM talks to your Home Assistant instance, and to GitHub only when you check for updates.",
+      "The address, token and language are saved in ~/.neohm/config.json, readable only by your user. NeoHM talks to your Home Assistant instance, and to GitHub only to check for updates, once a day unless you turn that off in Settings.",
     requirements: [
       "macOS 13+",
       "Windows & Linux next",

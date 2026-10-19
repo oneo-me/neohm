@@ -177,5 +177,10 @@
   "updateAvailable": "NeoHM {version} 現已推出",
   "updateInstall": "安裝並重新啟動",
   "updateInstalling": "正在下載 NeoHM {version}…",
-  "updateRelaunch": "安裝完成後 NeoHM 將重新啟動。"
+  "updateRelaunch": "安裝完成後 NeoHM 將重新啟動。",
+  "updates": "更新",
+  "autoCheckUpdates": "自動檢查",
+  "autoCheckUpdatesHint": "每天檢查一次，有新版本時通知你。",
+  "updateNotificationBody": "打開設定即可安裝。",
+  "settingsUpdate": "設定，有可用的更新"
 }
