@@ -3,7 +3,7 @@ import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
 import { defineConfig, loadEnv } from "vite"
 
-// Set BASE_PATH in CI to the repository's Pages base path, such as /ha-go.
+// Set BASE_PATH in CI to the repository's Pages base path, such as /neohm.
 // VITE_SITE_URL is the absolute URL used by canonical and social metadata.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "")
