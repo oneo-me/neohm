@@ -1396,11 +1396,11 @@ func (msgs Messages) CloseSettings() string {
 	return Catalog.Format(msgs.locale, "closeSettings", nil)
 }
 
-// Quit says "Quit"
+// Quit says "Quit NeoHM"
 // in the language the app shows.
 func Quit() string { return In(i18n.Locale()).Quit() }
 
-// Quit says "Quit"
+// Quit says "Quit NeoHM"
 // in the language of msgs.
 func (msgs Messages) Quit() string {
 	return Catalog.Format(msgs.locale, "quit", nil)

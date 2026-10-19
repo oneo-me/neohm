@@ -54,7 +54,9 @@ func (a *application) installMenus() {
 		return
 	}
 	// The panel holds everything else, Settings included.
-	items := []*mygo.MenuItem{item(locales.Quit(), mygo.App.Quit)}
+	quit := item(locales.Quit(), a.quit)
+	quit.Accelerator = "CmdOrCtrl+Q"
+	items := []*mygo.MenuItem{quit}
 	if runtime.GOOS == "linux" {
 		// AppIndicator only reports menu actions, not button events, so the
 		// menu opens the panel too.

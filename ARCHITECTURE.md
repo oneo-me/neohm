@@ -22,7 +22,7 @@ NeoHM is a macOS menu bar app that reads and controls the devices of one Home As
 
 ## Boundaries
 
-- Present the app from the menu bar: a left click opens the panel and a right click offers Quit.
+- Present the app from the menu bar: a left click opens the panel and a right click offers Quit, which ⌘Q also does in the panel.
 - Keep Settings a page of the panel, never a window of its own. A window shows the panel's pages only when the menu bar icon cannot be created.
 - Build each page in the shared frame: its header floats over content that scrolls to the panel's edges and blurs beneath it.
 - Keep the panel's surface opaque and drawn by the panel. The header's blur is computed in MyGo from what the panel paints, so it cannot blur a system material.

@@ -561,6 +561,21 @@ func TestSettingsPage(t *testing.T) {
 	}
 }
 
+// Command-Q quits from every page, a text field's keyboard included.
+func TestQuitShortcut(t *testing.T) {
+	a := demoApp(t)
+	quits := 0
+	a.quit = func() { quits++ }
+	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
+	tt.Key(ui.Cmd, ui.KeyQ)
+	a.showSettings()
+	focus(t, tt, locales.Address())
+	tt.Key(ui.Cmd, ui.KeyQ)
+	if quits != 2 {
+		t.Fatalf("quit %d times, want 2", quits)
+	}
+}
+
 // The configuration file holds the token, so only the user can read it.
 func TestConfigRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "x", "config.json")

@@ -100,14 +100,15 @@ type application struct {
 	edits     atomic.Int64
 	panelOpen atomic.Bool
 	kick      chan struct{}
-	// post runs a function on the main thread, and setLocale shows a
-	// language; tests replace them.
+	// post runs a function on the main thread, setLocale shows a language
+	// and quit quits the app; tests replace them.
 	post      func(func())
 	setLocale func(string)
+	quit      func()
 }
 
 func newApplication(path string) *application {
-	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain, setLocale: mygo.App.SetLocale}
+	return &application{path: path, kick: make(chan struct{}, 1), unit: "°C", post: mygo.RunOnMain, setLocale: mygo.App.SetLocale, quit: mygo.App.Quit}
 }
 
 func (a *application) report(key string, err error) {
@@ -750,6 +751,6 @@ func (a *application) errorDisplay() string {
 }
 
 func (a *application) scope(c *ui.Context) {
-	c.OnShortcut(ui.Cmd, ui.KeyQ, mygo.App.Quit)
+	c.OnShortcut(ui.Cmd, ui.KeyQ, a.quit)
 	c.OnShortcut(ui.Cmd, ui.KeyComma, a.showSettings)
 }

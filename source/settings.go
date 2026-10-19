@@ -20,7 +20,7 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 			}
 		})
 	}, func(top float32) {
-		scrollContent(c, top, radius, headerEdge, func() {
+		scrollContent(c, top, radius, 18, func() {
 			settingsGroup(c, locales.Language(), func() { a.languageSelect(c) })
 			settingsGroup(c, locales.Connection(), func() {
 				settingStacked(c, locales.Address(), "", func() {
@@ -31,7 +31,7 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 					components.TextBox(c, &a.token, components.TextBoxOptions{}).FillWidth().Label(locales.Token()).
 						Password().OnSubmit(a.saveConnection)
 				})
-				ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(t.Space(3)).Children(func() {
+				ui.Row(c).FillWidth().AlignItems(ui.Center).Gap(t.Space(3)).Margin(4, 0, 0).Children(func() {
 					b := components.Button(c, locales.Connect(), components.ButtonPrimary).Disabled(a.connecting || a.address == "" || a.token == "")
 					if b.Clicked() {
 						a.saveConnection()
@@ -45,7 +45,7 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 					}
 				})
 				if e := a.errorDisplay(); e != "" {
-					components.Text(c, e).Wrap().FontSize(12).TextColor(t.Danger).Margin(0, headerText-headerEdge)
+					components.Text(c, e).Wrap().FontSize(12).TextColor(t.Danger)
 				}
 			})
 		})
@@ -67,19 +67,19 @@ func (a *application) languageSelect(c *ui.Context) {
 	}
 }
 
-// settingsGroup shows related settings under title, its text in line with
-// the header's title and its controls with the header's buttons.
+// settingsGroup shows related settings on a card under title, as a
+// device's page shows its parts.
 func settingsGroup(c *ui.Context, title string, build func()) {
-	ui.Column(c).FillWidth().Gap(12).Padding(0, 0, 10).Children(func() {
-		areaHeading(c, title).Margin(0, headerText-headerEdge)
-		ui.Column(c).FillWidth().Gap(18).Children(build)
+	ui.Column(c).FillWidth().Gap(10).Padding(0, 0, 6).Children(func() {
+		areaHeading(c, title)
+		card(c).Gap(20).Padding(16).Children(build)
 	})
 }
 
 // settingStacked puts a control below its title and description, if any.
 func settingStacked(c *ui.Context, title, description string, build func()) {
-	ui.Column(c).FillWidth().Gap(8).Children(func() {
-		ui.Column(c).FillWidth().Gap(2).Padding(0, headerText-headerEdge).Children(func() {
+	ui.Column(c).FillWidth().Gap(10).Children(func() {
+		ui.Column(c).FillWidth().Gap(4).Children(func() {
 			components.Text(c, title).FontWeight(600)
 			if description != "" {
 				components.Text(c, description).FontSize(12).TextColor(c.Theme().TextMuted).Wrap()

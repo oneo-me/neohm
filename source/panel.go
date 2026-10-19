@@ -42,14 +42,6 @@ const (
 	pageFade = 24
 )
 
-// headerEdge is how far the header's controls keep from the panel's sides,
-// pageBar's inset and the 6 its bar pads them by, and headerText how far its
-// title.
-const (
-	headerEdge = 14
-	headerText = headerEdge + 8
-)
-
 // pageBar floats a page's header over the top of its content, which blurs
 // under it the more the nearer the top.
 var pageBar = components.ScrollEdgeBarOptions{Style: components.ScrollEdgeBlur, Inset: 8, Height: 48, Color: panelTop.Alpha(0.5)}
@@ -189,7 +181,7 @@ func scrollContent(c *ui.Context, top, radius, side float32, content func()) {
 
 // pageHeader titles a page in its bar, with its actions at the right.
 func pageHeader(c *ui.Context, title string, actions func()) {
-	components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).MarginStart(headerText - headerEdge)
+	components.Text(c, title).FontSize(20).Bold().TextColor(ink).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).MarginStart(8)
 	actions()
 }
 

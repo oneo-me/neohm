@@ -136,7 +136,7 @@
   "settings": "设置…",
   "settingsTitle": "设置",
   "closeSettings": "关闭设置",
-  "quit": "退出",
+  "quit": "退出 NeoHM",
   "openPanel": "打开面板",
   "connection": "Home Assistant",
   "address": "地址",
