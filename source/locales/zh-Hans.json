@@ -157,6 +157,5 @@
   "requestError": "无法连接 Home Assistant。",
   "saveError": "无法保存偏好设置。",
   "loadError": "无法读取偏好设置。",
-  "trayError": "无法创建菜单栏图标。",
-  "mygo.appName": "HA 空调"
+  "trayError": "无法创建菜单栏图标。"
 }

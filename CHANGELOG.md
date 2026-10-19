@@ -11,3 +11,4 @@
 - Keep Settings inside the panel, opened from its gear button.
 - Save the configuration, the access token included, in `~/.neohm`, readable only by the user.
 - Show the app in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following macOS or the language chosen in Settings.
+- Keep the app named NeoHM in every language.

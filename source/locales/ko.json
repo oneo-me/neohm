@@ -158,7 +158,6 @@
   "saveError": "환경설정을 저장할 수 없습니다.",
   "loadError": "환경설정을 읽을 수 없습니다.",
   "trayError": "메뉴 막대 아이콘을 만들 수 없습니다.",
-  "mygo.appName": "HA 에어컨",
   "mygo.undo": "실행 취소",
   "mygo.cut": "오려두기",
   "mygo.copy": "복사하기",

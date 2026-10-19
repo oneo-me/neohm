@@ -157,6 +157,5 @@
   "requestError": "無法連線到 Home Assistant。",
   "saveError": "無法儲存偏好設定。",
   "loadError": "無法讀取偏好設定。",
-  "trayError": "無法建立選單列圖示。",
-  "mygo.appName": "HA 空調"
+  "trayError": "無法建立選單列圖示。"
 }
