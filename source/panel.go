@@ -181,15 +181,15 @@ func pageHeader(c *ui.Context, title string, actions func()) {
 
 // backButton leads from a device's page back to the home page.
 func (a *application) backButton(c *ui.Context) {
-	if circleButton(c, lucide.ChevronLeft, locales.Back(), 36, false).Clicked() {
+	if circleButton(c, lucide.ChevronLeft, locales.Back(), headerButton, false).Clicked() {
 		a.closeDevice()
 	}
 }
 
-// headerSide is the width of each side of a titled header: the back button
-// at the left, the quick switch and its margin or the power button at the
-// right.
-const headerSide = 44
+// headerButton is how wide the buttons of a titled header are: the back
+// button at its left and the power button at its right. headerSide is the
+// width of each side.
+const headerButton, headerSide = 36, 36
 
 // titledHeader centers title, and what subtitle adds below it, between the
 // back button and the controls trailing builds. Sides of one width keep it

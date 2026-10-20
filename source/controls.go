@@ -23,7 +23,7 @@ func powerButton(c *ui.Context, label string, icon func() *ui.SVG, on, disabled 
 	if on {
 		glow = 1
 	}
-	power := ui.ButtonBase(c).Size(44, 44).Radius(22).Shrink(0).Label(label).Checked(on).Disabled(disabled)
+	power := ui.ButtonBase(c).Size(headerButton, headerButton).Radius(headerButton / 2).Shrink(0).Label(label).Checked(on).Disabled(disabled)
 	glow = power.Animate("glow", glow, 220*time.Millisecond)
 	tint = tint.Mix(panelTop, 0.6*(1-power.Animate("bright", bright, 220*time.Millisecond)))
 	dark := float32(0)
@@ -33,7 +33,7 @@ func powerButton(c *ui.Context, label string, icon func() *ui.SVG, on, disabled 
 	dark = power.Animate("dark", dark, 220*time.Millisecond)
 	power.Material(glass.Glass{Tint: ui.RGBA(255, 255, 255, 0.06).Mix(tint, glow), Interactive: true}).
 		Shadow(0, 4, 18, 0, tint.Alpha(0.55*glow)).Center()
-	power.Children(func() { components.Icon(c, icon).Size(21, 21).TextColor(ink.Mix(discInk, dark)) })
+	power.Children(func() { components.Icon(c, icon).Size(18, 18).TextColor(ink.Mix(discInk, dark)) })
 	if disabled {
 		power.Opacity(0.45)
 	}

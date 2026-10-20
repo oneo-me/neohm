@@ -4,6 +4,7 @@
 
 - Add Quit to the bottom of Settings.
 - Fix the panel's shadow outlining a rectangle around it on macOS.
+- Fix a device's page jumping as a light turns on or off.
 
 ## [0.2026.1] - 2026-10-20
 

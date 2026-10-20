@@ -147,7 +147,12 @@ func (a *application) readout(c *ui.Context, t ha.Tile, s ha.State, v tileView, 
 		if number != "" {
 			bigNumber(c, number, unit, v.color)
 		} else {
-			components.Text(c, text).FontSize(40).FontWeight(300).TextColor(ink).MaxLines(2).Ellipsis("…").FillWidth().TextAlign(ui.Center)
+			ui.Row(c).FillWidth().AlignItems(ui.Center).Children(func() {
+				// An unseen digit keeps a number's room, so that the page
+				// keeps still as a light's level turns to its state.
+				components.Text(c, "0").FontSize(68).FontWeight(300).SingleLine().Width(0).Invisible()
+				components.Text(c, text).FontSize(40).FontWeight(300).TextColor(ink).MaxLines(2).Ellipsis("…").Grow(1).MinWidth(0).TextAlign(ui.Center)
+			})
 		}
 		if detail != "" {
 			components.Text(c, detail).FontSize(14).TextColor(inkMuted.Mix(v.color, 0.4)).SingleLine().Ellipsis("…").FillWidth().TextAlign(ui.Center)
