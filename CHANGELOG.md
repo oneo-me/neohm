@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Add Quit to the bottom of Settings.
 - Fix the panel's shadow outlining a rectangle around it on macOS.
 
 ## [0.2026.1] - 2026-10-20

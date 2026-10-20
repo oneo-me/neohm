@@ -16,7 +16,7 @@ NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that re
 | `source/controls.go` | The controls every device's page shares: the power button at the top right, the main value in the middle, the slider with its Liquid Glass thumb and the stops below it, and the tiles along the bottom. |
 | `source/colors.go` | A light's swatches below its slider and the picker of any color. |
 | `source/scenes.go` | The drawing of each kind of device at the top of its page. |
-| `source/settings.go` | The Settings page. |
+| `source/settings.go` | The Settings page, and its own controls: groups of rows on panes of glass, with their fields, switches and actions. |
 | `source/update.go` | Settings' updates, which check GitHub for a newer version, by themselves once a day, notify the user of it and install it. |
 | `source/config.go` | Reading and atomically saving the configuration file. |
 | `source/internal/ha/` | The REST and WebSocket clients, what entities' states, actions, quick switches, levels and their stops, and lights' colors mean, which tiles Home shows, and the parsed climate entity. |

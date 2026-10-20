@@ -149,6 +149,13 @@ func focus(t *testing.T, tt *ui.Tester, label string) {
 	t.Fatalf("%q never takes the keyboard", label)
 }
 
+// toggle turns the switch labeled label from the keyboard.
+func toggle(t *testing.T, tt *ui.Tester, label string) {
+	t.Helper()
+	focus(t, tt, label)
+	tt.Key(0, ui.KeySpace)
+}
+
 // clickScene clicks the drawing at the top of a device's page, below the
 // power button labeled power.
 func clickScene(t *testing.T, tt *ui.Tester, power string) {
@@ -697,19 +704,18 @@ func TestSettingsPage(t *testing.T) {
 		t.Fatalf("language %q, saved %+v %v, shown %v", a.config.Language, saved, err, shown)
 	}
 	// Opening at login is the system's to keep, and a failure to change it
-	// shows below its switch.
+	// shows below its switch, which alone turns it on: its title does not.
 	tt.Frame()
-	if err := tt.Click(locales.OpenAtLogin()); err != nil {
-		t.Fatal(err)
+	if err := tt.Click(locales.OpenAtLogin()); err != nil || a.atLogin {
+		t.Fatalf("%v, at login %v", err, a.atLogin)
 	}
+	toggle(t, tt, locales.OpenAtLogin())
 	if !a.openAtLogin() || !a.atLogin {
 		t.Fatal("not opening at login")
 	}
 	a.setOpenAtLogin = func(bool) error { return errors.New("denied") }
 	tt.Frame()
-	if err := tt.Click(locales.OpenAtLogin()); err != nil {
-		t.Fatal(err)
-	}
+	toggle(t, tt, locales.OpenAtLogin())
 	tt.Frame()
 	if !a.atLogin || !tt.HasText(locales.OpenAtLoginError()) {
 		t.Fatalf("at login %v, texts %v", a.atLogin, tt.Texts())
@@ -737,7 +743,8 @@ func TestSettingsPage(t *testing.T) {
 	}
 }
 
-// Command-Q quits from every page, a text field's keyboard included.
+// Command-Q quits from every page, a text field's keyboard included, as
+// Settings' Quit does.
 func TestQuitShortcut(t *testing.T) {
 	a := demoApp(t)
 	quits := 0
@@ -747,8 +754,12 @@ func TestQuitShortcut(t *testing.T) {
 	a.showSettings()
 	focus(t, tt, locales.Address())
 	tt.Key(ui.Cmd, ui.KeyQ)
-	if quits != 2 {
-		t.Fatalf("quit %d times, want 2", quits)
+	tall := ui.NewTester(a.panelView, panelWidth, 1200)
+	if err := tall.Click(locales.Quit()); err != nil {
+		t.Fatal(err)
+	}
+	if quits != 3 {
+		t.Fatalf("quit %d times, want 3", quits)
 	}
 }
 
@@ -859,6 +870,8 @@ func TestSnapshot(t *testing.T) {
 	tt.Scroll(panelWidth/2, 300, 0, 200)
 	write("home-scrolled.png")
 	a.settingsOpen = true
+	tt.Frame()
+	tt.Scroll(panelWidth/2, 300, 0, -600)
 	write("settings.png")
 	a.settingsOpen, a.detail = false, true
 	write("panel.png")
@@ -1015,10 +1028,7 @@ func TestAutoCheck(t *testing.T) {
 	a.settingsOpen = true
 	a.upd.phase = updateCurrent
 	tt.Frame()
-	tt.Scroll(panelWidth/2, 300, 0, 600)
-	if err := tt.Click(locales.AutoCheckUpdates()); err != nil {
-		t.Fatal(err)
-	}
+	toggle(t, tt, locales.AutoCheckUpdates())
 	if !a.config.ManualUpdates {
 		t.Fatal("still checking by itself")
 	}
@@ -1031,9 +1041,7 @@ func TestAutoCheck(t *testing.T) {
 		t.Fatal("checked by itself while off")
 	}
 	tt.Frame()
-	if err := tt.Click(locales.AutoCheckUpdates()); err != nil {
-		t.Fatal(err)
-	}
+	toggle(t, tt, locales.AutoCheckUpdates())
 	if a.config.ManualUpdates || a.upd.phase != updateChecking {
 		t.Fatalf("manual %v, phase %d", a.config.ManualUpdates, a.upd.phase)
 	}
