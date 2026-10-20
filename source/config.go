@@ -28,9 +28,12 @@ type config struct {
 	// as the user dragged them; the areas it misses follow in Home
 	// Assistant's order. TileOrder lists each area's tiles by entity the
 	// same way, and Collapsed the areas whose tiles Home folds away.
+	// Pinned lists the entities whose tiles Home shows above the areas,
+	// in the order it shows them.
 	AreaOrder []string            `json:"areaOrder,omitempty"`
 	TileOrder map[string][]string `json:"tileOrder,omitempty"`
 	Collapsed []string            `json:"collapsed,omitempty"`
+	Pinned    []string            `json:"pinned,omitempty"`
 }
 
 func loadConfig(path string) (config, error) {

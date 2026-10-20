@@ -60,9 +60,11 @@ type application struct {
 	detail, settingsOpen bool
 	device               string
 
-	// home is what the home page shows, as last read, which listed
-	// reports. registry is what Home Assistant's registries said, nil
-	// until they could be read.
+	// sections are the areas Home Assistant arranges, as last read, which
+	// listed reports, and home is what the home page shows of them.
+	// registry is what Home Assistant's registries said, nil until they
+	// could be read.
+	sections []ha.Section
 	home     []ha.Section
 	listed   bool
 	registry *ha.Registry
@@ -173,7 +175,7 @@ func (a *application) connect(list bool) {
 	client := a.client
 	a.mu.Unlock()
 	// What the old connection read may not exist on this one.
-	a.home, a.listed, a.registry, a.holds, a.hasClimate, a.detail, a.device = nil, false, nil, nil, false, false, ""
+	a.sections, a.home, a.listed, a.registry, a.holds, a.hasClimate, a.detail, a.device = nil, nil, false, nil, nil, false, false, ""
 	a.follow()
 	if !list || client == nil {
 		return
@@ -366,7 +368,8 @@ func (a *application) applyList(client *ha.Client, edits int64, states []ha.Stat
 	if reg != nil {
 		a.registry = reg
 	}
-	a.home, a.listed = a.arrange(ha.Arrange(states, a.registry)), true
+	a.sections, a.listed = ha.Arrange(states, a.registry), true
+	a.arrange()
 	if _, _, ok := a.tileOf(a.device); !ok {
 		a.device = ""
 	}
@@ -492,12 +495,12 @@ type hold struct {
 }
 
 // tileOf finds the tile of entity id on the home page, and the area it
-// shows in.
+// belongs to, pinned or not.
 func (a *application) tileOf(id string) (ha.Tile, string, bool) {
 	if id == "" {
 		return ha.Tile{}, "", false
 	}
-	for _, s := range a.home {
+	for _, s := range a.sections {
 		for _, t := range s.Tiles {
 			if t.Entity.EntityID == id {
 				return t, s.Area, true

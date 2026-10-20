@@ -20,6 +20,10 @@ import (
 // panel.
 const tileHeight = 112
 
+// pinnedID is the ID of the group of pinned tiles above Home's areas, which
+// no area of Home Assistant's slugs takes.
+const pinnedID = "@pinned"
+
 // homePage is where the panel opens: Home Assistant's devices as tiles, by
 // area. radius rounds the corners the tiles scroll within.
 func (a *application) homePage(c *ui.Context, radius float32) {
@@ -67,10 +71,11 @@ func (a *application) homePage(c *ui.Context, radius float32) {
 
 // area shows the tiles of area s under its heading, which folds them away.
 // While another area is dragged over it, that area moves above or below
-// it, by the half of it under the pointer.
+// it, by the half of it under the pointer. The pinned tiles' group neither
+// folds nor moves, and stays above the areas.
 func (a *application) area(c *ui.Context, s ha.Section) {
 	col := ui.Column(c.Key("area:" + s.ID)).FillWidth().Gap(10)
-	if r := a.reorder; r != nil && !r.stale && r.drag.entity == "" && r.drag.area != s.ID {
+	if r := a.reorder; r != nil && !r.stale && r.drag.entity == "" && r.drag.area != s.ID && s.ID != pinnedID {
 		if _, y, over := col.PointerPosition(); over {
 			after := y >= col.LayoutBounds().H/2
 			r.move = func() { a.moveArea(r.drag.area, s.ID, after) }
@@ -79,6 +84,12 @@ func (a *application) area(c *ui.Context, s ha.Section) {
 	collapsed := slices.Contains(a.config.Collapsed, s.ID)
 	col.Children(func() {
 		switch {
+		case s.ID == pinnedID:
+			collapsed = false
+			ui.Row(c).FillWidth().Gap(6).Padding(2, 4).AlignItems(ui.Center).Children(func() {
+				areaHeading(c, locales.Pinned()).Grow(1).MinWidth(0).Margin(0)
+				components.Icon(c, lucide.Pin).Size(14, 14).TextColor(inkMuted)
+			})
 		case s.Area != "":
 			a.areaHeader(c, s, s.Area, collapsed)
 		case len(a.home) > 1:
@@ -101,7 +112,7 @@ func (a *application) area(c *ui.Context, s ha.Section) {
 // it is clicked. Dragging it moves the area among the others.
 func (a *application) areaHeader(c *ui.Context, s ha.Section, name string, collapsed bool) {
 	h := ui.ButtonBase(c).Row().FillWidth().Gap(6).Padding(2, 4).AlignItems(ui.Center).Label(name).Expanded(!collapsed)
-	if len(a.home) > 1 {
+	if a.areaCount() > 1 {
 		d := homeDrag{area: s.ID}
 		h.Drag(d)
 		if h.Dragging() {
@@ -126,6 +137,14 @@ func (a *application) areaHeader(c *ui.Context, s ha.Section, name string, colla
 	}
 }
 
+// areaCount is how many areas Home shows, without the pinned tiles' group.
+func (a *application) areaCount() int {
+	if len(a.home) > 0 && a.home[0].ID == pinnedID {
+		return len(a.home) - 1
+	}
+	return len(a.home)
+}
+
 // toggleArea folds away the tiles of area id, or shows them again.
 func (a *application) toggleArea(id string) {
 	if i := slices.Index(a.config.Collapsed, id); i >= 0 {
@@ -136,19 +155,30 @@ func (a *application) toggleArea(id string) {
 	a.save()
 }
 
+// togglePin pins the tile of entity id above Home's areas, after the tiles
+// pinned before, or returns it to its area.
+func (a *application) togglePin(id string) {
+	if i := slices.Index(a.config.Pinned, id); i >= 0 {
+		a.config.Pinned = slices.Delete(slices.Clone(a.config.Pinned), i, i+1)
+	} else {
+		a.config.Pinned = append(slices.Clone(a.config.Pinned), id)
+	}
+	a.arrange()
+	a.save()
+}
+
 // homeDrag is an area of Home being dragged to another place among the
 // others, or, when entity is set, the tile of entity within its area.
 type homeDrag struct{ area, entity string }
 
 // reorder is a drag moving an area or a tile of Home, as it goes: the
-// order saved and the order shown as it started, which it returns to unless
-// it drops among the areas, and the move the frame found the pointer asks
-// for.
+// order saved as it started, which it returns to unless it drops among the
+// areas, and the move the frame found the pointer asks for.
 type reorder struct {
-	drag         homeDrag
-	areas, shown []string
-	tiles, held  map[string][]string
-	move         func()
+	drag          homeDrag
+	areas, pinned []string
+	tiles         map[string][]string
+	move          func()
 	// active reports that the source dragged this frame, moved that the
 	// order changed and dropped that the drag dropped among the areas.
 	// stale reports that the frame's pointer is placed on the layout from
@@ -160,12 +190,7 @@ type reorder struct {
 // a reorder.
 func (a *application) dragging(d homeDrag) {
 	if a.reorder == nil {
-		r := &reorder{drag: d, areas: a.config.AreaOrder, tiles: maps.Clone(a.config.TileOrder), held: map[string][]string{}}
-		for _, s := range a.home {
-			r.shown = append(r.shown, s.ID)
-			r.held[s.ID] = tileIDs(s.Tiles)
-		}
-		a.reorder = r
+		a.reorder = &reorder{drag: d, areas: a.config.AreaOrder, pinned: a.config.Pinned, tiles: maps.Clone(a.config.TileOrder)}
 	}
 	a.reorder.active = true
 }
@@ -196,8 +221,8 @@ func (a *application) settleReorder(c *ui.Context) {
 		a.save()
 		return
 	}
-	a.config.AreaOrder, a.config.TileOrder = r.areas, r.tiles
-	a.home = arrange(a.home, r.shown, r.held)
+	a.config.AreaOrder, a.config.TileOrder, a.config.Pinned = r.areas, r.tiles, r.pinned
+	a.arrange()
 	c.Invalidate()
 }
 
@@ -221,7 +246,9 @@ func (a *application) moveArea(id, target string, after bool) {
 	a.home = slices.Insert(slices.Delete(a.home, i, i+1), to, s)
 	a.config.AreaOrder = nil
 	for _, s := range a.home {
-		a.config.AreaOrder = append(a.config.AreaOrder, s.ID)
+		if s.ID != pinnedID {
+			a.config.AreaOrder = append(a.config.AreaOrder, s.ID)
+		}
 	}
 	a.reorder.moved = true
 }
@@ -242,12 +269,16 @@ func (a *application) moveTile(area, id, target string) {
 	t := tiles[i]
 	tiles = slices.Insert(slices.Delete(tiles, i, i+1), to, t)
 	a.home[k].Tiles = tiles
+	a.reorder.moved = true
+	if area == pinnedID {
+		a.config.Pinned = tileIDs(tiles)
+		return
+	}
 	a.config.TileOrder = maps.Clone(a.config.TileOrder)
 	if a.config.TileOrder == nil {
 		a.config.TileOrder = map[string][]string{}
 	}
 	a.config.TileOrder[area] = tileIDs(tiles)
-	a.reorder.moved = true
 }
 
 func tileIDs(tiles []ha.Tile) []string {
@@ -258,10 +289,31 @@ func tileIDs(tiles []ha.Tile) []string {
 	return ids
 }
 
-// arrange orders Home's areas, and the tiles of each, as the user dragged
-// them.
-func (a *application) arrange(home []ha.Section) []ha.Section {
-	return arrange(home, a.config.AreaOrder, a.config.TileOrder)
+// arrange shows the areas Home Assistant arranges on Home as the user
+// arranged them: the tiles pinned in a group above the areas, then the
+// areas, and the tiles of each, in the order they were dragged into. An
+// area left without tiles drops out.
+func (a *application) arrange() {
+	var pinned []ha.Tile
+	var home []ha.Section
+	for _, s := range a.sections {
+		s.Tiles = slices.DeleteFunc(slices.Clone(s.Tiles), func(t ha.Tile) bool {
+			if !slices.Contains(a.config.Pinned, t.Entity.EntityID) {
+				return false
+			}
+			pinned = append(pinned, t)
+			return true
+		})
+		if len(s.Tiles) > 0 {
+			home = append(home, s)
+		}
+	}
+	home = arrange(home, a.config.AreaOrder, a.config.TileOrder)
+	if len(pinned) > 0 {
+		home = slices.Insert(home, 0, ha.Section{ID: pinnedID, Tiles: pinned})
+		arrange(home[:1], nil, map[string][]string{pinnedID: a.config.Pinned})
+	}
+	a.home = home
 }
 
 // arrange orders the areas of home by their IDs in areas, and the tiles of
@@ -337,7 +389,8 @@ func (a *application) setupView(c *ui.Context, top float32) {
 // conditioner's controls.
 //
 // Dragging the tile moves it within its area, sec: into the place of the
-// tile under the pointer.
+// tile under the pointer. Its context menu pins it above the areas, or
+// returns it to its area.
 func (a *application) tile(c *ui.Context, t ha.Tile, sec ha.Section) {
 	s := a.held(t.Entity)
 	v := a.tileView(t, s)
@@ -378,6 +431,15 @@ func (a *application) tile(c *ui.Context, t ha.Tile, sec ha.Section) {
 		if !s.Available() {
 			e.Opacity(0.45)
 		}
+		pin := locales.Pin()
+		if sec.ID == pinnedID {
+			pin = locales.Unpin()
+		}
+		e.ContextMenu(func(m *ui.Menu) {
+			if m.Item(pin).Chosen() {
+				a.togglePin(s.EntityID)
+			}
+		})
 		e.Children(func() {
 			deviceDisc(c, v, level, 36)
 			ui.Spacer(c)

@@ -466,6 +466,36 @@ func (msgs Messages) OtherDevices() string {
 	return Catalog.Format(msgs.locale, "otherDevices", nil)
 }
 
+// Pinned says "Pinned"
+// in the language the app shows.
+func Pinned() string { return In(i18n.Locale()).Pinned() }
+
+// Pinned says "Pinned"
+// in the language of msgs.
+func (msgs Messages) Pinned() string {
+	return Catalog.Format(msgs.locale, "pinned", nil)
+}
+
+// Pin says "Pin to Top"
+// in the language the app shows.
+func Pin() string { return In(i18n.Locale()).Pin() }
+
+// Pin says "Pin to Top"
+// in the language of msgs.
+func (msgs Messages) Pin() string {
+	return Catalog.Format(msgs.locale, "pin", nil)
+}
+
+// Unpin says "Unpin"
+// in the language the app shows.
+func Unpin() string { return In(i18n.Locale()).Unpin() }
+
+// Unpin says "Unpin"
+// in the language of msgs.
+func (msgs Messages) Unpin() string {
+	return Catalog.Format(msgs.locale, "unpin", nil)
+}
+
 // QuickSwitch says "Turn {name} on or off"
 // in the language the app shows.
 func QuickSwitch(name string) string { return In(i18n.Locale()).QuickSwitch(name) }

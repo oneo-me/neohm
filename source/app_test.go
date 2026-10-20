@@ -92,7 +92,8 @@ func demoApp(t *testing.T) *application {
 	a.config = config{Address: "http://ha.test", Token: "token", Entity: "climate.bedroom"}
 	a.address, a.token = a.config.Address, a.config.Token
 	a.registry = demoRegistry()
-	a.home, a.listed = a.arrange(ha.Arrange(states, a.registry)), true
+	a.sections, a.listed = ha.Arrange(states, a.registry), true
+	a.arrange()
 	a.climate, a.hasClimate, a.online = ha.ParseClimate(states[0]), true, true
 	return a
 }
@@ -280,21 +281,7 @@ func TestArrangeHome(t *testing.T) {
 	}
 	drag := func(from, to string, dy float32, cancel bool) {
 		t.Helper()
-		f, ok := tt.Find(from)
-		g, ok2 := tt.Find(to)
-		if !ok || !ok2 {
-			t.Fatalf("drag %q to %q in %v", from, to, tt.Texts())
-		}
-		x, y := f.X+f.W/2, f.Y+f.H/2
-		tt.Press(x, y)
-		tt.Move(x+6, y+6)
-		tt.Move(g.X+g.W/2, g.Y+g.H/2+dy)
-		tt.Frame()
-		if cancel {
-			tt.Key(0, ui.KeyEscape)
-		}
-		tt.Release(g.X+g.W/2, g.Y+g.H/2+dy)
-		tt.Frame()
+		dragTo(t, tt, from, to, dy, cancel)
 	}
 
 	if err := tt.Click("Bedroom"); err != nil {
@@ -336,6 +323,90 @@ func TestArrangeHome(t *testing.T) {
 	a.applyList(nil, a.edits.Load(), parseStates(t, demoStates), nil, "", nil)
 	if a2, l := order(); !slices.Equal(a2, saved.AreaOrder) || !slices.Equal(l, want) {
 		t.Fatalf("read: %q %q", a2, l)
+	}
+}
+
+// dragTo drags the element showing from onto the one showing to, dy below
+// its middle, and drops it there, or presses Escape first to cancel.
+func dragTo(t *testing.T, tt *ui.Tester, from, to string, dy float32, cancel bool) {
+	t.Helper()
+	f, ok := tt.Find(from)
+	g, ok2 := tt.Find(to)
+	if !ok || !ok2 {
+		t.Fatalf("drag %q to %q in %v", from, to, tt.Texts())
+	}
+	x, y := f.X+f.W/2, f.Y+f.H/2
+	tt.Press(x, y)
+	tt.Move(x+6, y+6)
+	tt.Move(g.X+g.W/2, g.Y+g.H/2+dy)
+	tt.Frame()
+	if cancel {
+		tt.Key(0, ui.KeyEscape)
+	}
+	tt.Release(g.X+g.W/2, g.Y+g.H/2+dy)
+	tt.Frame()
+}
+
+// A tile's context menu pins it to a group above the areas, by its full
+// name, where tiles move only among each other; the group neither folds nor
+// moves, and unpinning returns the tile to its area.
+func TestPinTiles(t *testing.T) {
+	a := demoApp(t)
+	tt := ui.NewTester(a.panelView, panelWidth, 900)
+	pin := func(name, item string) {
+		t.Helper()
+		if err := tt.RightClick(name); err != nil {
+			t.Fatal(err)
+		}
+		if err := tt.ChooseMenuItem(item); err != nil {
+			t.Fatalf("%v: %v", err, tt.Menu())
+		}
+		tt.Frame()
+	}
+	pinned := func() []string {
+		if a.home[0].ID != pinnedID {
+			return nil
+		}
+		return tileIDs(a.home[0].Tiles)
+	}
+	pin("Ceiling Light", locales.Pin())
+	pin("Lamp", locales.Pin())
+	if got := pinned(); !slices.Equal(got, []string{"light.ceiling", "light.lamp"}) {
+		t.Fatalf("pinned %q", got)
+	}
+	if !tt.HasText(locales.Pinned()) || !tt.HasText("Living Room Ceiling Light") || len(a.home[1].Tiles) != 4 {
+		t.Fatalf("pinned: %v", tt.Texts())
+	}
+
+	dragTo(t, tt, "Bedroom Lamp", "Living Room Ceiling Light", 0, false)
+	want := []string{"light.lamp", "light.ceiling"}
+	if got := pinned(); !slices.Equal(got, want) {
+		t.Fatalf("dragged %q", got)
+	}
+	dragTo(t, tt, "Bedroom", locales.Pinned(), -4, false)
+	dragTo(t, tt, "Bedroom Lamp", "Bedroom", 0, false)
+	if err := tt.Click(locales.Pinned()); err != nil {
+		t.Fatal(err)
+	}
+	if got := pinned(); !slices.Equal(got, want) || a.home[1].ID != "living_room" || len(a.config.Collapsed) > 0 {
+		t.Fatalf("pinned %q, then %q, folded %q", got, a.home[1].ID, a.config.Collapsed)
+	}
+	saved, _ := loadConfig(a.path)
+	if !slices.Equal(saved.Pinned, want) {
+		t.Fatalf("saved %q", saved.Pinned)
+	}
+	a.applyList(nil, a.edits.Load(), parseStates(t, demoStates), nil, "", nil)
+	if got := pinned(); !slices.Equal(got, want) {
+		t.Fatalf("read: %q", got)
+	}
+
+	pin("Bedroom Lamp", locales.Unpin())
+	if got := pinned(); !slices.Equal(got, []string{"light.ceiling"}) || !tt.HasText("Lamp") {
+		t.Fatalf("unpinned %q: %v", got, tt.Texts())
+	}
+	pin("Living Room Ceiling Light", locales.Unpin())
+	if a.home[0].ID == pinnedID || tt.HasText(locales.Pinned()) || len(a.home[0].Tiles) != 5 {
+		t.Fatalf("unpinned: %v", tt.Texts())
 	}
 }
 
@@ -844,7 +915,8 @@ func TestQuitShortcut(t *testing.T) {
 func TestConfigRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "x", "config.json")
 	want := config{Address: "http://ha.local:8123", Token: "secret", Entity: "climate.a", Language: "zh-Hant",
-		AreaOrder: []string{"bedroom", ""}, TileOrder: map[string][]string{"bedroom": {"light.lamp"}}, Collapsed: []string{""}}
+		AreaOrder: []string{"bedroom", ""}, TileOrder: map[string][]string{"bedroom": {"light.lamp"}}, Collapsed: []string{""},
+		Pinned: []string{"light.ceiling"}}
 	if err := saveConfig(path, want); err != nil {
 		t.Fatal(err)
 	}
@@ -948,6 +1020,11 @@ func TestSnapshot(t *testing.T) {
 	a.toggleArea("living_room")
 	write("home-collapsed.png")
 	a.toggleArea("living_room")
+	a.togglePin("light.ceiling")
+	a.togglePin("light.lamp")
+	write("home-pinned.png")
+	a.togglePin("light.ceiling")
+	a.togglePin("light.lamp")
 	tt.Scroll(panelWidth/2, 300, 0, 200)
 	write("home-scrolled.png")
 	a.settingsOpen = true
