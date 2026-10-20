@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2026.2] - 2026-10-20
 
 - Add Quit to the bottom of Settings.
 - Reorder Home's rooms and the tiles in each by dragging them, and fold a room away from its heading.
