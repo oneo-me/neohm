@@ -29,7 +29,7 @@ NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that re
 
 ## Boundaries
 
-- Present the app from its icon: a click opens the panel and a right click offers Quit, which ⌘Q, or Ctrl+Q, also does in the panel. Linux's tray icons report no clicks, so their menu opens the panel too, in the middle of the screen. Only macOS draws the panel's arrow, as Windows may flip the panel above the taskbar.
+- Present the app from its icon: a click opens the panel and a right click offers Quit, which ⌘Q, or Ctrl+Q, also does in the panel. Linux's tray icons report no clicks, so their menu opens the panel too, in the middle of the screen. The panel is a frameless window of its own, below the icon or above a taskbar's at the bottom of the screen, and closes as it loses the keyboard.
 - Keep Settings a page of the panel, never a window of its own. A window shows the panel's pages only when the icon cannot be created.
 - Build each page in the shared frame: its header floats over content that scrolls to the panel's edges and blurs beneath it.
 - Keep the panel's surface opaque and drawn by the panel. The header's blur is computed in MyGo from what the panel paints, so it cannot blur a system material.

@@ -52,6 +52,8 @@ type application struct {
 	// there is no menu bar icon to anchor it to.
 	panel  *mygo.Window
 	window *plain.Shell
+	// blurred is when the panel last closed as it lost the keyboard.
+	blurred time.Time
 	// The panel opens on Home: detail shows the air conditioner opened last
 	// in its place, device the page of another device, by its entity, and
 	// settingsOpen shows Settings over any of them.

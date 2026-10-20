@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"math"
 	"runtime"
+	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -14,7 +15,7 @@ import (
 	"github.com/oneo-me/onevra/source/shells/plain"
 )
 
-// The panel's size in DIPs, its arrow included.
+// The panel's size in DIPs.
 const (
 	panelWidth  = 388
 	panelHeight = 572
@@ -88,9 +89,12 @@ func (a *application) reopen() {
 }
 
 func (a *application) togglePanel() {
-	if a.panel != nil {
+	switch {
+	case a.panel != nil:
 		a.hidePanel()
-	} else {
+	case time.Since(a.blurred) > 300*time.Millisecond:
+		// A click on the icon that took the keyboard from the panel, as
+		// Windows' taskbar does, only closes it.
 		a.showPanel()
 	}
 }
@@ -101,26 +105,38 @@ func (a *application) hidePanel() {
 	}
 }
 
-// showPanel opens the panel under the menu bar icon. It draws its own dark
-// surface and arrow rather than the system popover's material, which the
-// blur under its pages' headers cannot see. Without a menu bar icon, its
-// pages show in a window.
+// panelGap is the distance between the menu bar or tray icon and the panel.
+const panelGap = 6
+
+// showPanel opens the panel in a window of its own below the menu bar icon,
+// or above a taskbar's icon at the bottom of the screen, which closes as it
+// loses the keyboard. It draws its own dark surface, as the blur under its
+// pages' headers sees only what the panel paints. Without a menu bar icon,
+// its pages show in a window that stays.
 func (a *application) showPanel() {
 	if a.tray == nil {
 		a.showWindow()
 		return
 	}
 	if a.panel != nil {
+		a.panel.Focus()
 		return
 	}
-	panel := mygo.NewFlyout(mygo.FlyoutOptions{
-		Tray: a.tray, Placement: mygo.PlacementBottom, Gap: 2,
-		Width: panelWidth, Height: panelHeight, Focusable: true, Shadow: true,
+	panel := mygo.NewWindow(mygo.WindowOptions{
+		Title: locales.Title(), Width: panelWidth, Height: panelHeight, UseContentSize: true, Hidden: true,
+		Frameless: true, DisableResize: true, DisableMove: true, DisableMinimize: true, DisableMaximize: true,
+		DisableFullScreen: true, AlwaysOnTop: true, SkipTaskbar: true, BackgroundColor: "#1f2d50", // panelTop
 		Content: ui.View(a.panelView),
 	})
 	a.panel = panel
 	a.panelOpen.Store(true)
 	a.follow()
+	panel.OnBlur(func() {
+		if a.panel == panel {
+			a.blurred = time.Now()
+			panel.Close()
+		}
+	})
 	panel.OnClosed(func() {
 		if a.panel == panel {
 			a.panel = nil
@@ -128,6 +144,29 @@ func (a *application) showPanel() {
 			a.resetPanel()
 		}
 	})
+	placePanel(panel, a.tray.Bounds())
+	panel.Show()
+}
+
+// placePanel centers the panel below icon, or above it where the work area
+// has no room below, as at a taskbar at the bottom of the screen, and keeps
+// it in the work area. Without the icon's bounds, which Linux's tray icons
+// and the icons of Windows' overflow panel do not tell, it centers the
+// panel on the screen.
+func placePanel(panel *mygo.Window, icon mygo.Rectangle) {
+	if icon.Width == 0 || icon.Height == 0 {
+		panel.Center()
+		return
+	}
+	area := mygo.Screen.DisplayNearestPoint(mygo.Point{X: icon.X + icon.Width/2, Y: icon.Y + icon.Height/2}).WorkArea
+	b := panel.Bounds()
+	x, y := icon.X+(icon.Width-b.Width)/2, icon.Y+icon.Height+panelGap
+	if y+b.Height > area.Y+area.Height {
+		y = icon.Y - b.Height - panelGap
+	}
+	x = max(area.X, min(x, area.X+max(0, area.Width-b.Width)))
+	y = max(area.Y, min(y, area.Y+max(0, area.Height-b.Height)))
+	panel.SetPosition(x, y)
 }
 
 // showWindow shows the panel's pages in a window when there is no menu bar

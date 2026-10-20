@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"runtime"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -20,8 +19,8 @@ var (
 	ink         = ui.RGB(236, 241, 250)
 	inkMuted    = ui.RGBA(214, 224, 245, 0.62)
 	accent      = ui.RGB(80, 144, 255)
-	tileFace = ui.RGBA(255, 255, 255, 0.045)
-	tileEdge = ui.RGBA(255, 255, 255, 0.08)
+	tileFace    = ui.RGBA(255, 255, 255, 0.045)
+	tileEdge    = ui.RGBA(255, 255, 255, 0.08)
 	danger      = ui.RGB(255, 99, 99)
 	// Devices glow in these while on; discInk draws on them.
 	amber    = ui.RGB(255, 190, 70)
@@ -34,17 +33,9 @@ var (
 	discInk  = ui.RGB(14, 20, 38)
 )
 
-// arrowHeight is the height of the arrow pointing at the menu bar icon. The
-// panel has none on Windows, where it may flip above the taskbar's icon, and
-// on Linux, where it opens in the middle of the screen.
-var arrowHeight = func() float32 {
-	if runtime.GOOS == "darwin" {
-		return 9
-	}
-	return 0
-}()
-
 const (
+	// panelRadius rounds the pages, which keeps them clear of the corners
+	// the panel's window rounds.
 	panelRadius = 26
 	// pageFade is how far past its bar a page's header blurs the content
 	// under it: content at rest starts below that.
@@ -115,23 +106,15 @@ func (a *application) panelView(c *ui.Context) {
 	if c.Shortcut(ui.Cmd, ui.KeyW) {
 		a.hidePanel()
 	}
-	c.Root().Background(ui.Transparent)
 	detail := a.showsDetail()
 	unitTop := components.ScrollEdgeBarExtent(c, pageBar) + pageFade
-	ui.Column(c).Fill().Padding(arrowHeight, 0, 0, 0).Draw(func(p *ui.Painter, r ui.Rect) {
-		// An arrow pointing at the menu bar icon, then the body, opaque: the
-		// blur under the pages' headers sees only what the panel paints.
-		cx := r.X + r.W/2
-		if arrowHeight > 0 {
-			var arrow ui.Path
-			arrow.MoveTo(cx-11, r.Y+arrowHeight+1).QuadTo(cx-3, r.Y+1, cx, r.Y).QuadTo(cx+3, r.Y+1, cx+11, r.Y+arrowHeight+1).Close()
-			p.FillPath(&arrow, panelTop)
-		}
-		body := ui.Rect{X: r.X, Y: r.Y + arrowHeight, W: r.W, H: r.H - arrowHeight}
-		p.FillGradient(body, ui.LinearGradient{From: panelTop, To: panelBottom, Angle: 180}, panelRadius)
+	ui.Column(c).Fill().Draw(func(p *ui.Painter, r ui.Rect) {
+		// The surface, opaque: the blur under the pages' headers sees only
+		// what the panel paints. The window rounds its corners.
+		p.FillGradient(r, ui.LinearGradient{From: panelTop, To: panelBottom, Angle: 180}, 0)
 		if detail {
 			// A soft glow behind the unit.
-			p.Shadow(ui.Rect{X: cx - 70, Y: body.Y + unitTop + 6, W: 140, H: 30}, 15, 0, 0, 60, 0, accent.Alpha(0.10))
+			p.Shadow(ui.Rect{X: r.X + r.W/2 - 70, Y: r.Y + unitTop + 6, W: 140, H: 30}, 15, 0, 0, 60, 0, accent.Alpha(0.10))
 		}
 	}).Children(func() { a.page(c, panelRadius) })
 }
