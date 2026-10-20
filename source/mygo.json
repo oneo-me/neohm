@@ -1,7 +1,7 @@
 {
   "name": "NeoHM",
   "identifier": "me.oneo.neohm",
-  "version": "0.2026.2",
+  "version": "0.2026.3",
   "icon": "icons/AppIcon.png",
   "out": "../dist",
   "macos": {

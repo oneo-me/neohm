@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2026.3] - 2026-10-20
+
 - Pin devices to a group at the top of Home from a tile's right-click menu, and reorder them there by dragging.
 - Show an update's status and what to do next on one Settings row, with automatic checking on its switch.
 - Fix Home scrolling back to the top on returning from a device's page or Settings.
