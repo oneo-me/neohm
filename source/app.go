@@ -71,6 +71,9 @@ type application struct {
 	// reorder is the drag moving an area or a tile of Home, nil while
 	// none does.
 	reorder *reorder
+	// homeScroll is how far Home is scrolled, kept while another page
+	// shows over it until the panel closes.
+	homeScroll ui.ScrollState
 	// holds keep what tiles show after an action until Home Assistant
 	// reports it.
 	holds map[string]*hold

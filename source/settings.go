@@ -23,7 +23,7 @@ func (a *application) settingsPage(c *ui.Context, radius float32) {
 			}
 		})
 	}, func(top float32) {
-		scrollContent(c, top, radius, 18, func() {
+		scrollContent(c, nil, top, radius, 18, func() {
 			settingsGroup(c, locales.General(), "", func() {
 				a.languageRow(c)
 				rowDivider(c)

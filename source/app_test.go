@@ -264,6 +264,27 @@ func TestHome(t *testing.T) {
 	}
 }
 
+// Home keeps its place under a device's page, until the panel closes.
+func TestHomeKeepsScroll(t *testing.T) {
+	a := demoApp(t)
+	tt := ui.NewTester(a.panelView, panelWidth, panelHeight)
+	tt.Scroll(panelWidth/2, 300, 0, 120)
+	scrolled := a.homeScroll.Y
+	if scrolled <= 0 {
+		t.Fatalf("scroll: %v of %v", scrolled, a.homeScroll.MaxY)
+	}
+	a.openDevice("light.ceiling")
+	tt.Frame()
+	tt.Key(0, ui.KeyEscape)
+	if a.device != "" || a.homeScroll.Y != scrolled {
+		t.Fatalf("back at %v, want %v", a.homeScroll.Y, scrolled)
+	}
+	a.resetPanel()
+	if a.homeScroll.Y != 0 {
+		t.Fatalf("reset at %v", a.homeScroll.Y)
+	}
+}
+
 // Home's areas fold away as their headings are clicked, and move by
 // dragging their headings, as tiles move within their areas by dragging
 // them; the order stays where the drag drops, and Escape restores it.

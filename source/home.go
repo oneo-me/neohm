@@ -42,7 +42,7 @@ func (a *application) homePage(c *ui.Context, radius float32) {
 				components.Text(c, locales.NoDevicesBody()).Wrap().TextAlign(ui.Center).FontSize(13).TextColor(inkMuted).MaxWidth(260)
 			})
 		default:
-			scrollContent(c, top, radius, 18, func() {
+			scrollContent(c, &a.homeScroll, top, radius, 18, func() {
 				// A failure after the devices were read leaves them as last
 				// read.
 				if e := a.errorDisplay(); e != "" {

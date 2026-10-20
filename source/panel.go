@@ -38,8 +38,11 @@ const (
 	// the panel's window rounds.
 	panelRadius = 26
 	// pageFade is how far past its bar a page's header blurs the content
-	// under it: content at rest starts below that.
+	// under it: a device's page starts below that.
 	pageFade = 24
+	// listGap is how far past its bar a scrolling page's content and scroll
+	// bar start, where the blur no longer shows on text at rest.
+	listGap = 16
 )
 
 // pageBar floats a page's header over the top of its content, which blurs
@@ -165,11 +168,12 @@ func pageFrame(c *ui.Context, radius float32, label string, header func(), conte
 }
 
 // scrollContent scrolls a page's content across the whole panel, its scroll
-// bar along the edge, clear of the header by top and of the bottom corners,
-// rounded by radius, and inset from the sides by side.
-func scrollContent(c *ui.Context, top, radius, side float32, content func()) {
-	components.ScrollView(c, components.ScrollViewOptions{}).Fill().ScrollbarInsets(top, 0, radius).Children(func() {
-		ui.Column(c).FillWidth().Padding(top+pageFade, side, 18, side).Gap(18).Children(content)
+// bar along the edge, both clear of the header below top and of the bottom
+// corners, rounded by radius, and inset from the sides by side. s keeps how
+// far it is scrolled, if not nil.
+func scrollContent(c *ui.Context, s *ui.ScrollState, top, radius, side float32, content func()) {
+	components.ScrollView(c, components.ScrollViewOptions{}).Fill().TrackScroll(s).ScrollbarInsets(top+listGap, 0, radius).Children(func() {
+		ui.Column(c).FillWidth().Padding(top+listGap, side, 18, side).Gap(18).Children(content)
 	})
 }
 
