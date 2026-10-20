@@ -20,9 +20,8 @@ var (
 	ink         = ui.RGB(236, 241, 250)
 	inkMuted    = ui.RGBA(214, 224, 245, 0.62)
 	accent      = ui.RGB(80, 144, 255)
-	tileFace    = ui.RGBA(255, 255, 255, 0.045)
-	tileHover   = ui.RGBA(255, 255, 255, 0.08)
-	tileEdge    = ui.RGBA(255, 255, 255, 0.08)
+	tileFace = ui.RGBA(255, 255, 255, 0.045)
+	tileEdge = ui.RGBA(255, 255, 255, 0.08)
 	danger      = ui.RGB(255, 99, 99)
 	// Devices glow in these while on; discInk draws on them.
 	amber    = ui.RGB(255, 190, 70)

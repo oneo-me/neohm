@@ -14,9 +14,10 @@ import (
 // right, the main value, the slider of its level and the tiles along the
 // bottom.
 
-// powerButton switches a device on and off, or opens and closes it, glowing
-// in tint while it is on, the less the dimmer it shines: bright, 0 to 1.
-// icon shows on it, dark while its face is light. label names it.
+// powerButton switches a device on and off, or opens and closes it: a disc
+// of glass tinted and glowing in tint while it is on, the less the dimmer it
+// shines: bright, 0 to 1. icon shows on it, dark while its face is light.
+// label names it.
 func powerButton(c *ui.Context, label string, icon func() *ui.SVG, on, disabled bool, tint ui.Color, bright float32) ui.Element {
 	glow := float32(0)
 	if on {
@@ -30,15 +31,8 @@ func powerButton(c *ui.Context, label string, icon func() *ui.SVG, on, disabled 
 		dark = 1
 	}
 	dark = power.Animate("dark", dark, 220*time.Millisecond)
-	face := ui.RGBA(255, 255, 255, 0.08).Mix(tint, glow)
-	switch {
-	case disabled:
-	case power.Pressed():
-		face = face.Mix(panelBottom, 0.2)
-	case power.Hovered():
-		face = face.Mix(ink, 0.08)
-	}
-	power.Background(face).Shadow(0, 4, 18, 0, tint.Alpha(0.55*glow)).Center()
+	power.Material(glass.Glass{Tint: ui.RGBA(255, 255, 255, 0.06).Mix(tint, glow), Interactive: true}).
+		Shadow(0, 4, 18, 0, tint.Alpha(0.55*glow)).Center()
 	power.Children(func() { components.Icon(c, icon).Size(21, 21).TextColor(ink.Mix(discInk, dark)) })
 	if disabled {
 		power.Opacity(0.45)
@@ -82,15 +76,9 @@ func toggleChip(c *ui.Context, icon func() *ui.SVG, label string, on, disabled b
 		lit = 1
 	}
 	lit = chip.Animate("lit", lit, 220*time.Millisecond)
-	face := tileFace.Mix(color.Alpha(0.16), lit)
-	switch {
-	case disabled:
-	case chip.Pressed():
-		face = face.Mix(ink, 0.12)
-	case chip.Hovered():
-		face = face.Mix(ink, 0.05)
-	}
-	chip.Background(face).Border(1, tileEdge.Mix(color.Alpha(0.5), lit))
+	// Glass tinted in color while on, which swells a little as it is pressed.
+	tint := ui.RGBA(255, 255, 255, 0.06).Mix(color.Alpha(0.28), lit)
+	chip.Material(glass.Glass{Tint: tint, Interactive: !disabled})
 	chip.Children(func() {
 		components.Icon(c, icon).Size(15, 15).TextColor(inkMuted.Mix(color, lit))
 		components.Text(c, label).FontSize(13).FontWeight(600).TextColor(inkMuted.Mix(ink, lit)).SingleLine()
@@ -101,18 +89,11 @@ func toggleChip(c *ui.Context, icon func() *ui.SVG, label string, on, disabled b
 	return chip
 }
 
-// circleButton is a circular icon button of size DIPs across.
+// circleButton is a disc of glass size DIPs across, with icon on it, which
+// swells a little as it is pressed.
 func circleButton(c *ui.Context, icon func() *ui.SVG, label string, size float32, disabled bool) ui.Element {
-	b := ui.ButtonBase(c).Size(size, size).Radius(size / 2).Shrink(0).Label(label).Disabled(disabled).Center()
-	face := ui.RGBA(255, 255, 255, 0.06)
-	switch {
-	case disabled:
-	case b.Pressed():
-		face = ui.RGBA(255, 255, 255, 0.14)
-	case b.Hovered():
-		face = ui.RGBA(255, 255, 255, 0.1)
-	}
-	b.Background(face).Border(1, tileEdge)
+	b := ui.ButtonBase(c).Size(size, size).Radius(size / 2).Shrink(0).Label(label).Disabled(disabled).Center().
+		Material(glass.Glass{Tint: ui.RGBA(255, 255, 255, 0.06), Interactive: !disabled})
 	glyph := min(size/2, 18)
 	b.Children(func() { components.Icon(c, icon).Size(glyph, glyph).TextColor(ink) })
 	if disabled {
@@ -185,8 +166,6 @@ func sliderStops(c *ui.Context, s slider) {
 					face, edge, color = s.Color.Alpha(0.2), s.Color.Alpha(0.45), ink
 				case b.Pressed():
 					face = ui.RGBA(255, 255, 255, 0.12)
-				case b.Hovered():
-					face, color = tileHover, ink
 				}
 				b.Background(face).Border(1, edge).Checked(on)
 				b.Children(func() { components.Text(c, text).FontSize(13).FontWeight(600).TextColor(color).SingleLine() })
@@ -278,15 +257,8 @@ const controlHeight = 104
 func tileBase(c *ui.Context, label string, disabled bool) ui.Element {
 	t := ui.ButtonBase(c).Grow(1).Basis(0).MinWidth(0).Height(controlHeight).Radius(20).Padding(12, 8, 12, 10).
 		Column().AlignItems(ui.Start).Label(label).Disabled(disabled)
-	face := tileFace
-	switch {
-	case disabled:
-	case t.Pressed():
-		face = ui.RGBA(255, 255, 255, 0.12)
-	case t.Hovered():
-		face = tileHover
-	}
-	t.Background(face).Border(1, tileEdge)
+	// Glass, which swells a little as it is pressed.
+	t.Material(glass.Glass{Tint: ui.RGBA(255, 255, 255, 0.06), Interactive: !disabled})
 	if disabled {
 		t.Opacity(0.45)
 	}

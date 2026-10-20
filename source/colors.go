@@ -72,12 +72,8 @@ const swatchSize = 46
 func swatchBase(c *ui.Context, label string, current, disabled bool, paint func(p *ui.Painter, r ui.Rect)) ui.Element {
 	b := ui.ButtonBase(c).Size(swatchSize, swatchSize).Radius(swatchSize / 2).Shrink(0).Label(label).Checked(current).Disabled(disabled)
 	ring := float32(0)
-	switch {
-	case disabled:
-	case current:
+	if !disabled && current {
 		ring = 1
-	case b.Hovered():
-		ring = 0.35
 	}
 	ring = b.Animate("ring", ring, 150*time.Millisecond)
 	press := b.Animate("press", map[bool]float32{false: 0, true: 1}[b.Pressed()], 100*time.Millisecond)

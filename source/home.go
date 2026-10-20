@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 	"github.com/oneo-me/neohm/source/internal/ha"
 	"github.com/oneo-me/neohm/source/locales"
@@ -126,17 +127,10 @@ func (a *application) tile(c *ui.Context, t ha.Tile, area string) {
 			level = 1
 		}
 		level = e.Animate("lit", level, 220*time.Millisecond)
-		// The face follows the pointer, as the panel's other tiles do.
-		offA, litA := float32(0.045), float32(0.2)
-		switch {
-		case e.Pressed():
-			offA, litA = 0.12, 0.15
-		case e.Hovered():
-			offA, litA = 0.08, 0.26
-		}
-		off := ui.RGBA(255, 255, 255, offA)
-		e.Gradient(off.Mix(v.color.Alpha(litA+0.1), level), off.Mix(v.color.Alpha(litA-0.08), level), 135).
-			Border(1, tileEdge.Mix(v.color.Alpha(0.45), level)).
+		// The tile is glass, tinted in its color while lit, which swells a
+		// little as it is pressed.
+		tint := ui.RGBA(255, 255, 255, 0.04).Mix(v.color.Alpha(0.3), level)
+		e.Material(glass.Glass{Tint: tint, Interactive: true}).
 			Shadow(0, 8, 24, 0, v.color.Alpha(0.28*level))
 		if !s.Available() {
 			e.Opacity(0.45)
