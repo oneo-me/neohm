@@ -1906,11 +1906,11 @@ func (msgs Messages) AutoCheckUpdates() string {
 	return Catalog.Format(msgs.locale, "autoCheckUpdates", nil)
 }
 
-// AutoCheckUpdatesHint says "Checks once a day and lets you know when a new version is out."
+// AutoCheckUpdatesHint says "With the switch on, NeoHM checks once a day and lets you know when a new version is out."
 // in the language the app shows.
 func AutoCheckUpdatesHint() string { return In(i18n.Locale()).AutoCheckUpdatesHint() }
 
-// AutoCheckUpdatesHint says "Checks once a day and lets you know when a new version is out."
+// AutoCheckUpdatesHint says "With the switch on, NeoHM checks once a day and lets you know when a new version is out."
 // in the language of msgs.
 func (msgs Messages) AutoCheckUpdatesHint() string {
 	return Catalog.Format(msgs.locale, "autoCheckUpdatesHint", nil)

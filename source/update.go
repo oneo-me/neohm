@@ -85,35 +85,55 @@ type updateState struct {
 	notified string
 }
 
-// updatesGroup, in Settings, says whether a newer version is out, checks for
-// one and installs it, and turns checking by itself on or off.
+// updatesGroup, in Settings, is one row that says where updates got and
+// does what they allow next, checking, installing or trying again, with the
+// notes of a newer version found, or how far its download got, below it. Its
+// switch turns checking by itself on or off.
 func (a *application) updatesGroup(c *ui.Context) {
 	u := &a.upd
-	settingsGroup(c, locales.Updates(), "", func() {
-		a.updateRows(c)
-		var act func()
-		icon, title := lucide.RefreshCw, locales.CheckForUpdates()
+	current := mygo.App.Version()
+	icon, color, title, detail, detailColor := lucide.RefreshCw, accent, locales.CheckForUpdates(), locales.UpdateVersion(current), inkMuted
+	act := func() { a.checkForUpdates(false) }
+	switch u.phase {
+	case updateChecking:
+		icon, color, title, act = nil, quietBadge, locales.UpdateChecking(), nil
+	case updateCurrent:
+		icon, color, title = lucide.CircleCheck, green, locales.UpdateCurrent()
+	case updateDisabled:
+		icon, color, title, detail, act = lucide.CircleAlert, quietBadge, locales.UpdateDisabled(), updateDisabledBody(), nil
+	case updateFailed:
+		icon, color, title, detail, detailColor = lucide.TriangleAlert, danger, locales.UpdateCheckError(), locales.UpdateRetry(), accent
+		if u.installFailed {
+			title, act = locales.UpdateInstallError(), a.installUpdate
+		}
+	case updateAvailable:
+		icon, title, detail, detailColor, act = lucide.CircleArrowUp, locales.UpdateAvailable(u.found.Version), locales.UpdateInstall(), accent, a.installUpdate
+	case updateInstalling:
+		icon, title, detail, act = lucide.Download, locales.UpdateInstalling(u.found.Version), locales.UpdateRelaunch(), nil
+	}
+	settingsGroup(c, locales.Updates(), locales.AutoCheckUpdatesHint(), func() {
+		clicked := pressRow(c, title, false, func() {
+			rowBody(c, icon, color, title, detail, detailColor, func() {
+				auto := !a.config.ManualUpdates
+				glassSwitch(c, &auto, locales.AutoCheckUpdates(), locales.AutoCheckUpdatesHint())
+				if auto == a.config.ManualUpdates {
+					a.setAutoCheck(auto)
+				}
+			})
+		})
+		if clicked && act != nil {
+			act()
+		}
 		switch {
-		case u.phase == updateFailed && u.installFailed:
-			icon, title, act = lucide.RotateCw, locales.UpdateRetry(), a.installUpdate
-		case u.phase == updateFailed:
-			icon, title, act = lucide.RotateCw, locales.UpdateRetry(), func() { a.checkForUpdates(false) }
-		case u.phase == updateAvailable:
-			icon, title, act = lucide.Download, locales.UpdateInstall(), a.installUpdate
-		case u.phase != updateInstalling && u.phase != updateDisabled:
-			act = func() { a.checkForUpdates(false) }
-		}
-		if act != nil {
-			rowDivider(c)
-			if actionRow(c, icon, accent, title, "", inkMuted, false, u.phase == updateChecking) {
-				act()
-			}
-		}
-		rowDivider(c)
-		auto := !a.config.ManualUpdates
-		switchRow(c, lucide.CalendarClock, teal, locales.AutoCheckUpdates(), locales.AutoCheckUpdatesHint(), inkMuted, &auto)
-		if auto == a.config.ManualUpdates {
-			a.setAutoCheck(auto)
+		case u.phase == updateAvailable && u.found.Notes != "":
+			// The notes continue the row above, below its text.
+			components.ScrollView(c, components.ScrollViewOptions{}).FillWidth().MaxHeight(180).Children(func() {
+				ui.Column(c).FillWidth().Padding(0, 14, 12, 0).PaddingStart(rowInset).Children(func() {
+					markdown.View(c, u.found.Notes, u.notes)
+				})
+			})
+		case u.phase == updateInstalling:
+			ui.Column(c).FillWidth().Padding(0, 14, 16, 0).PaddingStart(rowInset).Children(func() { progressBar(c, u.progress) })
 		}
 	})
 }
@@ -127,45 +147,6 @@ func updateDisabledBody() string {
 		return locales.UpdateDisabledBodyLinux()
 	}
 	return locales.UpdateDisabledBody()
-}
-
-// updateRows say where updates got, with the notes of a newer version
-// found, or how far its download got.
-func (a *application) updateRows(c *ui.Context) {
-	u := &a.upd
-	current := mygo.App.Version()
-	status := func(icon func() *ui.SVG, color ui.Color, title, detail string) {
-		staticRow(c).Children(func() { rowBody(c, icon, color, title, detail, inkMuted, nil) })
-	}
-	switch u.phase {
-	case updateIdle:
-		status(lucide.CircleArrowUp, quietBadge, locales.Title(), locales.UpdateVersion(current))
-	case updateChecking:
-		status(nil, quietBadge, locales.UpdateChecking(), locales.UpdateVersion(current))
-	case updateCurrent:
-		status(lucide.CircleCheck, green, locales.UpdateCurrent(), locales.UpdateVersion(current))
-	case updateDisabled:
-		status(lucide.CircleAlert, quietBadge, locales.UpdateDisabled(), updateDisabledBody())
-	case updateFailed:
-		title := locales.UpdateCheckError()
-		if u.installFailed {
-			title = locales.UpdateInstallError()
-		}
-		status(lucide.TriangleAlert, danger, title, locales.UpdateVersion(current))
-	case updateAvailable:
-		status(lucide.CircleArrowUp, accent, locales.UpdateAvailable(u.found.Version), locales.UpdateYours(current))
-		if u.found.Notes != "" {
-			// The notes continue the row above, below its text.
-			components.ScrollView(c, components.ScrollViewOptions{}).FillWidth().MaxHeight(180).Children(func() {
-				ui.Column(c).FillWidth().Padding(0, 14, 12, 0).PaddingStart(rowInset).Children(func() {
-					markdown.View(c, u.found.Notes, u.notes)
-				})
-			})
-		}
-	case updateInstalling:
-		status(lucide.Download, accent, locales.UpdateInstalling(u.found.Version), locales.UpdateRelaunch())
-		ui.Column(c).FillWidth().Padding(0, 14, 16, 0).PaddingStart(rowInset).Children(func() { progressBar(c, u.progress) })
-	}
 }
 
 // autoCheck checks for a newer version when checking by itself is on and

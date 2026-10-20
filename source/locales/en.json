@@ -188,7 +188,7 @@
   "updateRelaunch": "NeoHM relaunches once it's installed.",
   "updates": "Updates",
   "autoCheckUpdates": "Check automatically",
-  "autoCheckUpdatesHint": "Checks once a day and lets you know when a new version is out.",
+  "autoCheckUpdatesHint": "With the switch on, NeoHM checks once a day and lets you know when a new version is out.",
   "updateNotificationBody": "Open Settings to install it.",
   "settingsUpdate": "Settings, an update is available"
 }

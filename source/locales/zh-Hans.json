@@ -188,7 +188,7 @@
   "updateRelaunch": "安装完成后 NeoHM 将重新启动。",
   "updates": "更新",
   "autoCheckUpdates": "自动检查",
-  "autoCheckUpdatesHint": "每天检查一次，有新版本时通知你。",
+  "autoCheckUpdatesHint": "打开开关后，NeoHM 每天检查一次，有新版本时通知你。",
   "updateNotificationBody": "打开设置即可安装。",
   "settingsUpdate": "设置，有可用更新"
 }

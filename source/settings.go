@@ -201,27 +201,10 @@ func staticRow(c *ui.Context) ui.Element {
 }
 
 // actionRow is a row that does what title says, in color, which detail
-// below it says more of in detailColor, and reports a click on it. It
-// lightens while pressed and while it has the keyboard focus, in place of a
-// ring the group's edge would clip. While busy it spins at its end and
-// ignores clicks, undimmed.
+// below it says more of in detailColor, and reports a click on it. While
+// busy it spins at its end and ignores clicks, undimmed.
 func actionRow(c *ui.Context, icon func() *ui.SVG, color ui.Color, title, detail string, detailColor ui.Color, busy, disabled bool) bool {
-	off := disabled && !busy
-	row := ui.ButtonBase(c).Label(title).Disabled(off).
-		FillWidth().Row().AlignItems(ui.Center).Gap(12).Padding(11, 14).MinHeight(54).FocusRing(false)
-	pressed, focus := row.Pressed() && !off, row.FocusVisible()
-	row.Draw(func(p *ui.Painter, r ui.Rect) {
-		if pressed {
-			p.Fill(r, ui.RGBA(255, 255, 255, 0.07), 0)
-		}
-		if focus {
-			p.Fill(r, accent.Alpha(0.16), 0)
-		}
-	})
-	if off {
-		row.Opacity(0.45)
-	}
-	row.Children(func() {
+	return pressRow(c, title, disabled && !busy, func() {
 		badge(c, icon, color)
 		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(2).Children(func() {
 			components.Text(c, title).FontSize(14).FontWeight(600).TextColor(color.Mix(ink, 0.25)).Wrap()
@@ -232,8 +215,30 @@ func actionRow(c *ui.Context, icon func() *ui.SVG, color ui.Color, title, detail
 		if busy {
 			components.Spinner(c, components.SpinnerRing).Size(16, 16)
 		}
+	}) && !busy
+}
+
+// pressRow is a row labeled label, of what content builds, that reports a
+// click on it. It lightens while pressed and while it has the keyboard
+// focus, in place of a ring the group's edge would clip, and dims while
+// disabled.
+func pressRow(c *ui.Context, label string, disabled bool, content func()) bool {
+	row := ui.ButtonBase(c).Label(label).Disabled(disabled).
+		FillWidth().Row().AlignItems(ui.Center).Gap(12).Padding(11, 14).MinHeight(54).FocusRing(false)
+	pressed, focus := row.Pressed() && !disabled, row.FocusVisible()
+	row.Draw(func(p *ui.Painter, r ui.Rect) {
+		if pressed {
+			p.Fill(r, ui.RGBA(255, 255, 255, 0.07), 0)
+		}
+		if focus {
+			p.Fill(r, accent.Alpha(0.16), 0)
+		}
 	})
-	return row.Clicked() && !busy
+	if disabled {
+		row.Opacity(0.45)
+	}
+	row.Children(content)
+	return row.Clicked()
 }
 
 // fieldRow edits *value, named title above it, on a row; submit runs on

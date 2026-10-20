@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Show an update's status and what to do next on one Settings row, with automatic checking on its switch.
+
 ## [0.2026.2] - 2026-10-20
 
 - Add Quit to the bottom of Settings.

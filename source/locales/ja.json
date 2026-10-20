@@ -194,7 +194,7 @@
   "updateRelaunch": "インストールが終わると NeoHM が再起動します。",
   "updates": "アップデート",
   "autoCheckUpdates": "自動で確認",
-  "autoCheckUpdatesHint": "1 日に 1 回確認し、新しいバージョンが出たらお知らせします。",
+  "autoCheckUpdatesHint": "スイッチをオンにすると、NeoHM は 1 日に 1 回確認し、新しいバージョンが出たらお知らせします。",
   "updateNotificationBody": "設定を開いてインストールできます。",
   "settingsUpdate": "設定、アップデートがあります"
 }

@@ -1058,8 +1058,14 @@ func TestUpdates(t *testing.T) {
 	returned(t, posted)
 	returned(t, posted)
 	tt.Frame()
-	if !tt.HasText(locales.UpdateInstallError()) || !tt.HasText(locales.UpdateRetry()) || relaunched != 1 {
+	if !tt.HasText(locales.UpdateInstallError()) || relaunched != 1 {
 		t.Fatalf("failed: %v, relaunched %d", tt.Texts(), relaunched)
+	}
+	if err := tt.Click(locales.UpdateRetry()); err != nil {
+		t.Fatal(err)
+	}
+	if a.upd.phase != updateInstalling {
+		t.Fatalf("retried into phase %d", a.upd.phase)
 	}
 }
 
@@ -1109,9 +1115,11 @@ func TestAutoCheck(t *testing.T) {
 	a.settingsOpen = true
 	a.upd.phase = updateCurrent
 	tt.Frame()
-	toggle(t, tt, locales.AutoCheckUpdates())
-	if !a.config.ManualUpdates {
-		t.Fatal("still checking by itself")
+	if err := tt.Click(locales.AutoCheckUpdates()); err != nil {
+		t.Fatal(err)
+	}
+	if !a.config.ManualUpdates || a.upd.phase != updateCurrent {
+		t.Fatal("still checking by itself, or the switch checked for updates")
 	}
 	if c, err := loadConfig(a.path); err != nil || !c.ManualUpdates {
 		t.Fatalf("not saved: %v %+v", err, c)
@@ -1122,7 +1130,9 @@ func TestAutoCheck(t *testing.T) {
 		t.Fatal("checked by itself while off")
 	}
 	tt.Frame()
-	toggle(t, tt, locales.AutoCheckUpdates())
+	if err := tt.Click(locales.AutoCheckUpdates()); err != nil {
+		t.Fatal(err)
+	}
 	if a.config.ManualUpdates || a.upd.phase != updateChecking {
 		t.Fatalf("manual %v, phase %d", a.config.ManualUpdates, a.upd.phase)
 	}
