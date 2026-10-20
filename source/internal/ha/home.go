@@ -18,9 +18,11 @@ type Tile struct {
 	Name string
 }
 
-// Section holds the tiles of one area, named as Home Assistant names it.
-// The tiles of no area come last, in a section of no name.
+// Section holds the tiles of one area, named as Home Assistant names it,
+// with the area's ID. The tiles of no area come last, in a section of no
+// name and no ID.
 type Section struct {
+	ID    string
 	Area  string
 	Tiles []Tile
 }
@@ -183,7 +185,7 @@ func Arrange(states []State, reg *Registry) []Section {
 				}
 			}
 			if len(s.Tiles) > 0 {
-				s.Area = a.Name
+				s.ID, s.Area = a.ID, a.Name
 				sections = append(sections, s)
 			}
 		}

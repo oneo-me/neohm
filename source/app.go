@@ -66,6 +66,9 @@ type application struct {
 	home     []ha.Section
 	listed   bool
 	registry *ha.Registry
+	// reorder is the drag moving an area or a tile of Home, nil while
+	// none does.
+	reorder *reorder
 	// holds keep what tiles show after an action until Home Assistant
 	// reports it.
 	holds map[string]*hold
@@ -363,7 +366,7 @@ func (a *application) applyList(client *ha.Client, edits int64, states []ha.Stat
 	if reg != nil {
 		a.registry = reg
 	}
-	a.home, a.listed = ha.Arrange(states, a.registry), true
+	a.home, a.listed = a.arrange(ha.Arrange(states, a.registry)), true
 	if _, _, ok := a.tileOf(a.device); !ok {
 		a.device = ""
 	}

@@ -4,7 +4,7 @@
 
 NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that controls the devices of a Home Assistant instance, with full controls for air conditioners. It is built in Go with [MyGo](https://github.com/egoist/mygo) and [Onevra](https://github.com/oneo-me/onevra).
 
-Click the menu bar icon on macOS, or the tray icon on Windows, to open the panel; on Linux, choose **Open panel** from the tray icon's menu. It shows the devices as tiles by room, lit while they are on. A click on a tile turns its device on or off, and the arrow in its corner opens the device's page; a device that does not switch opens its page from the click. Settings opens in the same panel from its gear button. Right-click the icon for Quit NeoHM, which Linux lists in the same menu, or press ⌘Q (Ctrl+Q on Windows and Linux) while the panel is open.
+Click the menu bar icon on macOS, or the tray icon on Windows, to open the panel; on Linux, choose **Open panel** from the tray icon's menu. It shows the devices as tiles by room, lit while they are on. A click on a tile turns its device on or off, and the arrow in its corner opens the device's page; a device that does not switch opens its page from the click. Drag a room's heading to move the room, or a tile to move it within its room; click the heading to fold the room away. Settings opens in the same panel from its gear button. Right-click the icon for Quit NeoHM, which Linux lists in the same menu, or press ⌘Q (Ctrl+Q on Windows and Linux) while the panel is open.
 
 <p align="center">
   <img src="docs/screenshots/home.jpg" width="24%" alt="Devices by room">
@@ -46,7 +46,7 @@ Later versions install from Settings: NeoHM checks once a day and notifies you o
 3. Enter the address, for example `http://homeassistant.local:8123`, and the token, then click **Connect**.
 4. Close Settings to see your devices. Click a tile to switch its device, or its arrow to open the device's page.
 
-The address, the token, the language chosen, whether updates are checked automatically and the air conditioner opened last are saved in `~/.neohm/config.json`, which only your user account can read.
+The address, the token, the language chosen, whether updates are checked automatically, the air conditioner opened last and how you arranged the rooms and tiles are saved in `~/.neohm/config.json`, which only your user account can read.
 
 ## Contributing
 

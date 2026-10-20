@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add Quit to the bottom of Settings.
+- Reorder Home's rooms and the tiles in each by dragging them, and fold a room away from its heading.
 - Fix the panel's shadow outlining a rectangle around it on macOS.
 - Fix a device's page jumping as a light turns on or off.
 

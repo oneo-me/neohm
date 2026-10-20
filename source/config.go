@@ -24,6 +24,13 @@ type config struct {
 	// ManualUpdates checks for updates only when Settings asks, not by
 	// itself every day.
 	ManualUpdates bool `json:"manualUpdates,omitempty"`
+	// AreaOrder lists Home's areas by ID, "" for the devices of no area,
+	// as the user dragged them; the areas it misses follow in Home
+	// Assistant's order. TileOrder lists each area's tiles by entity the
+	// same way, and Collapsed the areas whose tiles Home folds away.
+	AreaOrder []string            `json:"areaOrder,omitempty"`
+	TileOrder map[string][]string `json:"tileOrder,omitempty"`
+	Collapsed []string            `json:"collapsed,omitempty"`
 }
 
 func loadConfig(path string) (config, error) {

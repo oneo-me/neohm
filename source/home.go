@@ -1,6 +1,10 @@
 package main
 
 import (
+	"cmp"
+	"maps"
+	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,24 +47,246 @@ func (a *application) homePage(c *ui.Context, radius float32) {
 						components.Text(c, e).FontSize(12).Wrap().TextColor(inkMuted).Grow(1).MinWidth(0)
 					})
 				}
-				for i, s := range a.home {
-					ui.Column(c.Key(i)).FillWidth().Gap(10).Children(func() {
-						switch {
-						case s.Area != "":
-							areaHeading(c, s.Area)
-						case len(a.home) > 1:
-							areaHeading(c, locales.OtherDevices())
-						}
-						ui.Grid(c).Columns(3).Gap(8).Children(func() {
-							for _, t := range s.Tiles {
-								a.tile(c, t, s.Area)
-							}
-						})
-					})
+				// Releasing a drag anywhere among the areas keeps the order it
+				// shows; Escape, or releasing it elsewhere, restores the one
+				// before.
+				list := ui.Column(c).FillWidth().Gap(18)
+				if _, ok := ui.Drop[homeDrag](list); ok && a.reorder != nil {
+					a.reorder.dropped = true
 				}
+				list.Children(func() {
+					for _, s := range a.home {
+						a.area(c, s)
+					}
+				})
 			})
+			a.settleReorder(c)
 		}
 	})
+}
+
+// area shows the tiles of area s under its heading, which folds them away.
+// While another area is dragged over it, that area moves above or below
+// it, by the half of it under the pointer.
+func (a *application) area(c *ui.Context, s ha.Section) {
+	col := ui.Column(c.Key("area:" + s.ID)).FillWidth().Gap(10)
+	if r := a.reorder; r != nil && !r.stale && r.drag.entity == "" && r.drag.area != s.ID {
+		if _, y, over := col.PointerPosition(); over {
+			after := y >= col.LayoutBounds().H/2
+			r.move = func() { a.moveArea(r.drag.area, s.ID, after) }
+		}
+	}
+	collapsed := slices.Contains(a.config.Collapsed, s.ID)
+	col.Children(func() {
+		switch {
+		case s.Area != "":
+			a.areaHeader(c, s, s.Area, collapsed)
+		case len(a.home) > 1:
+			a.areaHeader(c, s, locales.OtherDevices(), collapsed)
+		default:
+			collapsed = false
+		}
+		if collapsed {
+			return
+		}
+		ui.Grid(c).Columns(3).Gap(8).Children(func() {
+			for _, t := range s.Tiles {
+				a.tile(c, t, s)
+			}
+		})
+	})
+}
+
+// areaHeader names area s, and folds its tiles away or shows them again as
+// it is clicked. Dragging it moves the area among the others.
+func (a *application) areaHeader(c *ui.Context, s ha.Section, name string, collapsed bool) {
+	h := ui.ButtonBase(c).Row().FillWidth().Gap(6).Padding(2, 4).AlignItems(ui.Center).Label(name).Expanded(!collapsed)
+	if len(a.home) > 1 {
+		d := homeDrag{area: s.ID}
+		h.Drag(d)
+		if h.Dragging() {
+			a.dragging(d)
+			h.Opacity(0.4)
+		}
+	}
+	turn := float32(0)
+	if collapsed {
+		turn = 1
+	}
+	turn = h.Animate("turn", turn, 160*time.Millisecond)
+	h.Children(func() {
+		areaHeading(c, name).Grow(1).MinWidth(0).Margin(0)
+		if collapsed {
+			components.Text(c, strconv.Itoa(len(s.Tiles))).FontSize(12).TextColor(inkMuted)
+		}
+		components.Icon(c, lucide.ChevronDown).Size(14, 14).TextColor(inkMuted).Rotate(-90 * turn)
+	})
+	if h.Clicked() {
+		a.toggleArea(s.ID)
+	}
+}
+
+// toggleArea folds away the tiles of area id, or shows them again.
+func (a *application) toggleArea(id string) {
+	if i := slices.Index(a.config.Collapsed, id); i >= 0 {
+		a.config.Collapsed = slices.Delete(slices.Clone(a.config.Collapsed), i, i+1)
+	} else {
+		a.config.Collapsed = append(slices.Clone(a.config.Collapsed), id)
+	}
+	a.save()
+}
+
+// homeDrag is an area of Home being dragged to another place among the
+// others, or, when entity is set, the tile of entity within its area.
+type homeDrag struct{ area, entity string }
+
+// reorder is a drag moving an area or a tile of Home, as it goes: the
+// order saved and the order shown as it started, which it returns to unless
+// it drops among the areas, and the move the frame found the pointer asks
+// for.
+type reorder struct {
+	drag         homeDrag
+	areas, shown []string
+	tiles, held  map[string][]string
+	move         func()
+	// active reports that the source dragged this frame, moved that the
+	// order changed and dropped that the drag dropped among the areas.
+	// stale reports that the frame's pointer is placed on the layout from
+	// before the last move.
+	active, moved, dropped, stale bool
+}
+
+// dragging reports that the source of d drags it this frame, which starts
+// a reorder.
+func (a *application) dragging(d homeDrag) {
+	if a.reorder == nil {
+		r := &reorder{drag: d, areas: a.config.AreaOrder, tiles: maps.Clone(a.config.TileOrder), held: map[string][]string{}}
+		for _, s := range a.home {
+			r.shown = append(r.shown, s.ID)
+			r.held[s.ID] = tileIDs(s.Tiles)
+		}
+		a.reorder = r
+	}
+	a.reorder.active = true
+}
+
+// settleReorder moves what the frame's drag asks to, once Home is built,
+// and ends a drag no longer dragging: it keeps the order shown if the drag
+// dropped among the areas, and restores the one before otherwise.
+func (a *application) settleReorder(c *ui.Context) {
+	r := a.reorder
+	if r == nil {
+		return
+	}
+	r.stale = r.move != nil
+	if r.move != nil {
+		r.move()
+		r.move = nil
+		c.Invalidate()
+	}
+	if r.active {
+		r.active = false
+		return
+	}
+	a.reorder = nil
+	if !r.moved {
+		return
+	}
+	if r.dropped {
+		a.save()
+		return
+	}
+	a.config.AreaOrder, a.config.TileOrder = r.areas, r.tiles
+	a.home = arrange(a.home, r.shown, r.held)
+	c.Invalidate()
+}
+
+// moveArea moves area id above area target, or below it after.
+func (a *application) moveArea(id, target string, after bool) {
+	i := slices.IndexFunc(a.home, func(s ha.Section) bool { return s.ID == id })
+	to := slices.IndexFunc(a.home, func(s ha.Section) bool { return s.ID == target })
+	if i < 0 || to < 0 {
+		return
+	}
+	if after {
+		to++
+	}
+	if i < to {
+		to--
+	}
+	if i == to {
+		return
+	}
+	s := a.home[i]
+	a.home = slices.Insert(slices.Delete(a.home, i, i+1), to, s)
+	a.config.AreaOrder = nil
+	for _, s := range a.home {
+		a.config.AreaOrder = append(a.config.AreaOrder, s.ID)
+	}
+	a.reorder.moved = true
+}
+
+// moveTile moves the tile of entity id into the place of target's in area,
+// which moves the tiles between them by one.
+func (a *application) moveTile(area, id, target string) {
+	k := slices.IndexFunc(a.home, func(s ha.Section) bool { return s.ID == area })
+	if k < 0 {
+		return
+	}
+	tiles := a.home[k].Tiles
+	i := slices.IndexFunc(tiles, func(t ha.Tile) bool { return t.Entity.EntityID == id })
+	to := slices.IndexFunc(tiles, func(t ha.Tile) bool { return t.Entity.EntityID == target })
+	if i < 0 || to < 0 || i == to {
+		return
+	}
+	t := tiles[i]
+	tiles = slices.Insert(slices.Delete(tiles, i, i+1), to, t)
+	a.home[k].Tiles = tiles
+	a.config.TileOrder = maps.Clone(a.config.TileOrder)
+	if a.config.TileOrder == nil {
+		a.config.TileOrder = map[string][]string{}
+	}
+	a.config.TileOrder[area] = tileIDs(tiles)
+	a.reorder.moved = true
+}
+
+func tileIDs(tiles []ha.Tile) []string {
+	ids := make([]string, len(tiles))
+	for i, t := range tiles {
+		ids[i] = t.Entity.EntityID
+	}
+	return ids
+}
+
+// arrange orders Home's areas, and the tiles of each, as the user dragged
+// them.
+func (a *application) arrange(home []ha.Section) []ha.Section {
+	return arrange(home, a.config.AreaOrder, a.config.TileOrder)
+}
+
+// arrange orders the areas of home by their IDs in areas, and the tiles of
+// each by their entities in tiles. What these miss follows in the order it
+// has.
+func arrange(home []ha.Section, areas []string, tiles map[string][]string) []ha.Section {
+	slices.SortStableFunc(home, func(x, y ha.Section) int {
+		return cmp.Compare(rank(areas, x.ID), rank(areas, y.ID))
+	})
+	for _, s := range home {
+		if order, ok := tiles[s.ID]; ok {
+			slices.SortStableFunc(s.Tiles, func(x, y ha.Tile) int {
+				return cmp.Compare(rank(order, x.Entity.EntityID), rank(order, y.Entity.EntityID))
+			})
+		}
+	}
+	return home
+}
+
+// rank is the place of id in order, past its end when order misses it.
+func rank(order []string, id string) int {
+	if i := slices.Index(order, id); i >= 0 {
+		return i
+	}
+	return len(order)
 }
 
 // settingsButton opens Settings, marked with a dot while a newer version
@@ -109,12 +335,29 @@ func (a *application) setupView(c *ui.Context, top float32) {
 // switches on and off, or opens and closes, whose page then opens from the
 // button in the corner; it opens the page of any other, an air
 // conditioner's controls.
-func (a *application) tile(c *ui.Context, t ha.Tile, area string) {
+//
+// Dragging the tile moves it within its area, sec: into the place of the
+// tile under the pointer.
+func (a *application) tile(c *ui.Context, t ha.Tile, sec ha.Section) {
 	s := a.held(t.Entity)
 	v := a.tileView(t, s)
-	name := tileName(t.Name, area)
+	name := tileName(t.Name, sec.Area)
 	_, switches := s.Toggle()
-	ui.Box(c.Key(s.EntityID)).Height(tileHeight).Children(func() {
+	box := ui.Box(c.Key(s.EntityID)).Height(tileHeight)
+	if len(sec.Tiles) > 1 {
+		d := homeDrag{area: sec.ID, entity: s.EntityID}
+		box.Drag(d)
+		if box.Dragging() {
+			a.dragging(d)
+			box.Opacity(0.4)
+		}
+	}
+	if r := a.reorder; r != nil && !r.stale && r.drag.area == sec.ID && r.drag.entity != "" && r.drag.entity != s.EntityID {
+		if _, _, over := box.PointerPosition(); over {
+			r.move = func() { a.moveTile(sec.ID, r.drag.entity, s.EntityID) }
+		}
+	}
+	box.Children(func() {
 		e := ui.ButtonBase(c).Fill().Radius(20).Padding(12).Column().AlignItems(ui.Start)
 		if switches {
 			e.Label(locales.QuickSwitch(name)).Disabled(!s.Available())

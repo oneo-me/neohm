@@ -10,7 +10,7 @@ NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that re
 | `source/app.go` | Application state, the poller, merging reads with local changes and sending service calls. |
 | `source/tray.go` | The menu bar or tray icon and menus, the panel's lifecycle and navigation, and the window used without an icon. |
 | `source/panel.go` | The panel's frame, theme and palette, the frame every page shares, and the controls of one air conditioner. |
-| `source/home.go` | Home's tiles by area, which switch their devices and open their pages, and what stands in for them before Home Assistant answers. |
+| `source/home.go` | Home's tiles by area, which switch their devices and open their pages, the areas and tiles the user drags into place or folds away, and what stands in for them before Home Assistant answers. |
 | `source/tiles.go` | How each kind of device shows on its tile and page. |
 | `source/device.go` | A device's page, laid out as an air conditioner's controls: its drawing, its main value, the slider of its level, a light's colors and its other actions or readings along the bottom. |
 | `source/controls.go` | The controls every device's page shares: the power button at the top right, the main value in the middle, the slider with its Liquid Glass thumb and the stops below it, and the tiles along the bottom. |
@@ -49,13 +49,13 @@ NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that re
 
 **Polling.** One goroutine reads Home Assistant while the panel is open, every 3 seconds: every entity while Home or a device's page shows, otherwise only the air conditioner shown. It reads nothing while the panel is closed, as the icon never changes; opening the panel, navigating and connecting wake it at once.
 
-**Arranging Home.** Which device and area each entity belongs to, and what Home Assistant's dashboards hide, come only from the registries of its WebSocket API. The poller reads them in one short session per connection, and again every five minutes. `ha.Arrange` then shows each device's main controls, or one tile of a sensor device's readings, by area.
+**Arranging Home.** Which device and area each entity belongs to, and what Home Assistant's dashboards hide, come only from the registries of its WebSocket API. The poller reads them in one short session per connection, and again every five minutes. `ha.Arrange` then shows each device's main controls, or one tile of a sensor device's readings, by area, which the order the user dragged areas and tiles into rearranges. A drag moves what it holds as it goes and saves the order once it drops on Home; Escape, or a drop elsewhere, restores the order it started from.
 
 **Control.** A click on a tile that switches calls one service of its entity's domain at once, as the power button in a device's page header, or a click on the device drawn below it, does; the tile's arrow, or a click on any other tile, opens the device's page. A device's page calls the others, and sends a level, or a color dragged in the picker, once its control rests; a swatch sends its color at once. An air conditioner's controls call `climate` services on the device shown, and a click on its unit turns it on or off. Its temperature is sent once the slider rests, and a temperature still waiting goes to its own device when another one opens.
 
 ## Data and state
 
-The [configuration file](README.md#getting-started) holds the address, the access token, the language chosen, whether updates are checked only by hand and the air conditioner opened last. Each save replaces it atomically with a file only the user can read. A read of every entity that no longer contains that air conditioner forgets it. Device states and the registries stay in memory and are read again after each launch.
+The [configuration file](README.md#getting-started) holds the address, the access token, the language chosen, whether updates are checked only by hand, the air conditioner opened last, and the order of Home's areas and of their tiles, by area ID and entity, with the areas folded away. Each save replaces it atomically with a file only the user can read. A read of every entity that no longer contains that air conditioner forgets it. Device states and the registries stay in memory and are read again after each launch.
 
 ## Verification
 

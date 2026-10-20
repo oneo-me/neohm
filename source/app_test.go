@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"slices"
 	"strings"
@@ -91,7 +92,7 @@ func demoApp(t *testing.T) *application {
 	a.config = config{Address: "http://ha.test", Token: "token", Entity: "climate.bedroom"}
 	a.address, a.token = a.config.Address, a.config.Token
 	a.registry = demoRegistry()
-	a.home, a.listed = ha.Arrange(states, a.registry), true
+	a.home, a.listed = a.arrange(ha.Arrange(states, a.registry)), true
 	a.climate, a.hasClimate, a.online = ha.ParseClimate(states[0]), true, true
 	return a
 }
@@ -259,6 +260,82 @@ func TestHome(t *testing.T) {
 	tt.Key(0, ui.KeyEscape)
 	if a.detail || !tt.HasText("Ceiling Light") {
 		t.Fatalf("escape: %v", tt.Texts())
+	}
+}
+
+// Home's areas fold away as their headings are clicked, and move by
+// dragging their headings, as tiles move within their areas by dragging
+// them; the order stays where the drag drops, and Escape restores it.
+func TestArrangeHome(t *testing.T) {
+	a := demoApp(t)
+	tt := ui.NewTester(a.panelView, panelWidth, 900)
+	order := func() (areas, living []string) {
+		for _, s := range a.home {
+			areas = append(areas, s.ID)
+		}
+		for _, t := range a.home[slices.IndexFunc(a.home, func(s ha.Section) bool { return s.ID == "living_room" })].Tiles {
+			living = append(living, t.Entity.EntityID)
+		}
+		return areas, living
+	}
+	drag := func(from, to string, dy float32, cancel bool) {
+		t.Helper()
+		f, ok := tt.Find(from)
+		g, ok2 := tt.Find(to)
+		if !ok || !ok2 {
+			t.Fatalf("drag %q to %q in %v", from, to, tt.Texts())
+		}
+		x, y := f.X+f.W/2, f.Y+f.H/2
+		tt.Press(x, y)
+		tt.Move(x+6, y+6)
+		tt.Move(g.X+g.W/2, g.Y+g.H/2+dy)
+		tt.Frame()
+		if cancel {
+			tt.Key(0, ui.KeyEscape)
+		}
+		tt.Release(g.X+g.W/2, g.Y+g.H/2+dy)
+		tt.Frame()
+	}
+
+	if err := tt.Click("Bedroom"); err != nil {
+		t.Fatal(err)
+	}
+	if tt.HasText("Lamp") || !tt.HasText("Ceiling Light") {
+		t.Fatalf("collapse: %v", tt.Texts())
+	}
+	if saved, _ := loadConfig(a.path); !slices.Equal(saved.Collapsed, []string{"bedroom"}) {
+		t.Fatalf("collapsed %q", saved.Collapsed)
+	}
+	if err := tt.Click("Bedroom"); err != nil {
+		t.Fatal(err)
+	}
+	if !tt.HasText("Lamp") {
+		t.Fatalf("expand: %v", tt.Texts())
+	}
+
+	areas, living := order()
+	drag("Ceiling Light", "TV", 0, true)
+	if a2, l2 := order(); !slices.Equal(a2, areas) || !slices.Equal(l2, living) {
+		t.Fatalf("escape kept %q %q", a2, l2)
+	}
+	drag("Ceiling Light", "TV", 0, false)
+	want := []string{"climate.living_room", "cover.curtain", "media_player.tv", "light.ceiling", "lock.front_door"}
+	if _, l := order(); !slices.Equal(living, []string{"climate.living_room", "light.ceiling", "cover.curtain", "media_player.tv", "lock.front_door"}) || !slices.Equal(l, want) {
+		t.Fatalf("tiles %q, then %q", living, l)
+	}
+	drag("Bedroom", "Living Room", 0, false)
+	if a2, _ := order(); !slices.Equal(a2, []string{"bedroom", "living_room", ""}) {
+		t.Fatalf("areas %q", a2)
+	}
+	saved, _ := loadConfig(a.path)
+	if !slices.Equal(saved.AreaOrder, []string{"bedroom", "living_room", ""}) || !slices.Equal(saved.TileOrder["living_room"], want) {
+		t.Fatalf("saved %q %v", saved.AreaOrder, saved.TileOrder)
+	}
+
+	// A fresh read keeps the order.
+	a.applyList(nil, a.edits.Load(), parseStates(t, demoStates), nil, "", nil)
+	if a2, l := order(); !slices.Equal(a2, saved.AreaOrder) || !slices.Equal(l, want) {
+		t.Fatalf("read: %q %q", a2, l)
 	}
 }
 
@@ -766,11 +843,12 @@ func TestQuitShortcut(t *testing.T) {
 // The configuration file holds the token, so only the user can read it.
 func TestConfigRoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "x", "config.json")
-	want := config{Address: "http://ha.local:8123", Token: "secret", Entity: "climate.a", Language: "zh-Hant"}
+	want := config{Address: "http://ha.local:8123", Token: "secret", Entity: "climate.a", Language: "zh-Hant",
+		AreaOrder: []string{"bedroom", ""}, TileOrder: map[string][]string{"bedroom": {"light.lamp"}}, Collapsed: []string{""}}
 	if err := saveConfig(path, want); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := loadConfig(path); err != nil || got != want {
+	if got, err := loadConfig(path); err != nil || !reflect.DeepEqual(got, want) {
 		t.Fatalf("%+v %v", got, err)
 	}
 	// A language the app is not written in follows the system's.
@@ -867,6 +945,9 @@ func TestSnapshot(t *testing.T) {
 		}
 	}
 	write("home.png")
+	a.toggleArea("living_room")
+	write("home-collapsed.png")
+	a.toggleArea("living_room")
 	tt.Scroll(panelWidth/2, 300, 0, 200)
 	write("home-scrolled.png")
 	a.settingsOpen = true
