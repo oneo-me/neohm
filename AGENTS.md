@@ -11,6 +11,7 @@ NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that co
 
 ## Working with the user
 
+- Never create sub-Agents or Git worktrees; work directly in the current checkout.
 - Do not commit, tag, push or publish without explicit authorization.
 - An explicit request to publish a named version authorizes the [Releasing](README.md#releasing) steps, including the release commit, tag and pushes. Requests to prepare a release or edit its notes do not.
 
@@ -21,6 +22,7 @@ Build and test from `source/`, following [Development](README.md#development). A
 ## Documentation
 
 - Update a document only when a fact its reader needs changes.
+- Avoid secondary labels and descriptions that restate a heading or value; let the layout explain.
 - Keep each document within its budget and written for its reader.
 - Repair a document you touch instead of appending to it.
 - Keep `README.md` and `README.zh-CN.md` equivalent; everything else, including code comments, is English.
