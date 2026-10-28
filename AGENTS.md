@@ -33,11 +33,11 @@ Build and test from `source/`, following [Development](README.md#development). A
 
 [CHANGELOG.md](CHANGELOG.md) is the release notes on GitHub and in the update popover, written for someone deciding whether to install a version.
 
-- Record each completed outcome a user notices, or must act on, under `Unreleased`.
+- Record each completed outcome a user notices, or must act on, under `Unreleased`, with references such as `(#12 by @alice)`.
 - Write one short clause per outcome, starting with a verb. Do not extend it with a colon, semicolon or "which" clause.
 - Omit refactors, tests, tooling, CI, the website, styling and copy tweaks. The website deploys on its own, outside versions.
 - Merge related entries and refine an existing one instead of appending. Never present an unreleased experiment as a change or a removal.
 - Until the first release ships, describe what the app does, not how it evolved.
 - Prefix breaking changes with `Breaking:` and name the action required.
-- Order bullets as `Breaking:`, then Add, then other changes, then Fix. Keep one list per version, without subheadings.
-- At release, rename `[Unreleased]` to the version, as [Releasing](README.md#releasing) describes. Change published sections only to correct facts.
+- Order bullets as `Breaking:`, then Add, then other changes, then Fix. Keep `Unreleased` as one list, without subheadings.
+- At release, rename `[Unreleased]` to the version, as [Releasing](README.md#releasing) describes, and open it with a summary sentence and highlights when it has several outcomes. Change published sections only to correct facts.
