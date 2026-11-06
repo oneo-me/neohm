@@ -1,24 +1,40 @@
-# NeoHM
+<p align="center">
+  <img src="source/icons/AppIcon.png" alt="NeoHM" width="128">
+</p>
 
-**English** | [简体中文](README.zh-CN.md)
-
-NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that controls the devices of a Home Assistant instance, with full controls for air conditioners. It is built in Go with [MyGo](https://github.com/egoist/mygo) and [Onevra](https://github.com/oneo-me/onevra).
-
-Click the menu bar icon on macOS, or the tray icon on Windows, to open the panel; on Linux, choose **Open panel** from the tray icon's menu. It shows the devices as tiles by room, lit while they are on. A click on a tile turns its device on or off, and the arrow in its corner opens the device's page; a device that does not switch opens its page from the click. Drag a room's heading to move the room, or a tile to move it within its room; click the heading to fold the room away. Right-click a tile to pin it to the Pinned group at the top, whose tiles you drag among each other; the group itself stays first and open. Settings opens in the same panel from its gear button. Right-click the icon for Quit NeoHM, which Linux lists in the same menu, or press ⌘Q (Ctrl+Q on Windows and Linux) while the panel is open.
+<h1 align="center">NeoHM</h1>
 
 <p align="center">
-  <img src="docs/screenshots/home.jpg" width="24%" alt="Devices by room">
-  <img src="docs/screenshots/air-conditioner.jpg" width="24%" alt="An air conditioner's controls">
-  <img src="docs/screenshots/light.jpg" width="24%" alt="A light's page">
-  <img src="docs/screenshots/cover.jpg" width="24%" alt="A curtain's page">
+  <strong>English</strong> |
+  <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/oneo-me"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-oneo--me-181717?logo=github&logoColor=white"></a>
+  <a href="https://oneo.me"><img alt="Blog" src="https://img.shields.io/badge/Blog-oneo.me-0969da"></a>
+  <a href="https://x.com/oneo666"><img alt="X" src="https://img.shields.io/badge/X-%40oneo666-000000?logo=x&logoColor=white"></a>
+  <a href="https://github.com/sponsors/oneo-me"><img alt="GitHub Sponsors" src="https://img.shields.io/badge/GitHub%20Sponsors-ea4aaa?logo=githubsponsors&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://awesomemygo.dev/apps/neohm"><img alt="Listed on Awesome MyGo" src="https://awesomemygo.dev/badge.svg"></a>
+</p>
+
+<p align="center">
+  NeoHM is a menu bar app for macOS, and a tray app for Windows and Linux, that controls the devices of a Home Assistant instance, with full controls for air conditioners. It is built in Go with <a href="https://github.com/egoist/mygo">MyGo</a> and <a href="https://github.com/oneo-me/onevra">Onevra</a>.
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/home.jpg" alt="NeoHM showing devices by room">
 </p>
 
 ## Features
 
-- Show the devices as tiles grouped by room, each with its main state and whether it is on.
-- Switch lights, plugs, fans, covers and more from their tiles, and dim, color, move, play, lock or start a device from its page, with a light's colors and a cover's quarter positions a click away.
-- Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep, as far as it offers them.
-- Show the interface in English, Simplified Chinese, Traditional Chinese, Japanese or Korean, following the system or the language chosen in Settings.
+- Show devices as tiles by room, lit while they are on, and pin favorites above the rooms.
+- Switch lights, plugs, fans and covers from their tiles, then dim, color, move, lock or start them from their pages.
+- Control an air conditioner's power, temperature, mode, fan speed, airflow, Eco Mode and Sleep as it supports them.
+- Drag rooms and tiles into place, fold rooms away, and keep the arrangement.
+- Use the interface in English, Simplified Chinese, Traditional Chinese, Japanese or Korean.
 
 ## Install
 
@@ -45,8 +61,6 @@ Later versions install from Settings: NeoHM checks once a day and notifies you o
 2. Start NeoHM. The panel opens on Settings until Home Assistant is set up; later, open Settings from the panel's gear button or with ⌘, (Ctrl+, on Windows and Linux).
 3. Enter the address, for example `http://homeassistant.local:8123`, and the token, then click **Connect**.
 4. Close Settings to see your devices. Click a tile to switch its device, or its arrow to open the device's page.
-
-The address, the token, the language chosen, whether updates are checked automatically, the air conditioner opened last and how you arranged the rooms and tiles are saved in `~/.neohm/config.json`, which only your user account can read.
 
 ## Contributing
 
@@ -78,9 +92,7 @@ Pushing a tag `v<version>` builds the apps for macOS, Windows and Linux on GitHu
 
 The workflow signs updates with the `MYGO_UPDATER_PRIVATE_KEY` secret, the key whose public half is `updates.publicKey` in `mygo.json`. Installed apps accept only updates signed with it, so keep a copy outside the repository.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
-
-## Website
+### Website
 
 The landing page is a React and Vite app in `website/`, built with [Bun](https://bun.sh). Run its commands from that directory:
 
@@ -92,3 +104,9 @@ bun run build     # static site in dist
 ```
 
 Pushes to `main` that change `website/` deploy it to GitHub Pages with Actions. Set Settings → Pages → Source to **GitHub Actions** once.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the layout and [AGENTS.md](AGENTS.md) for the working rules.
+
+## License
+
+[MIT](LICENSE) © 2026 ONEO.

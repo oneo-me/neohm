@@ -1,24 +1,40 @@
-# NeoHM
+<p align="center">
+  <img src="source/icons/AppIcon.png" alt="NeoHM" width="128">
+</p>
 
-[English](README.md) | **简体中文**
-
-NeoHM 是 macOS 上的菜单栏应用，也是 Windows 和 Linux 上的托盘应用，用来控制 Home Assistant 中的设备，并为空调提供完整的控制界面。它用 Go 编写，基于 [MyGo](https://github.com/egoist/mygo) 和 [Onevra](https://github.com/oneo-me/onevra)。
-
-在 macOS 上点击菜单栏图标，或在 Windows 上点击托盘图标，即可打开面板；在 Linux 上，从托盘图标的菜单中选择**打开面板**。面板按房间以方块显示设备，设备开启时方块会亮起。点击方块可以开关设备，方块角上的箭头会打开设备的页面；不能开关的设备点击方块即打开它的页面。拖动房间的标题可以移动房间，拖动方块可以在房间内调整它的位置；点击标题可以折叠房间。右键点击方块可以将它置顶到顶部的“置顶”分组，分组内的方块可以拖动调整顺序；这个分组始终在最前，不能折叠。设置也在同一个面板中，从齿轮按钮打开。右键点击图标可以退出 NeoHM（Linux 上在同一个菜单中），面板打开时也可以按 ⌘Q（Windows 和 Linux 上为 Ctrl+Q）退出。
+<h1 align="center">NeoHM</h1>
 
 <p align="center">
-  <img src="docs/screenshots/home.jpg" width="24%" alt="按房间显示的设备">
-  <img src="docs/screenshots/air-conditioner.jpg" width="24%" alt="空调的控制界面">
-  <img src="docs/screenshots/light.jpg" width="24%" alt="灯的页面">
-  <img src="docs/screenshots/cover.jpg" width="24%" alt="窗帘的页面">
+  <strong>简体中文</strong> |
+  <a href="README.md">English</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/oneo-me"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-oneo--me-181717?logo=github&logoColor=white"></a>
+  <a href="https://oneo.me"><img alt="博客" src="https://img.shields.io/badge/%E5%8D%9A%E5%AE%A2-oneo.me-0969da"></a>
+  <a href="https://x.com/oneo666"><img alt="X" src="https://img.shields.io/badge/X-%40oneo666-000000?logo=x&logoColor=white"></a>
+  <a href="https://github.com/sponsors/oneo-me"><img alt="GitHub 赞助" src="https://img.shields.io/badge/GitHub%20%E8%B5%9E%E5%8A%A9-ea4aaa?logo=githubsponsors&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://awesomemygo.dev/apps/neohm"><img alt="Listed on Awesome MyGo" src="https://awesomemygo.dev/badge.svg"></a>
+</p>
+
+<p align="center">
+  NeoHM 是 macOS 上的菜单栏应用，也是 Windows 和 Linux 上的托盘应用，用来控制 Home Assistant 中的设备，并为空调提供完整的控制界面。它用 Go 编写，基于 <a href="https://github.com/egoist/mygo">MyGo</a> 和 <a href="https://github.com/oneo-me/onevra">Onevra</a>。
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/home.jpg" alt="NeoHM 按房间显示设备">
 </p>
 
 ## 功能
 
-- 按房间以方块显示设备，每个方块显示设备的主要状态以及是否开启。
-- 在方块上开关灯、插座、风扇、窗帘等设备，并在设备的页面中调光、调色、调节位置、播放、锁门或启动设备，一键选择灯光颜色或窗帘的四分位置。
+- 按房间以方块显示设备，设备开启时方块会亮起，并可把常用设备置顶到房间上方。
+- 在方块上开关灯、插座、风扇和窗帘，并在设备页面中调光、调色、调节位置、锁门或启动设备。
 - 控制空调的电源、温度、模式、风速、风向、节能模式和睡眠，以每台空调支持的功能为准。
-- 以英文、简体中文、繁体中文、日文或韩文显示界面，跟随系统或在设置中选择的语言。
+- 拖动房间和方块调整位置，折叠房间，并保留这些排列。
+- 以英文、简体中文、繁体中文、日文或韩文显示界面。
 
 ## 安装
 
@@ -45,8 +61,6 @@ NeoHM 需要一个这台电脑能访问到的 Home Assistant。从 [Releases](ht
 2. 启动 NeoHM。完成 Home Assistant 配置之前，面板会直接打开设置；之后可以从面板的齿轮按钮或用 ⌘,（Windows 和 Linux 上为 Ctrl+,）打开设置。
 3. 填写地址（例如 `http://homeassistant.local:8123`）和令牌，然后点击**连接**。
 4. 关闭设置即可看到你的设备。点击方块可以开关设备，点击它的箭头可以打开设备的页面。
-
-地址、令牌、所选语言、是否自动检查更新、最近打开的空调以及你对房间和方块的排列保存在 `~/.neohm/config.json`，只有你的用户账户可以读取。
 
 ## 参与开发
 
@@ -78,9 +92,7 @@ go tool mygo build    # 在 ../dist 生成本系统的应用和安装包
 
 工作流用 `MYGO_UPDATER_PRIVATE_KEY` 密钥签名更新，它的公钥就是 `mygo.json` 中的 `updates.publicKey`。已安装的应用只接受用这把密钥签名的更新，请在仓库之外保留一份副本。
 
-代码布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
-
-## 官网
+### 官网
 
 官网是 `website/` 中的 React + Vite 应用，使用 [Bun](https://bun.sh) 构建，请在该目录下运行命令：
 
@@ -92,3 +104,9 @@ bun run build     # 生成 dist 静态站点
 ```
 
 推送到 `main` 且改动 `website/` 时，会通过 Actions 发布到 GitHub Pages。首次使用前，请在 Settings → Pages 中将 Source 设为 **GitHub Actions**。
+
+代码布局见 [ARCHITECTURE.md](ARCHITECTURE.md)，协作规则见 [AGENTS.md](AGENTS.md)。
+
+## 许可证
+
+采用 [MIT](LICENSE) 协议 © 2026 ONEO。
